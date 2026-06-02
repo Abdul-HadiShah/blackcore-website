@@ -3,86 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlackCore | Industrial Matrix</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0a0a0a; color: #ffffff; }
-        .mono { font-family: 'JetBrains+Mono', monospace; }
-        .border-glow { border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
-        .border-glow:hover { border: 1px solid rgba(59, 130, 246, 0.5); box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); }
-        .logo-img { height: 96px; max-height: 120px; width: auto; filter: brightness(0) invert(1); object-fit: contain; } 
-    </style>
+    <title>PMT Monitoring & Control</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
 </head>
-<body>
+<body class="bg-gray-100 font-sans text-gray-800">
 
-    <nav class="flex items-center justify-between px-10 py-2 border-b border-white/10">
-        <div class="flex-shrink-0">
-            <a href="index.html">
-                <img src="finallogo1.png" alt="BlackCore Logo" class="logo-img">
-            </a>
+    <div id="login-overlay" class="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <h2 class="text-2xl font-bold text-orange-600 mb-2">🔐 Secure Portal Access</h2>
+            <p class="text-gray-500 text-sm mb-6">Enter dashboard system credentials to establish control uplink.</p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Username</label>
+                    <input type="text" id="panel-user" class="w-full px-4 py-2 border rounded-lg focus:outline-orange-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Password</label>
+                    <input type="password" id="panel-pass" class="w-full px-4 py-2 border rounded-lg focus:outline-orange-500">
+                </div>
+                <button onclick="checkCredentials()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg transition">Authenticate</button>
+                <p id="login-err" class="text-red-500 text-xs mt-2 hidden">Invalid dashboard access tokens.</p>
+            </div>
         </div>
+    </div>
+
+    <div id="main-dashboard" class="max-w-7xl mx-auto p-4 md:p-6 opacity-20 transition-opacity duration-500 pointer-events-none">
         
-        <div class="hidden md:flex items-center space-x-8 text-sm font-medium tracking-wide uppercase opacity-70">
-            <a href="#" class="hover:opacity-100 transition">Product</a>
-            <a href="solutions.html" class="hover:opacity-100 transition text-blue-400">Solutions</a>
-            <a href="#" class="hover:opacity-100 transition">About Us</a>
-            <a href="#" class="hover:opacity-100 transition">Contact</a>
-        </div>
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 pb-4 mb-6 gap-2">
+            <div class="flex items-center gap-2">
+                <span class="text-orange-500 text-3xl font-extrabold tracking-tight">KE</span>
+                <h1 class="text-2xl font-bold text-gray-700 tracking-wide">PMT Monitoring & Control</h1>
+            </div>
+            <div class="text-xs text-gray-500 font-medium space-x-4 bg-white px-3 py-1.5 rounded-full shadow-xs">
+                <span id="live-clock">2026-06-02 | 00:00:00 AM</span>
+                <span>🌡️ Temp: <strong id="val-temp">--</strong>°C</span>
+                <span>Status: <strong id="broker-status" class="text-red-500">Disconnected</strong></span>
+            </div>
+        </header>
 
-        <div class="flex items-center space-x-6">
-            <button class="px-6 py-2 border border-blue-500 text-blue-500 text-xs font-bold uppercase tracking-widest hover:bg-blue-500 hover:text-white transition">
-                Request a Demo
-            </button>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <div class="h-6 w-[1px] bg-white/20"></div> <a href="index_ar.html" class="flex items-center space-x-2 hover:text-blue-400 transition text-sm font-bold opacity-80 hover:opacity-100">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-                <span>AR</span>
-            </a>
-        </div>
-    </nav>
+            <div class="space-y-6 lg:col-span-1">
+                <div class="bg-white p-5 rounded-xl shadow-xs border border-gray-100">
+                    <h3 class="text-amber-500 font-bold flex items-center gap-1.5 mb-4">PMT Specifications ⚡</h3>
+                    <ul class="space-y-3 text-sm font-medium text-gray-600">
+                        <li class="flex items-center gap-2">⏱️ <span class="text-gray-400 font-normal">Power:</span> 250 KVA</li>
+                        <li class="flex items-center gap-2">📍 <span class="text-gray-400 font-normal">Location:</span> Al-Khizra Heights</li>
+                        <li class="flex items-center gap-2">🪪 <span class="text-gray-400 font-normal">ID:</span> KE-PMT-725</li>
+                    </ul>
+                </div>
 
-    <section class="relative h-[80vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden">
-        <div class="absolute inset-0 opacity-10 pointer-events-none">
-            <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <path d="M0 100 L100 0 L100 100 Z" fill="#3b82f6"/>
-            </svg>
-        </div>
-        <div class="relative z-10 max-w-4xl">
-            <h1 class="text-5xl md:text-7xl font-black tracking-tighter leading-none mb-6">THE NEW OPERATING STANDARD <br> FOR INDUSTRY</h1>
-            <p class="text-lg md:text-xl opacity-60 max-w-2xl mx-auto mb-10 leading-relaxed">
-                Digitalize maintenance. Automate tasks. Secure your core. BlackCore presents <span class="text-blue-500 font-bold">Matrix</span>.
-            </p>
-            <a href="solutions.html" class="inline-block px-10 py-4 bg-white text-black font-black uppercase text-sm tracking-widest hover:bg-blue-500 hover:text-white transition">Explore the Platform</a>
-        </div>
-    </section>
+                <div class="bg-white p-5 rounded-xl shadow-xs border border-gray-100">
+                    <h3 class="text-blue-600 font-bold flex items-center gap-1.5 mb-4">Load Shedding Schedule 🕒</h3>
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">Period 1 (Start Time)</label>
+                            <input type="time" id="sched-start" class="w-full px-3 py-1.5 border rounded-lg focus:outline-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">Period 1 (End Time)</label>
+                            <input type="time" id="sched-end" class="w-full px-3 py-1.5 border rounded-lg focus:outline-blue-500">
+                        </div>
+                        <button onclick="sendSchedule()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition text-xs shadow-md">Transmit Schedule Profile</button>
+                    </div>
+                </div>
+            </div>
 
-    <section class="max-w-7xl mx-auto px-10 py-24">
-        <div class="grid md:grid-cols-3 gap-8">
-            <div class="p-8 bg-[#111] border-glow rounded-sm">
-                <div class="w-10 h-10 mb-6 flex items-center justify-center border border-blue-500/50"><div class="w-2 h-2 bg-blue-500 animate-pulse"></div></div>
-                <h3 class="mono text-lg font-bold mb-4 uppercase">Task Automation</h3>
-                <p class="text-sm opacity-50">AI-driven workflows. Every daily task is logged and optimized in real-time.</p>
-            </div>
-            <div class="p-8 bg-[#111] border-glow rounded-sm">
-                <div class="w-10 h-10 mb-6 flex items-center justify-center border border-blue-500/50"><div class="w-4 h-1 bg-blue-500"></div></div>
-                <h3 class="mono text-lg font-bold mb-4 uppercase">Predictive Maintenance</h3>
-                <p class="text-sm opacity-50">Proactive prevention with neural asset monitoring.</p>
-            </div>
-            <div class="p-8 bg-[#111] border-glow rounded-sm">
-                <div class="w-10 h-10 mb-6 flex items-center justify-center border border-blue-500/50"><svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"/></svg></div>
-                <h3 class="mono text-lg font-bold mb-4 uppercase">Defense-Grade Security</h3>
-                <p class="text-sm opacity-50">Encryption and air-gapped compliance for industrial data.</p>
-            </div>
-        </div>
-    </section>
+            <div class="space-y-6 lg:col-span-2">
+                <div class="bg-white p-6 rounded-xl shadow-xs border border-gray-100 flex flex-col items-center">
+                    <h3 class="text-gray-600 font-bold text-sm self-start flex items-center gap-1.5 mb-4">⚙️ System Control</h3>
+                    <div id="status-banner" class="w-full bg-red-600 text-white font-bold text-xl py-4 rounded-xl text-center shadow-inner tracking-wide mb-4 transition-all duration-300">
+                        System Deactive
+                    </div>
+                    <button id="btn-toggle" onclick="toggleSystem()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-2.5 rounded-lg transition text-sm shadow-md cursor-pointer">
+                        Activate System
+                    </button>
+                </div>
 
-    <footer class="border-t border-white/10 py-12 px-10 text-center md:text-left">
-        <div class="flex flex-col md:flex-row justify-between items-center opacity-60">
-            <img src="finallogo1.png" alt="BlackCore Logo" class="logo-img" style="height: 60px;">
-            <div class="mono text-xs uppercase tracking-[0.3em]">Industrial Strength. Neural Intelligence.</div>
-            <div class="text-xs">© 2026 BlackCore Systems.</div>
+                <div class="bg-white p-5 rounded-xl shadow-xs border border-gray-100">
+                    <h3 class="text-emerald-600 font-bold flex items-center gap-1.5 mb-4">Phase Current Monitoring (Amperes) 📈</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-gray-600 mb-1"><span>Phase R:</span> <span id="txt-phase-r">0 A</span></div>
+                            <div class="w-full bg-gray-100 h-4 rounded-full overflow-hidden"><div id="bar-phase-r" class="bg-amber-500 h-full transition-all duration-500" style="width: 0%"></div></div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-gray-600 mb-1"><span>Phase S:</span> <span id="txt-phase-s">0 A</span></div>
+                            <div class="w-full bg-gray-100 h-4 rounded-full overflow-hidden"><div id="bar-phase-s" class="bg-gray-300 h-full transition-all duration-500" style="width: 0%"></div></div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-gray-600 mb-1"><span>Phase T:</span> <span id="txt-phase-t">0 A</span></div>
+                            <div class="w-full bg-gray-100 h-4 rounded-full overflow-hidden"><div id="bar-phase-t" class="bg-gray-300 h-full transition-all duration-500" style="width: 0%"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
-    </footer>
+    </div>
+
+    <script>
+        // ------ BROKER CREDENTIAL CONFIGURATION ------
+        const MQTT_HOST = "9a9143ec37924c2c8c2bc10c92f1601c.s1.eu.hivemq.cloud"; 
+        const MQTT_PORT = 8884; // WebSocket Secure standard port
+        const MQTT_USER = "Abdul";
+        const MQTT_PASS = "Ke-1234@";
+        
+        let mqttClient;
+        let currentState = "OFF";
+
+        // Simple login mechanism to prevent random visitors on your GitHub page
+        function checkCredentials() {
+            const u = document.getElementById('panel-user').value;
+            const p = document.getElementById('panel-pass').value;
+            // Set your desired dashboard access passwords here
+            if(u === "admin" && p === "ke725") {
+                document.getElementById('login-overlay').classList.add('hidden');
+                const main = document.getElementById('main-dashboard');
+                main.classList.remove('opacity-20', 'pointer-events-none');
+                initMQTT();
+            } else {
+                const err = document.getElementById('login-err');
+                err.classList.remove('hidden');
+            }
+        }
+
+        function initMQTT() {
+            const clientId = "WebPanel-" + Math.floor(Math.random() * 10000);
+            mqttClient = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), clientId);
+
+            mqttClient.onConnectionLost = (response) => {
+                document.getElementById('broker-status').innerText = "Disconnected";
+                document.getElementById('broker-status').className = "text-red-500";
+                setTimeout(initMQTT, 5000); // Auto loop reconnection
+            };
+
+            mqttClient.onMessageArrived = (message) => {
+                const topic = message.destinationName;
+                const payload = message.payloadString;
+
+                if (topic === "esp32/status") {
+                    updateSystemState(payload);
+                } else if (topic === "esp32/telemetry") {
+                    const data = JSON.parse(payload);
+                    document.getElementById('val-temp').innerText = data.temp;
+                    updatePhase('r', data.r);
+                    updatePhase('s', data.s);
+                    updatePhase('t', data.t);
+                }
+            };
+
+            const connectOptions = {
+                useSSL: true,
+                userName: MQTT_USER,
+                password: MQTT_PASS,
+                onSuccess: () => {
+                    document.getElementById('broker-status').innerText = "Connected";
+                    document.getElementById('broker-status').className = "text-emerald-500";
+                    mqttClient.subscribe("esp32/status");
+                    mqttClient.subscribe("esp32/telemetry");
+                }
+            };
+            mqttClient.connect(connectOptions);
+        }
+
+        function updateSystemState(state) {
+            currentState = state;
+            const banner = document.getElementById('status-banner');
+            const btn = document.getElementById('btn-toggle');
+            if (state === "ON") {
+                banner.innerText = "System Active";
+                banner.className = "w-full bg-emerald-600 text-white font-bold text-xl py-4 rounded-xl text-center shadow-inner tracking-wide mb-4 transition-all";
+                btn.innerText = "Deactivate System";
+                btn.className = "bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-2.5 rounded-lg transition text-sm shadow-md cursor-pointer";
+            } else {
+                banner.innerText = "System Deactive";
+                banner.className = "w-full bg-red-600 text-white font-bold text-xl py-4 rounded-xl text-center shadow-inner tracking-wide mb-4 transition-all";
+                btn.innerText = "Activate System";
+                btn.className = "bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-2.5 rounded-lg transition text-sm shadow-md cursor-pointer";
+            }
+        }
+
+        function toggleSystem() {
+            const nextState = (currentState === "ON") ? "OFF" : "ON";
+            const message = new Paho.MQTT.Message(nextState);
+            message.destinationName = "esp32/led";
+            mqttClient.send(message);
+        }
+
+        function sendSchedule() {
+            const start = document.getElementById('sched-start').value;
+            const end = document.getElementById('sched-end').value;
+            if(!start || !end) return alert("Define full schedule limits.");
+            
+            // Format structure text payload: "SH,HH:MM,HH:MM"
+            const payloadStr = `SH,${start},${end}`;
+            const message = new Paho.MQTT.Message(payloadStr);
+            message.destinationName = "esp32/led";
+            mqttClient.send(message);
+            alert("Schedule parameters pushed to edge device.");
+        }
+
+        function updatePhase(phase, val) {
+            document.getElementById(`txt-phase-${phase}`).innerText = `${val} A`;
+            const maxAmps = 400; // Scaling denominator limits
+            const pct = Math.min((val / maxAmps) * 100, 100);
+            document.getElementById(`bar-phase-${phase}`).style.width = `${pct}%`;
+        }
+
+        // Keep the local top widget timer clock live
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('live-clock').innerText = now.toISOString().slice(0,10) + " | " + now.toLocaleTimeString();
+        }, 1000);
+    </script>
 </body>
 </html>

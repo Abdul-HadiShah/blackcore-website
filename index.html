@@ -104,119 +104,117 @@
     </div>
 
     <script>
-        // ------ BROKER CREDENTIAL CONFIGURATION ------
-        const MQTT_HOST = "9a9143ec37924c2c8c2bc10c92f1601c.s1.eu.hivemq.cloud"; 
-        const MQTT_PORT = 8884; // WebSocket Secure standard port
-        const MQTT_USER = "Abdul";
-        const MQTT_PASS = "Ke-1234@";
+    // ------ BROKER CREDENTIAL CONFIGURATION ------
+    const MQTT_HOST = "9a9143ec37924c2c8c2bc10c92f1601c.s1.eu.hivemq.cloud"; 
+    const MQTT_PORT = 8884; 
+    const MQTT_USER = "Abdul";
+    const MQTT_PASS = "Ke-1234@";
+    
+    let mqttClient;
+    let currentState = "OFF";
+
+    function checkCredentials() {
+        const u = document.getElementById('panel-user').value;
+        const p = document.getElementById('panel-pass').value;
+        if(u === "admin" && p === "ke725") {
+            document.getElementById('login-overlay').classList.add('hidden');
+            const main = document.getElementById('main-dashboard');
+            main.classList.remove('opacity-20', 'pointer-events-none');
+            initMQTT();
+        } else {
+            document.getElementById('login-err').classList.remove('hidden');
+        }
+    }
+
+    function initMQTT() {
+        const clientId = "WebPanel-" + Math.floor(Math.random() * 10000);
+        mqttClient = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), clientId);
+
+        mqttClient.onConnectionLost = (response) => {
+            document.getElementById('broker-status').innerText = "Disconnected";
+            document.getElementById('broker-status').className = "text-red-500";
+            setTimeout(initMQTT, 5000); 
+        };
+
+        mqttClient.onMessageArrived = (message) => {
+            const topic = message.destinationName;
+            const payload = message.payloadString;
+
+            if (topic === "esp32/status") {
+                updateSystemState(payload);
+            } else if (topic === "esp32/telemetry") {
+                const data = JSON.parse(payload);
+                document.getElementById('val-temp').innerText = data.temp;
+                updatePhase('r', data.r);
+                updatePhase('s', data.s);
+                updatePhase('t', data.t);
+            }
+        };
+
+        const connectOptions = {
+            useSSL: true,
+            userName: MQTT_USER,
+            password: MQTT_PASS,
+            onSuccess: () => {
+                document.getElementById('broker-status').innerText = "Connected";
+                document.getElementById('broker-status').className = "text-emerald-500";
+                mqttClient.subscribe("esp32/status");
+                mqttClient.subscribe("esp32/telemetry");
+            }
+        };
+        mqttClient.connect(connectOptions);
+    }
+
+    function updateSystemState(state) {
+        currentState = state;
+        const banner = document.getElementById('status-banner');
+        const btn = document.getElementById('btn-toggle');
+        if (state === "ON") {
+            banner.innerText = "System Active";
+            banner.className = "w-full bg-emerald-600 text-white font-bold text-xl py-4 rounded-xl text-center shadow-inner tracking-wide mb-4 transition-all duration-300";
+            btn.innerText = "Deactivate System";
+            btn.className = "bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-2.5 rounded-lg transition text-sm shadow-md cursor-pointer";
+        } else {
+            banner.innerText = "System Deactive";
+            banner.className = "w-full bg-red-600 text-white font-bold text-xl py-4 rounded-xl text-center shadow-inner tracking-wide mb-4 transition-all duration-300";
+            btn.innerText = "Activate System";
+            btn.className = "bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-2.5 rounded-lg transition text-sm shadow-md cursor-pointer";
+        }
+    }
+
+    function toggleSystem() {
+        const nextState = (currentState === "ON") ? "OFF" : "ON";
+        // Optimistically update UI locally to avoid round-trip lag feel
+        updateSystemState(nextState); 
         
-        let mqttClient;
-        let currentState = "OFF";
+        const message = new Paho.MQTT.Message(nextState);
+        message.destinationName = "esp32/led";
+        mqttClient.send(message);
+    }
 
-        // Simple login mechanism to prevent random visitors on your GitHub page
-        function checkCredentials() {
-            const u = document.getElementById('panel-user').value;
-            const p = document.getElementById('panel-pass').value;
-            // Set your desired dashboard access passwords here
-            if(u === "admin" && p === "ke725") {
-                document.getElementById('login-overlay').classList.add('hidden');
-                const main = document.getElementById('main-dashboard');
-                main.classList.remove('opacity-20', 'pointer-events-none');
-                initMQTT();
-            } else {
-                const err = document.getElementById('login-err');
-                err.classList.remove('hidden');
-            }
-        }
+    function sendSchedule() {
+        const start = document.getElementById('sched-start').value;
+        const end = document.getElementById('sched-end').value;
+        if(!start || !end) return alert("Define full schedule limits.");
+        
+        const payloadStr = `SH,${start},${end}`;
+        const message = new Paho.MQTT.Message(payloadStr);
+        message.destinationName = "esp32/led";
+        mqttClient.send(message);
+        alert("Schedule parameters pushed to edge device.");
+    }
 
-        function initMQTT() {
-            const clientId = "WebPanel-" + Math.floor(Math.random() * 10000);
-            mqttClient = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), clientId);
+    function updatePhase(phase, val) {
+        document.getElementById(`txt-phase-${phase}`).innerText = `${val} A`;
+        const maxAmps = 400; 
+        const pct = Math.min((val / maxAmps) * 100, 100);
+        document.getElementById(`bar-phase-${phase}`).style.width = `${pct}%`;
+    }
 
-            mqttClient.onConnectionLost = (response) => {
-                document.getElementById('broker-status').innerText = "Disconnected";
-                document.getElementById('broker-status').className = "text-red-500";
-                setTimeout(initMQTT, 5000); // Auto loop reconnection
-            };
-
-            mqttClient.onMessageArrived = (message) => {
-                const topic = message.destinationName;
-                const payload = message.payloadString;
-
-                if (topic === "esp32/status") {
-                    updateSystemState(payload);
-                } else if (topic === "esp32/telemetry") {
-                    const data = JSON.parse(payload);
-                    document.getElementById('val-temp').innerText = data.temp;
-                    updatePhase('r', data.r);
-                    updatePhase('s', data.s);
-                    updatePhase('t', data.t);
-                }
-            };
-
-            const connectOptions = {
-                useSSL: true,
-                userName: MQTT_USER,
-                password: MQTT_PASS,
-                onSuccess: () => {
-                    document.getElementById('broker-status').innerText = "Connected";
-                    document.getElementById('broker-status').className = "text-emerald-500";
-                    mqttClient.subscribe("esp32/status");
-                    mqttClient.subscribe("esp32/telemetry");
-                }
-            };
-            mqttClient.connect(connectOptions);
-        }
-
-        function updateSystemState(state) {
-            currentState = state;
-            const banner = document.getElementById('status-banner');
-            const btn = document.getElementById('btn-toggle');
-            if (state === "ON") {
-                banner.innerText = "System Active";
-                banner.className = "w-full bg-emerald-600 text-white font-bold text-xl py-4 rounded-xl text-center shadow-inner tracking-wide mb-4 transition-all";
-                btn.innerText = "Deactivate System";
-                btn.className = "bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-2.5 rounded-lg transition text-sm shadow-md cursor-pointer";
-            } else {
-                banner.innerText = "System Deactive";
-                banner.className = "w-full bg-red-600 text-white font-bold text-xl py-4 rounded-xl text-center shadow-inner tracking-wide mb-4 transition-all";
-                btn.innerText = "Activate System";
-                btn.className = "bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-2.5 rounded-lg transition text-sm shadow-md cursor-pointer";
-            }
-        }
-
-        function toggleSystem() {
-            const nextState = (currentState === "ON") ? "OFF" : "ON";
-            const message = new Paho.MQTT.Message(nextState);
-            message.destinationName = "esp32/led";
-            mqttClient.send(message);
-        }
-
-        function sendSchedule() {
-            const start = document.getElementById('sched-start').value;
-            const end = document.getElementById('sched-end').value;
-            if(!start || !end) return alert("Define full schedule limits.");
-            
-            // Format structure text payload: "SH,HH:MM,HH:MM"
-            const payloadStr = `SH,${start},${end}`;
-            const message = new Paho.MQTT.Message(payloadStr);
-            message.destinationName = "esp32/led";
-            mqttClient.send(message);
-            alert("Schedule parameters pushed to edge device.");
-        }
-
-        function updatePhase(phase, val) {
-            document.getElementById(`txt-phase-${phase}`).innerText = `${val} A`;
-            const maxAmps = 400; // Scaling denominator limits
-            const pct = Math.min((val / maxAmps) * 100, 100);
-            document.getElementById(`bar-phase-${phase}`).style.width = `${pct}%`;
-        }
-
-        // Keep the local top widget timer clock live
-        setInterval(() => {
-            const now = new Date();
-            document.getElementById('live-clock').innerText = now.toISOString().slice(0,10) + " | " + now.toLocaleTimeString();
-        }, 1000);
-    </script>
+    setInterval(() => {
+        const now = new Date();
+        document.getElementById('live-clock').innerText = now.toISOString().slice(0,10) + " | " + now.toLocaleTimeString();
+    }, 1000);
+</script>
 </body>
 </html>

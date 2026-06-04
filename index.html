@@ -36,7 +36,7 @@
                 <h1 class="text-2xl font-bold text-gray-700 tracking-wide">PMT Monitoring & Control</h1>
             </div>
             <div class="text-xs text-gray-500 font-medium space-x-4 bg-white px-3 py-1.5 rounded-full shadow-xs">
-                <span id="live-clock">2026-06-04 | 00:00:00 AM</span>
+                <span id="live-clock">2026-06-05 | 00:00:00 AM</span>
                 <span>🌡️ Temp: <strong id="val-temp">--</strong>°C</span>
                 <span>Status: <strong id="broker-status" class="text-red-500">Disconnected</strong></span>
             </div>
@@ -167,9 +167,13 @@
             mqttClient.onMessageArrived = (message) => {
                 const topic = message.destinationName;
                 const payload = message.payloadString;
+                console.log("Arrived -> Topic: " + topic + " Payload: " + payload);
 
                 if (topic === "esp32/status") {
                     updateSystemState(payload);
+                } else if (topic === "esp32/sched_sync") {
+                    // Rebuild the dashboard UI from the saved profile sent by the ESP32
+                    handleIncomingScheduleSync(payload);
                 } else if (topic === "esp32/telemetry") {
                     try {
                         const data = JSON.parse(payload);
@@ -192,6 +196,16 @@
                     document.getElementById('broker-status').className = "text-emerald-500";
                     mqttClient.subscribe("esp32/status", {qos: 1});
                     mqttClient.subscribe("esp32/telemetry", {qos: 0});
+                    mqttClient.subscribe("esp32/sched_sync", {qos: 1});
+
+                    // Request the current active schedules from the ESP32 upon loading
+                    setTimeout(() => {
+                        const reqMessage = new Paho.MQTT.Message("REQ_SCHED");
+                        reqMessage.destinationName = "esp32/led";
+                        reqMessage.qos = 1;
+                        mqttClient.send(reqMessage);
+                        console.log("Requested active schedule parameters from edge hardware...");
+                    }, 1000);
                 },
                 onFailure: (error) => {
                     document.getElementById('broker-status').innerText = "Auth Error";
@@ -199,6 +213,26 @@
                 }
             };
             mqttClient.connect(connectOptions);
+        }
+
+        function handleIncomingScheduleSync(payload) {
+            // Parses incoming layout: "SYNC,[COUNT],HH:MM,HH:MM..."
+            const segments = payload.split(',');
+            if (segments !== "SYNC") return;
+
+            const count = parseInt(segments);
+            document.getElementById('sched-count').value = count;
+            renderScheduleInputs();
+
+            let segmentIdx = 2;
+            for (let i = 1; i <= count; i++) {
+                if(segments[segmentIdx] && segments[segmentIdx+1]) {
+                    document.getElementById(`start-time-${i}`).value = segments[segmentIdx];
+                    document.getElementById(`end-time-${i}`).value = segments[segmentIdx+1];
+                }
+                segmentIdx += 2;
+            }
+            console.log("Dashboard UI synchronized with stored ESP32 profiles.");
         }
 
         function updateSystemState(state) {
@@ -230,8 +264,6 @@
 
         function sendSchedule() {
             const count = parseInt(document.getElementById('sched-count').value);
-            
-            // Format layout schema string header: "SH,[COUNT]"
             let payloadStr = `SH,${count}`;
 
             for (let i = 1; i <= count; i++) {

@@ -36,7 +36,7 @@
                 <h1 class="text-2xl font-bold text-gray-700 tracking-wide">PMT Monitoring & Control</h1>
             </div>
             <div class="text-xs text-gray-500 font-medium space-x-4 bg-white px-3 py-1.5 rounded-full shadow-xs">
-                <span id="live-clock">2026-06-02 | 00:00:00 AM</span>
+                <span id="live-clock">2026-06-04 | 00:00:00 AM</span>
                 <span>🌡️ Temp: <strong id="val-temp">--</strong>°C</span>
                 <span>Status: <strong id="broker-status" class="text-red-500">Disconnected</strong></span>
             </div>
@@ -58,13 +58,18 @@
                     <h3 class="text-blue-600 font-bold flex items-center gap-1.5 mb-4">Load Shedding Schedule 🕒</h3>
                     <div class="space-y-4 text-sm">
                         <div>
-                            <label class="block text-xs font-semibold text-gray-500 mb-1">Period 1 (Start Time)</label>
-                            <input type="time" id="sched-start" class="w-full px-3 py-1.5 border rounded-lg focus:outline-blue-500">
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">Number of Periods:</label>
+                            <select id="sched-count" onchange="renderScheduleInputs()" class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-blue-500">
+                                <option value="0">None (Manual Only)</option>
+                                <option value="1">1 Period</option>
+                                <option value="2">2 Periods</option>
+                                <option value="3">3 Periods</option>
+                                <option value="4">4 Periods</option>
+                            </select>
                         </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 mb-1">Period 1 (End Time)</label>
-                            <input type="time" id="sched-end" class="w-full px-3 py-1.5 border rounded-lg focus:outline-blue-500">
-                        </div>
+                        
+                        <div id="dynamic-schedule-container" class="space-y-3"></div>
+
                         <button onclick="sendSchedule()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition text-xs shadow-md">Transmit Schedule Profile</button>
                     </div>
                 </div>
@@ -104,7 +109,6 @@
     </div>
 
     <script>
-        // ------ BROKER CREDENTIAL CONFIGURATION ------
         const MQTT_HOST = "9a9143ec37924c2c8c2bc10c92f1601c.s1.eu.hivemq.cloud"; 
         const MQTT_PORT = 8884; 
         const MQTT_USER = "Abdul";
@@ -121,27 +125,48 @@
                 const main = document.getElementById('main-dashboard');
                 main.classList.remove('opacity-20', 'pointer-events-none');
                 initMQTT();
+                renderScheduleInputs();
             } else {
                 document.getElementById('login-err').classList.remove('hidden');
             }
         }
 
+        function renderScheduleInputs() {
+            const container = document.getElementById('dynamic-schedule-container');
+            const count = parseInt(document.getElementById('sched-count').value);
+            container.innerHTML = "";
+
+            for (let i = 1; i <= count; i++) {
+                container.innerHTML += `
+                    <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
+                        <span class="text-xs font-bold text-blue-600">Period ${i}</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-500 uppercase">Start Time</label>
+                                <input type="time" id="start-time-${i}" class="w-full px-2 py-1 border rounded bg-white text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-500 uppercase">End Time</label>
+                                <input type="time" id="end-time-${i}" class="w-full px-2 py-1 border rounded bg-white text-xs">
+                            </div>
+                        </div>
+                    </div>`;
+            }
+        }
+
         function initMQTT() {
-            // Generate standard unique client session ID
             const clientId = "WebPanel-" + Math.floor(Math.random() * 100000);
             mqttClient = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), clientId);
 
             mqttClient.onConnectionLost = (responseObject) => {
-                console.log("Connection Lost: " + responseObject.errorMessage);
                 document.getElementById('broker-status').innerText = "Disconnected";
                 document.getElementById('broker-status').className = "text-red-500";
-                setTimeout(initMQTT, 5000); // Trigger auto loop reconnection
+                setTimeout(initMQTT, 5000); 
             };
 
             mqttClient.onMessageArrived = (message) => {
                 const topic = message.destinationName;
                 const payload = message.payloadString;
-                console.log("Message Arrived - Topic: " + topic + " Payload: " + payload);
 
                 if (topic === "esp32/status") {
                     updateSystemState(payload);
@@ -152,9 +177,7 @@
                         updatePhase('r', data.r);
                         updatePhase('s', data.s);
                         updatePhase('t', data.t);
-                    } catch(e) {
-                        console.error("Malformed telemetry JSON layout payload received", e);
-                    }
+                    } catch(e) { console.error(e); }
                 }
             };
 
@@ -165,16 +188,12 @@
                 userName: MQTT_USER,
                 password: MQTT_PASS,
                 onSuccess: () => {
-                    console.log("MQTT Socket Channel Secure Gateway Opened!");
                     document.getElementById('broker-status').innerText = "Connected";
                     document.getElementById('broker-status').className = "text-emerald-500";
-                    
-                    // Direct subscriptions execution handling
                     mqttClient.subscribe("esp32/status", {qos: 1});
                     mqttClient.subscribe("esp32/telemetry", {qos: 0});
                 },
                 onFailure: (error) => {
-                    console.error("Broker Authentication Pipeline Blocked:", error);
                     document.getElementById('broker-status').innerText = "Auth Error";
                     setTimeout(initMQTT, 5000);
                 }
@@ -189,19 +208,18 @@
             if (state === "ON") {
                 banner.innerText = "System Active";
                 banner.className = "w-full bg-emerald-600 text-white font-bold text-xl py-4 rounded-xl text-center shadow-inner tracking-wide mb-4 transition-all duration-300";
-                btn.innerText = "Deactivate System";
+                btn.innerText = "Deactivate System (Shed)";
                 btn.className = "bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-2.5 rounded-lg transition text-sm shadow-md cursor-pointer";
             } else {
                 banner.innerText = "System Deactive";
                 banner.className = "w-full bg-red-600 text-white font-bold text-xl py-4 rounded-xl text-center shadow-inner tracking-wide mb-4 transition-all duration-300";
-                btn.innerText = "Activate System";
+                btn.innerText = "Activate System (Restore)";
                 btn.className = "bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-2.5 rounded-lg transition text-sm shadow-md cursor-pointer";
             }
         }
 
         function toggleSystem() {
             const nextState = (currentState === "ON") ? "OFF" : "ON";
-            // Optimistically switch layout locally to ensure crisp runtime UI feedback
             updateSystemState(nextState); 
             
             const message = new Paho.MQTT.Message(nextState);
@@ -211,16 +229,23 @@
         }
 
         function sendSchedule() {
-            const start = document.getElementById('sched-start').value;
-            const end = document.getElementById('sched-end').value;
-            if(!start || !end) return alert("Define full schedule limits.");
+            const count = parseInt(document.getElementById('sched-count').value);
             
-            const payloadStr = `SH,${start},${end}`;
+            // Format layout schema string header: "SH,[COUNT]"
+            let payloadStr = `SH,${count}`;
+
+            for (let i = 1; i <= count; i++) {
+                const start = document.getElementById(`start-time-${i}`).value;
+                const end = document.getElementById(`end-time-${i}`).value;
+                if(!start || !end) return alert(`Please enter full values for Period ${i}`);
+                payloadStr += `,${start},${end}`;
+            }
+            
             const message = new Paho.MQTT.Message(payloadStr);
             message.destinationName = "esp32/led";
             message.qos = 1;
             mqttClient.send(message);
-            alert("Schedule profile parameters transmitted: " + payloadStr);
+            alert("Schedule structural mapping profiles dispatched to edge node.");
         }
 
         function updatePhase(phase, val) {

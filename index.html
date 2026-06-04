@@ -9,10 +9,15 @@
 </head>
 <body class="bg-gray-100 font-sans text-gray-800">
 
+    <!-- 🔐 Secure Portal Access Overlay -->
     <div id="login-overlay" class="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-50">
         <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full mx-4">
-            <h2 class="text-2xl font-bold text-orange-600 mb-2">🔐 Secure Portal Access</h2>
-            <p class="text-gray-500 text-sm mb-6">Enter dashboard system credentials to establish control uplink.</p>
+            <!-- Corporate Brand Integration -->
+            <div class="flex justify-center mb-4">
+                <img src="image_ec36b1.png" alt="K-Electric Logo" class="h-16 object-contain">
+            </div>
+            <h2 class="text-2xl font-bold text-orange-600 text-center mb-2">Secure Portal Access</h2>
+            <p class="text-gray-500 text-sm text-center mb-6">Enter dashboard system credentials to establish control uplink.</p>
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Username</label>
@@ -22,18 +27,21 @@
                     <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Password</label>
                     <input type="password" id="panel-pass" value="ke725" class="w-full px-4 py-2 border rounded-lg focus:outline-orange-500">
                 </div>
-                <button onclick="checkCredentials()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg transition">Authenticate</button>
-                <p id="login-err" class="text-red-500 text-xs mt-2 hidden">Invalid dashboard access tokens.</p>
+                <button onclick="checkCredentials()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-lg transition tracking-wide shadow-md cursor-pointer">Authenticate</button>
+                <p id="login-err" class="text-red-500 text-xs text-center mt-2 hidden">Invalid dashboard access tokens.</p>
             </div>
         </div>
     </div>
 
+    <!-- 📊 Main Control Dashboard -->
     <div id="main-dashboard" class="max-w-7xl mx-auto p-4 md:p-6 opacity-20 transition-opacity duration-500 pointer-events-none">
         
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 pb-4 mb-6 gap-2">
-            <div class="flex items-center gap-2">
-                <span class="text-orange-500 text-3xl font-extrabold tracking-tight">KE</span>
-                <h1 class="text-2xl font-bold text-gray-700 tracking-wide">PMT Monitoring & Control</h1>
+            <div class="flex items-center gap-3">
+                <!-- Branding Graphic Replacing Text Elements -->
+                <img src="image_ec36b1.png" alt="K-Electric" class="h-10 object-contain">
+                <div class="h-6 w-[2px] bg-gray-300 hidden md:block"></div>
+                <h1 class="text-xl font-bold text-gray-700 tracking-wide">PMT Monitoring & Control</h1>
             </div>
             <div class="text-xs text-gray-500 font-medium space-x-4 bg-white px-3 py-1.5 rounded-full shadow-xs">
                 <span id="live-clock">2026-06-05 | 00:00:00 AM</span>
@@ -44,6 +52,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
+            <!-- Left Grid Configuration Column -->
             <div class="space-y-6 lg:col-span-1">
                 <div class="bg-white p-5 rounded-xl shadow-xs border border-gray-100">
                     <h3 class="text-amber-500 font-bold flex items-center gap-1.5 mb-4">PMT Specifications ⚡</h3>
@@ -54,6 +63,7 @@
                     </ul>
                 </div>
 
+                <!-- Load Shedding Schedule Box -->
                 <div class="bg-white p-5 rounded-xl shadow-xs border border-gray-100">
                     <h3 class="text-blue-600 font-bold flex items-center gap-1.5 mb-4">Load Shedding Schedule 🕒</h3>
                     <div class="space-y-4 text-sm">
@@ -68,13 +78,15 @@
                             </select>
                         </div>
                         
+                        <!-- Container where dynamic rows inject -->
                         <div id="dynamic-schedule-container" class="space-y-3"></div>
 
-                        <button onclick="sendSchedule()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition text-xs shadow-md">Transmit Schedule Profile</button>
+                        <button onclick="sendSchedule()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition text-xs shadow-md cursor-pointer">Transmit Schedule Profile</button>
                     </div>
                 </div>
             </div>
 
+            <!-- Right Grid Configuration Column -->
             <div class="space-y-6 lg:col-span-2">
                 <div class="bg-white p-6 rounded-xl shadow-xs border border-gray-100 flex flex-col items-center">
                     <h3 class="text-gray-600 font-bold text-sm self-start flex items-center gap-1.5 mb-4">⚙️ System Control</h3>
@@ -167,12 +179,10 @@
             mqttClient.onMessageArrived = (message) => {
                 const topic = message.destinationName;
                 const payload = message.payloadString;
-                console.log("Arrived -> Topic: " + topic + " Payload: " + payload);
 
                 if (topic === "esp32/status") {
                     updateSystemState(payload);
                 } else if (topic === "esp32/sched_sync") {
-                    // Rebuild the dashboard UI from the saved profile sent by the ESP32
                     handleIncomingScheduleSync(payload);
                 } else if (topic === "esp32/telemetry") {
                     try {
@@ -198,13 +208,11 @@
                     mqttClient.subscribe("esp32/telemetry", {qos: 0});
                     mqttClient.subscribe("esp32/sched_sync", {qos: 1});
 
-                    // Request the current active schedules from the ESP32 upon loading
                     setTimeout(() => {
                         const reqMessage = new Paho.MQTT.Message("REQ_SCHED");
                         reqMessage.destinationName = "esp32/led";
                         reqMessage.qos = 1;
                         mqttClient.send(reqMessage);
-                        console.log("Requested active schedule parameters from edge hardware...");
                     }, 1000);
                 },
                 onFailure: (error) => {
@@ -216,11 +224,10 @@
         }
 
         function handleIncomingScheduleSync(payload) {
-            // Parses incoming layout: "SYNC,[COUNT],HH:MM,HH:MM..."
             const segments = payload.split(',');
-            if (segments !== "SYNC") return;
+            if (segments[0] !== "SYNC") return;
 
-            const count = parseInt(segments);
+            const count = parseInt(segments[1]);
             document.getElementById('sched-count').value = count;
             renderScheduleInputs();
 
@@ -232,7 +239,6 @@
                 }
                 segmentIdx += 2;
             }
-            console.log("Dashboard UI synchronized with stored ESP32 profiles.");
         }
 
         function updateSystemState(state) {

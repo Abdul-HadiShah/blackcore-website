@@ -7,29 +7,32 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
-
+ 
   :root {
     --bg:        #0d0f14;
     --surface:   #141720;
+    --surface2:  #1a1f2e;
     --border:    #1e2230;
     --border2:   #252b3b;
     --green:     #00e5a0;
-    --green-dim: #00e5a020;
+    --green-dim: #00e5a018;
     --amber:     #f59e0b;
     --amber-dim: #f59e0b18;
     --red:       #f43f5e;
     --red-dim:   #f43f5e18;
     --blue:      #60a5fa;
     --blue-dim:  #60a5fa18;
+    --purple:    #a78bfa;
+    --purple-dim:#a78bfa18;
     --muted:     #4b5570;
     --text:      #c8d0e0;
     --text-dim:  #6b7592;
     --mono:      'DM Mono', monospace;
     --sans:      'Syne', sans-serif;
   }
-
+ 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+ 
   body {
     background: var(--bg);
     color: var(--text);
@@ -37,8 +40,7 @@
     min-height: 100vh;
     overflow-x: hidden;
   }
-
-  /* ── GRID LINES BACKGROUND ── */
+ 
   body::before {
     content: '';
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
@@ -46,238 +48,264 @@
       linear-gradient(var(--border) 1px, transparent 1px),
       linear-gradient(90deg, var(--border) 1px, transparent 1px);
     background-size: 40px 40px;
-    opacity: 0.35;
+    opacity: 0.3;
   }
-
-  /* ── TOP SCANLINE ── */
+ 
   body::after {
     content: '';
     position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100;
     background: linear-gradient(90deg, transparent, var(--green), transparent);
     animation: scanline 4s ease-in-out infinite;
   }
-  @keyframes scanline {
-    0%,100% { opacity: 0; transform: scaleX(0.3); }
-    50% { opacity: 1; transform: scaleX(1); }
-  }
-
-  .wrap { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 0 24px 48px; }
-
+  @keyframes scanline { 0%,100%{opacity:0;transform:scaleX(0.3);} 50%{opacity:1;transform:scaleX(1);} }
+ 
+  .wrap { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 0 24px 60px; }
+ 
   /* ── HEADER ── */
   header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 20px 0 16px;
     border-bottom: 1px solid var(--border2);
-    margin-bottom: 28px;
+    margin-bottom: 24px;
     gap: 12px; flex-wrap: wrap;
   }
   .brand { display: flex; align-items: center; gap: 14px; }
   .brand-icon {
-    width: 42px; height: 42px; border-radius: 10px;
-    background: var(--green-dim);
-    border: 1px solid var(--green);
-    display: grid; place-items: center;
-    font-size: 20px; flex-shrink: 0;
+    width: 44px; height: 44px; border-radius: 10px;
+    background: var(--green-dim); border: 1px solid var(--green);
+    display: grid; place-items: center; font-size: 22px; flex-shrink: 0;
   }
-  .brand-text h1 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
-  .brand-text p  { font-size: 0.7rem; font-family: var(--mono); color: var(--text-dim); margin-top: 2px; }
-
-  .header-right { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .brand-text h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
+  .brand-text p  { font-size: 0.68rem; font-family: var(--mono); color: var(--text-dim); margin-top: 2px; }
+  .header-right  { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .conn-pill {
     display: flex; align-items: center; gap: 7px;
-    font-family: var(--mono); font-size: 0.72rem;
+    font-family: var(--mono); font-size: 0.7rem;
     padding: 5px 12px; border-radius: 999px;
-    border: 1px solid var(--border2);
-    background: var(--surface);
+    border: 1px solid var(--border2); background: var(--surface);
     transition: all 0.3s;
   }
-  .conn-pill.connected { border-color: var(--green); background: var(--green-dim); color: var(--green); }
+  .conn-pill.connected  { border-color: var(--green); background: var(--green-dim); color: var(--green); }
   .conn-pill.disconnected { color: var(--red); }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
   .dot.pulse { animation: blink 1.2s step-end infinite; }
-  @keyframes blink { 50% { opacity: 0; } }
-  #live-clock { font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim); }
-
+  @keyframes blink { 50%{opacity:0;} }
+  #live-clock { font-family: var(--mono); font-size: 0.7rem; color: var(--text-dim); }
+ 
+  /* ── TAB NAV ── */
+  .tab-nav {
+    display: flex; gap: 4px; margin-bottom: 22px;
+    border-bottom: 1px solid var(--border2); padding-bottom: 0;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    font-family: var(--mono); font-size: 0.68rem; font-weight: 500;
+    padding: 8px 16px; cursor: pointer;
+    border: 1px solid transparent; border-bottom: none;
+    background: transparent; color: var(--text-dim);
+    border-radius: 8px 8px 0 0;
+    transition: all 0.2s; letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .tab-btn:hover { color: var(--text); background: var(--surface); }
+  .tab-btn.active {
+    color: var(--green); background: var(--surface);
+    border-color: var(--border2); border-bottom-color: var(--surface);
+    margin-bottom: -1px;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+ 
   /* ── LIVE BANNER ── */
   .live-banner {
     border-radius: 14px; border: 1px solid var(--border2);
-    background: var(--surface);
-    padding: 20px 24px;
-    margin-bottom: 24px;
-    transition: all 0.4s;
+    background: var(--surface); padding: 20px 24px;
+    margin-bottom: 20px; transition: all 0.4s;
     position: relative; overflow: hidden;
   }
   .live-banner.active {
     border-color: var(--green);
     background: linear-gradient(135deg, var(--surface), #0a1a12);
-    box-shadow: 0 0 40px #00e5a015, inset 0 1px 0 #00e5a025;
+    box-shadow: 0 0 40px #00e5a012;
   }
   .live-banner.active::before {
     content: 'LIVE';
     position: absolute; top: 12px; right: 16px;
-    font-family: var(--mono); font-size: 0.62rem; font-weight: 500;
+    font-family: var(--mono); font-size: 0.6rem;
     color: var(--green); letter-spacing: 0.15em;
     padding: 3px 8px; border-radius: 4px;
     background: var(--green-dim); border: 1px solid var(--green);
     animation: blink 1.2s step-end infinite;
   }
-  .live-banner-top { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .live-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
   .live-avatar {
-    width: 44px; height: 44px; border-radius: 10px;
-    background: var(--green-dim); border: 1px solid var(--green);
-    display: grid; place-items: center;
-    font-size: 22px; flex-shrink: 0;
+    width: 46px; height: 46px; border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--border2);
+    display: grid; place-items: center; font-size: 22px; flex-shrink: 0;
   }
-  .live-banner.idle .live-avatar { background: var(--surface); border-color: var(--border2); }
+  .live-banner.active .live-avatar { background: var(--green-dim); border-color: var(--green); }
   .live-info h2 { font-size: 1rem; font-weight: 700; color: #fff; }
-  .live-info p  { font-size: 0.72rem; font-family: var(--mono); color: var(--text-dim); margin-top: 3px; }
-  .live-info .green { color: var(--green); }
-
-  /* ── METRIC GRID ── */
-  .metric-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 12px;
-  }
-  .metric-card {
+  .live-info p  { font-size: 0.7rem; font-family: var(--mono); color: var(--text-dim); margin-top: 3px; }
+  .green { color: var(--green); }
+ 
+  /* ── METRIC GRIDS ── */
+  .mg-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
+  .mg-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+  .mg-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 10px; }
+  .mc {
     background: var(--bg); border: 1px solid var(--border2);
-    border-radius: 10px; padding: 14px 16px;
+    border-radius: 10px; padding: 13px 15px;
   }
-  .metric-card .label {
-    font-size: 0.64rem; font-family: var(--mono);
+  .mc .lbl {
+    font-size: 0.6rem; font-family: var(--mono);
     color: var(--text-dim); letter-spacing: 0.08em;
-    text-transform: uppercase; margin-bottom: 8px;
+    text-transform: uppercase; margin-bottom: 7px;
   }
-  .metric-card .value {
-    font-size: 1.35rem; font-weight: 700;
-    color: #fff; line-height: 1;
+  .mc .val { font-size: 1.25rem; font-weight: 700; color: #fff; line-height: 1; }
+  .mc .sub { font-size: 0.62rem; color: var(--text-dim); font-family: var(--mono); margin-top: 4px; }
+  .mc.c-green { border-color: var(--green); background: var(--green-dim); }
+  .mc.c-green .val { color: var(--green); }
+  .mc.c-amber { border-color: var(--amber); background: var(--amber-dim); }
+  .mc.c-amber .val { color: var(--amber); }
+  .mc.c-red   { border-color: var(--red);   background: var(--red-dim);   }
+  .mc.c-red   .val { color: var(--red);   }
+  .mc.c-blue  { border-color: var(--blue);  background: var(--blue-dim);  }
+  .mc.c-blue  .val { color: var(--blue);  }
+  .mc.c-purple{ border-color: var(--purple);background: var(--purple-dim);}
+  .mc.c-purple .val { color: var(--purple); }
+ 
+  /* ── EFF BAR ── */
+  .eff-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+  .eff-bar-wrap { flex: 1; height: 5px; border-radius: 999px; background: var(--border2); overflow: hidden; }
+  .eff-bar { height: 100%; border-radius: 999px; background: var(--green); transition: width 0.8s cubic-bezier(.4,0,.2,1); width: 0%; }
+  .eff-pct { font-family: var(--mono); font-size: 0.72rem; color: var(--green); min-width: 44px; text-align: right; }
+ 
+  /* ── FAULT BREAKDOWN ── */
+  .fault-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    margin-top: 10px;
   }
-  .metric-card .sub { font-size: 0.65rem; color: var(--text-dim); font-family: var(--mono); margin-top: 4px; }
-  .metric-card.green-card { border-color: var(--green); background: var(--green-dim); }
-  .metric-card.green-card .value { color: var(--green); }
-
-  /* ── EFFICIENCY BAR ── */
-  .eff-row { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
-  .eff-bar-wrap {
-    flex: 1; height: 6px; border-radius: 999px;
-    background: var(--border2); overflow: hidden;
+  .fault-cell {
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 4px;
   }
-  .eff-bar {
-    height: 100%; border-radius: 999px;
-    background: var(--green);
-    transition: width 0.8s cubic-bezier(.4,0,.2,1);
-    width: 0%;
-  }
-  .eff-pct { font-family: var(--mono); font-size: 0.75rem; color: var(--green); min-width: 40px; text-align: right; }
-
+  .fault-cell .f-name { font-size: 0.6rem; font-family: var(--mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+  .fault-cell .f-count { font-size: 1.1rem; font-weight: 700; color: var(--red); }
+ 
   /* ── SECTION HEADER ── */
-  .section-header {
+  .sh {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 14px; margin-top: 28px;
+    margin-bottom: 12px; margin-top: 22px;
   }
-  .section-header h2 {
-    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em;
+  .sh h2 {
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
     text-transform: uppercase; color: var(--text-dim);
     display: flex; align-items: center; gap: 8px;
   }
-  .section-header h2::before {
-    content: ''; display: block;
-    width: 3px; height: 14px; border-radius: 2px;
-    background: var(--green);
-  }
-  .btn-small {
-    font-family: var(--mono); font-size: 0.68rem;
-    padding: 5px 12px; border-radius: 6px; cursor: pointer;
+  .sh h2::before { content:''; display:block; width:3px; height:13px; border-radius:2px; background:var(--green); }
+  .btn-sm {
+    font-family: var(--mono); font-size: 0.65rem;
+    padding: 5px 11px; border-radius: 6px; cursor: pointer;
     border: 1px solid var(--border2); background: var(--surface);
     color: var(--text-dim); transition: all 0.2s;
   }
-  .btn-small:hover { border-color: var(--red); color: var(--red); }
-
+  .btn-sm:hover { border-color: var(--red); color: var(--red); }
+  .btn-sm.blue:hover { border-color: var(--blue); color: var(--blue); }
+ 
   /* ── TABLE ── */
-  .table-wrap {
-    border: 1px solid var(--border2); border-radius: 12px;
-    overflow: hidden; overflow-x: auto;
-  }
-  table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .tbl-wrap { border: 1px solid var(--border2); border-radius: 12px; overflow: hidden; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
   thead tr { background: var(--surface); }
   thead th {
-    padding: 11px 14px; text-align: left;
-    font-family: var(--mono); font-size: 0.64rem;
-    color: var(--text-dim); letter-spacing: 0.08em; text-transform: uppercase;
-    border-bottom: 1px solid var(--border2);
-    white-space: nowrap;
+    padding: 10px 13px; text-align: left;
+    font-family: var(--mono); font-size: 0.6rem;
+    color: var(--text-dim); letter-spacing: 0.07em; text-transform: uppercase;
+    border-bottom: 1px solid var(--border2); white-space: nowrap;
   }
   tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
   tbody tr:last-child { border-bottom: none; }
   tbody tr:hover { background: var(--surface); }
-  tbody td { padding: 10px 14px; font-family: var(--mono); color: var(--text); white-space: nowrap; }
-  .badge {
-    display: inline-block; padding: 2px 8px; border-radius: 5px;
-    font-size: 0.65rem; font-weight: 600;
-  }
-  .badge-green { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
-  .badge-amber { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); }
-  .badge-red   { background: var(--red-dim);   color: var(--red);   border: 1px solid var(--red);   }
-
-  .empty-state {
-    text-align: center; padding: 40px 20px;
-    font-family: var(--mono); font-size: 0.75rem;
-    color: var(--muted);
-  }
-  .empty-state span { display: block; font-size: 2rem; margin-bottom: 8px; }
-
-  /* ── BOTTOM EXPORT ROW ── */
-  .export-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  tbody td { padding: 9px 13px; font-family: var(--mono); color: var(--text); white-space: nowrap; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 0.62rem; font-weight: 600; }
+  .bg   { background: var(--green-dim);  color: var(--green);  border: 1px solid var(--green);  }
+  .ba   { background: var(--amber-dim);  color: var(--amber);  border: 1px solid var(--amber);  }
+  .br   { background: var(--red-dim);    color: var(--red);    border: 1px solid var(--red);    }
+  .bb   { background: var(--blue-dim);   color: var(--blue);   border: 1px solid var(--blue);   }
+ 
+  .empty-state { text-align: center; padding: 36px 20px; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); }
+  .empty-state span { display: block; font-size: 1.8rem; margin-bottom: 8px; }
+ 
+  /* ── EXPORT ── */
+  .export-row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
   .btn-export {
-    font-family: var(--mono); font-size: 0.7rem;
-    padding: 7px 14px; border-radius: 7px; cursor: pointer;
+    font-family: var(--mono); font-size: 0.68rem;
+    padding: 7px 13px; border-radius: 7px; cursor: pointer;
     border: 1px solid var(--border2); background: var(--surface);
-    color: var(--text); transition: all 0.2s;
-    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    color: var(--text); transition: all 0.2s; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
   }
   .btn-export:hover { border-color: var(--green); color: var(--green); }
-
+ 
   /* ── TOAST ── */
   #toast {
     position: fixed; bottom: 28px; right: 28px; z-index: 200;
-    font-family: var(--mono); font-size: 0.72rem;
+    font-family: var(--mono); font-size: 0.7rem;
     padding: 10px 18px; border-radius: 8px;
     background: var(--surface); border: 1px solid var(--green); color: var(--green);
     transform: translateY(80px); opacity: 0;
-    transition: all 0.3s cubic-bezier(.4,0,.2,1);
-    pointer-events: none;
+    transition: all 0.3s cubic-bezier(.4,0,.2,1); pointer-events: none;
   }
   #toast.show { transform: translateY(0); opacity: 1; }
-
-  /* ── STATS ROW ── */
-  .stats-strip {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 10px; margin-bottom: 24px;
+ 
+  /* ── MONTHLY SUMMARY CARDS ── */
+  .month-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px; margin-top: 4px;
   }
-  .stat-cell {
+  .month-card {
     background: var(--surface); border: 1px solid var(--border2);
     border-radius: 10px; padding: 14px 16px;
   }
-  .stat-cell .s-label { font-size: 0.62rem; font-family: var(--mono); color: var(--text-dim); letter-spacing: 0.08em; text-transform: uppercase; }
-  .stat-cell .s-val   { font-size: 1.1rem; font-weight: 700; color: #fff; margin-top: 6px; }
-
-  @media (max-width: 600px) {
-    .metric-grid { grid-template-columns: repeat(2, 1fr); }
-    .stats-strip { grid-template-columns: repeat(2, 1fr); }
+  .month-card .m-lbl { font-size: 0.6rem; font-family: var(--mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.07em; }
+  .month-card .m-val { font-size: 1.15rem; font-weight: 700; color: #fff; margin-top: 6px; }
+  .month-card .m-sub { font-size: 0.6rem; font-family: var(--mono); color: var(--text-dim); margin-top: 3px; }
+ 
+  /* ── FAULT EVENT LOG ── */
+  .fault-event-row td.resolved { color: var(--green); }
+  .fault-event-row td.unresolved { color: var(--red); }
+ 
+  /* ── TARGET BAR ── */
+  .target-section { margin-top: 12px; }
+  .target-row { display: flex; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .target-row:last-child { border-bottom: none; }
+  .target-label { font-size: 0.72rem; font-family: var(--mono); color: var(--text-dim); min-width: 90px; }
+  .target-bar-wrap { flex: 1; height: 8px; border-radius: 999px; background: var(--border2); overflow: hidden; }
+  .target-bar { height: 100%; border-radius: 999px; background: var(--green); transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+  .target-nums { font-size: 0.7rem; font-family: var(--mono); color: var(--text); min-width: 100px; text-align: right; }
+ 
+  @media (max-width: 768px) {
+    .mg-4 { grid-template-columns: repeat(2, 1fr); }
+    .mg-3 { grid-template-columns: repeat(2, 1fr); }
+    .fault-grid { grid-template-columns: repeat(2, 1fr); }
+    .month-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .mg-4, .mg-3, .mg-2 { grid-template-columns: 1fr 1fr; }
+    .fault-grid { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
 </head>
 <body>
 <div class="wrap">
-
+ 
   <!-- HEADER -->
   <header>
     <div class="brand">
       <div class="brand-icon">🧵</div>
       <div class="brand-text">
         <h1>StitchTrack</h1>
-        <p>OPERATOR MONITORING SYSTEM — J. TEXTILE FACTORY</p>
+        <p>OPERATOR MONITORING — J. TEXTILE FACTORY</p>
       </div>
     </div>
     <div class="header-right">
@@ -288,95 +316,283 @@
       </div>
     </div>
   </header>
-
-  <!-- LIVE BANNER -->
-  <div class="live-banner idle" id="live-banner">
-    <div class="live-banner-top">
-      <div class="live-avatar" id="live-avatar">👤</div>
-      <div class="live-info">
-        <h2 id="live-name">No operator logged in</h2>
-        <p id="live-sub">Waiting for card tap…</p>
+ 
+  <!-- TAB NAV -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('live')">📡 Live</button>
+    <button class="tab-btn" onclick="switchTab('sessions')">📋 Sessions</button>
+    <button class="tab-btn" onclick="switchTab('monthly')">📅 Monthly</button>
+    <button class="tab-btn" onclick="switchTab('faults')">⚠️ Faults</button>
+    <button class="tab-btn" onclick="switchTab('target')">🎯 Target</button>
+  </div>
+ 
+  <!-- ═══════════════════ TAB: LIVE ═══════════════════ -->
+  <div class="tab-panel active" id="tab-live">
+ 
+    <!-- LIVE BANNER -->
+    <div class="live-banner idle" id="live-banner">
+      <div class="live-top">
+        <div class="live-avatar" id="live-avatar">👤</div>
+        <div class="live-info">
+          <h2 id="live-name">No operator logged in</h2>
+          <p id="live-sub">Waiting for RFID card tap…</p>
+        </div>
+      </div>
+ 
+      <!-- Row 1: Time metrics -->
+      <div class="mg-4">
+        <div class="mc"><div class="lbl">Work Time</div><div class="val" id="m-work">—</div><div class="sub">IN → now</div></div>
+        <div class="mc"><div class="lbl">Needle Time</div><div class="val" id="m-needle">—</div><div class="sub">vibration active</div></div>
+        <div class="mc"><div class="lbl">Handling Time</div><div class="val" id="m-handling">—</div><div class="sub">work − needle</div></div>
+        <div class="mc c-amber"><div class="lbl">Overtime</div><div class="val" id="m-ot">—</div><div class="sub">after 18:00</div></div>
+      </div>
+ 
+      <!-- Row 2: Output metrics -->
+      <div class="mg-4">
+        <div class="mc c-blue"><div class="lbl">Pieces (Instant)</div><div class="val" id="m-pieces">—</div><div class="sub">this session</div></div>
+        <div class="mc c-red"><div class="lbl">Faults</div><div class="val" id="m-faults">—</div><div class="sub">total logged</div></div>
+        <div class="mc"><div class="lbl">Bursts / Stops</div><div class="val" id="m-bursts">—</div><div class="sub">vib transitions</div></div>
+        <div class="mc"><div class="lbl">Cycle Time</div><div class="val" id="m-cycle">—</div><div class="sub">avg sec/piece</div></div>
+      </div>
+ 
+      <!-- Row 3: Performance -->
+      <div class="mg-3">
+        <div class="mc c-green"><div class="lbl">Needle Efficiency</div><div class="val" id="m-eff">—</div><div class="sub">needle / work × 100</div></div>
+        <div class="mc c-green"><div class="lbl">SAM Efficiency</div><div class="val" id="m-sam-eff">—</div><div class="sub">(pieces×SAM) / work × 100</div></div>
+        <div class="mc c-purple"><div class="lbl">Earnings (Est.)</div><div class="val" id="m-earnings">—</div><div class="sub">pieces × rate PKR</div></div>
+      </div>
+ 
+      <!-- SAM target vs output -->
+      <div class="mg-2" style="margin-top:10px;">
+        <div class="mc"><div class="lbl">SAM Target (pieces)</div><div class="val" id="m-sam-target">—</div><div class="sub">work time ÷ SAM</div></div>
+        <div class="mc c-amber"><div class="lbl">Balance to Achieve</div><div class="val" id="m-balance">—</div><div class="sub">target − output</div></div>
+      </div>
+ 
+      <!-- Efficiency bar -->
+      <div class="eff-row">
+        <span style="font-family:var(--mono);font-size:0.6rem;color:var(--text-dim);white-space:nowrap;">SAM EFF</span>
+        <div class="eff-bar-wrap"><div class="eff-bar" id="eff-bar"></div></div>
+        <div class="eff-pct" id="eff-pct-label">0%</div>
+      </div>
+ 
+      <!-- Fault breakdown -->
+      <div class="sh" style="margin-top:16px;"><h2>Fault Breakdown</h2></div>
+      <div class="fault-grid" id="live-fault-grid">
+        <div class="fault-cell"><div class="f-name">SKIP STITCH</div><div class="f-count" id="fc-0">0</div></div>
+        <div class="fault-cell"><div class="f-name">BROKEN THREAD</div><div class="f-count" id="fc-1">0</div></div>
+        <div class="fault-cell"><div class="f-name">NEEDLE BREAK</div><div class="f-count" id="fc-2">0</div></div>
+        <div class="fault-cell"><div class="f-name">TENSION FAULT</div><div class="f-count" id="fc-3">0</div></div>
+      </div>
+    </div><!-- /live-banner -->
+ 
+  </div><!-- /tab-live -->
+ 
+  <!-- ═══════════════════ TAB: SESSIONS ═══════════════════ -->
+  <div class="tab-panel" id="tab-sessions">
+    <div class="sh">
+      <h2>Session Log</h2>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-sm blue" onclick="exportCSV()">⬇ CSV</button>
+        <button class="btn-sm blue" onclick="exportJSON()">⬇ JSON</button>
+        <button class="btn-sm" onclick="clearHistory()">Clear</button>
       </div>
     </div>
-    <div class="metric-grid" id="live-metrics">
-      <div class="metric-card"><div class="label">Work Time</div><div class="value" id="m-work">—</div></div>
-      <div class="metric-card"><div class="label">Pieces</div><div class="value" id="m-pieces">—</div></div>
-      <div class="metric-card"><div class="label">Faults</div><div class="value" id="m-faults">—</div></div>
-      <div class="metric-card"><div class="label">Needle Time</div><div class="value" id="m-needle">—</div></div>
-      <div class="metric-card"><div class="label">Handling</div><div class="value" id="m-handling">—</div></div>
-      <div class="metric-card green-card"><div class="label">Efficiency</div><div class="value" id="m-eff">—</div></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Operator</th>
+            <th>In</th>
+            <th>Out</th>
+            <th>Work (min)</th>
+            <th>OT (min)</th>
+            <th>Pieces</th>
+            <th>Faults</th>
+            <th>Bursts</th>
+            <th>Needle (s)</th>
+            <th>Handling (s)</th>
+            <th>Cycle (s)</th>
+            <th>Needle Eff</th>
+            <th>SAM Eff</th>
+            <th>Earnings (PKR)</th>
+          </tr>
+        </thead>
+        <tbody id="log-tbody">
+          <tr><td colspan="15" class="empty-state"><span>📋</span>Sessions appear here after each logout.</td></tr>
+        </tbody>
+      </table>
     </div>
-    <div class="eff-row">
-      <div class="eff-bar-wrap"><div class="eff-bar" id="eff-bar"></div></div>
-      <div class="eff-pct" id="eff-pct-label">0%</div>
+  </div><!-- /tab-sessions -->
+ 
+  <!-- ═══════════════════ TAB: MONTHLY ═══════════════════ -->
+  <div class="tab-panel" id="tab-monthly">
+    <div class="sh"><h2>Monthly Summary</h2><span id="month-label" style="font-family:var(--mono);font-size:0.68rem;color:var(--text-dim);"></span></div>
+    <div class="month-grid">
+      <div class="month-card"><div class="m-lbl">Sessions</div><div class="m-val" id="mo-sessions">0</div><div class="m-sub">days worked</div></div>
+      <div class="month-card"><div class="m-lbl">Attendance %</div><div class="m-val" id="mo-attend">—</div><div class="m-sub">sessions / working days</div></div>
+      <div class="month-card"><div class="m-lbl">Total Work Time</div><div class="m-val" id="mo-work">—</div><div class="m-sub">sum of all sessions</div></div>
+      <div class="month-card"><div class="m-lbl">Total OT</div><div class="m-val" id="mo-ot">—</div><div class="m-sub">overtime minutes</div></div>
+      <div class="month-card"><div class="m-lbl">Total Pieces</div><div class="m-val" id="mo-pieces">0</div><div class="m-sub">monthly output</div></div>
+      <div class="month-card"><div class="m-lbl">Total Faults</div><div class="m-val" id="mo-faults">0</div><div class="m-sub">all fault types</div></div>
+      <div class="month-card"><div class="m-lbl">Total Needle Time</div><div class="m-val" id="mo-needle">—</div><div class="m-sub">vibration time</div></div>
+      <div class="month-card"><div class="m-lbl">Avg Needle Eff</div><div class="m-val" id="mo-needle-eff">—</div><div class="m-sub">avg across sessions</div></div>
+      <div class="month-card"><div class="m-lbl">Avg SAM Eff</div><div class="m-val" id="mo-sam-eff">—</div><div class="m-sub">SAM-based efficiency</div></div>
+      <div class="month-card"><div class="m-lbl">Total Earnings</div><div class="m-val" id="mo-earnings">—</div><div class="m-sub">PKR sum</div></div>
+      <div class="month-card"><div class="m-lbl">Avg Cycle Time</div><div class="m-val" id="mo-cycle">—</div><div class="m-sub">sec / piece</div></div>
+      <div class="month-card"><div class="m-lbl">Best Day (pieces)</div><div class="m-val" id="mo-best">—</div><div class="m-sub">highest single day</div></div>
     </div>
-  </div>
-
-  <!-- AGGREGATE STATS -->
-  <div class="stats-strip" id="stats-strip" style="display:none">
-    <div class="stat-cell"><div class="s-label">Sessions Today</div><div class="s-val" id="agg-sessions">0</div></div>
-    <div class="stat-cell"><div class="s-label">Total Pieces</div><div class="s-val" id="agg-pieces">0</div></div>
-    <div class="stat-cell"><div class="s-label">Total Faults</div><div class="s-val" id="agg-faults">0</div></div>
-    <div class="stat-cell"><div class="s-label">Avg Efficiency</div><div class="s-val" id="agg-eff">0%</div></div>
-    <div class="stat-cell"><div class="s-label">Total Needle Time</div><div class="s-val" id="agg-needle">—</div></div>
-  </div>
-
-  <!-- SESSION LOG TABLE -->
-  <div class="section-header">
-    <h2>Session Log</h2>
-    <button class="btn-small" onclick="clearHistory()">Clear History</button>
-  </div>
-
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Operator</th>
-          <th>In Time</th>
-          <th>Out Time</th>
-          <th>Work (min)</th>
-          <th>Pieces</th>
-          <th>Faults</th>
-          <th>Needle Time</th>
-          <th>Handling</th>
-          <th>Efficiency</th>
-        </tr>
-      </thead>
-      <tbody id="log-tbody">
-        <tr><td colspan="10" class="empty-state"><span>📋</span>No sessions recorded yet. Records appear here after each logout.</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="export-row">
-    <a class="btn-export" onclick="exportCSV()">⬇ Export CSV</a>
-    <a class="btn-export" onclick="exportJSON()">⬇ Export JSON</a>
-  </div>
-
+ 
+    <!-- Skill matrix: operation-wise breakdown per session -->
+    <div class="sh" style="margin-top:24px;"><h2>Skill Matrix (Cycle Time per Session)</h2></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Operator</th>
+            <th>Operation (Machine)</th>
+            <th>Pieces</th>
+            <th>SAM (s)</th>
+            <th>Cycle Time (s/pc)</th>
+            <th>SAM Efficiency</th>
+          </tr>
+        </thead>
+        <tbody id="skill-tbody">
+          <tr><td colspan="7" class="empty-state"><span>📊</span>Skill matrix built from session history.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div><!-- /tab-monthly -->
+ 
+  <!-- ═══════════════════ TAB: FAULTS ═══════════════════ -->
+  <div class="tab-panel" id="tab-faults">
+    <div class="sh"><h2>Fault Event Log</h2></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Operator</th>
+            <th>Machine</th>
+            <th>Fault Type</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="fault-tbody">
+          <tr><td colspan="5" class="empty-state"><span>⚠️</span>Fault events appear here in real time.</td></tr>
+        </tbody>
+      </table>
+    </div>
+ 
+    <div class="sh" style="margin-top:24px;"><h2>Cumulative Fault Totals (All Sessions)</h2></div>
+    <div class="fault-grid" id="all-fault-grid">
+      <div class="fault-cell"><div class="f-name">SKIP STITCH</div><div class="f-count" id="afc-0">0</div></div>
+      <div class="fault-cell"><div class="f-name">BROKEN THREAD</div><div class="f-count" id="afc-1">0</div></div>
+      <div class="fault-cell"><div class="f-name">NEEDLE BREAK</div><div class="f-count" id="afc-2">0</div></div>
+      <div class="fault-cell"><div class="f-name">TENSION FAULT</div><div class="f-count" id="afc-3">0</div></div>
+    </div>
+  </div><!-- /tab-faults -->
+ 
+  <!-- ═══════════════════ TAB: TARGET ═══════════════════ -->
+  <div class="tab-panel" id="tab-target">
+    <div class="sh">
+      <h2>SAM Target vs Output</h2>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);">SAM (s):</span>
+        <input id="sam-input" type="number" value="45" min="1" max="3600"
+          style="width:70px;background:var(--surface);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:0.7rem;padding:4px 8px;border-radius:6px;">
+        <span style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);">Rate (PKR):</span>
+        <input id="rate-input" type="number" value="2.5" min="0" step="0.1"
+          style="width:70px;background:var(--surface);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:0.7rem;padding:4px 8px;border-radius:6px;">
+        <button class="btn-sm blue" onclick="recalcTarget()">Apply</button>
+      </div>
+    </div>
+ 
+    <div class="target-section" id="target-section">
+      <div class="target-row">
+        <span class="target-label">Today Output</span>
+        <div class="target-bar-wrap"><div class="target-bar" id="tb-today" style="width:0%"></div></div>
+        <span class="target-nums" id="tn-today">0 / 0</span>
+      </div>
+      <div class="target-row">
+        <span class="target-label">This Week</span>
+        <div class="target-bar-wrap"><div class="target-bar" id="tb-week" style="width:0%"></div></div>
+        <span class="target-nums" id="tn-week">0 / 0</span>
+      </div>
+      <div class="target-row">
+        <span class="target-label">This Month</span>
+        <div class="target-bar-wrap"><div class="target-bar" id="tb-month" style="width:0%"></div></div>
+        <span class="target-nums" id="tn-month">0 / 0</span>
+      </div>
+    </div>
+ 
+    <div class="sh" style="margin-top:24px;"><h2>Daily Output vs Target</h2></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Work Time (min)</th>
+            <th>SAM (s)</th>
+            <th>Target (pieces)</th>
+            <th>Actual Output</th>
+            <th>Balance</th>
+            <th>Achievement %</th>
+          </tr>
+        </thead>
+        <tbody id="target-tbody">
+          <tr><td colspan="7" class="empty-state"><span>🎯</span>Target breakdown per session.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div><!-- /tab-target -->
+ 
 </div><!-- /wrap -->
-
 <div id="toast"></div>
-
+ 
 <script>
 /* ═══════════════════════════════════════════════════════════
    CONFIG
    ═══════════════════════════════════════════════════════════ */
-const MQTT_HOST    = "9a9143ec37924c2c8c2bc10c92f1601c.s1.eu.hivemq.cloud";  // FIX: was _HOST
-const MQTT_PORT    = 8884;                                                      // FIX: was _PORT
+const MQTT_HOST    = "9a9143ec37924c2c8c2bc10c92f1601c.s1.eu.hivemq.cloud";
+const MQTT_PORT    = 8884;
 const MQTT_USER    = "Abdul";
 const MQTT_PASS    = "Ke-1234@";
 const TOPIC_LIVE   = "stitch/machine1/live";
 const TOPIC_LOGOUT = "stitch/machine1/logout";
 const TOPIC_STATUS = "stitch/machine1/status";
-
+const TOPIC_FAULT  = "stitch/machine1/fault";
+ 
+const FAULT_NAMES = ["SKIP STITCH","BROKEN THREAD","NEEDLE BREAK","TENSION FAULT"];
+ 
+// Working days in a month for attendance calculation
+const WORKING_DAYS_PER_MONTH = 26;
+const SHIFT_MINUTES = 480; // 8 hours standard shift
+ 
 /* ═══════════════════════════════════════════════════════════
    STATE
    ═══════════════════════════════════════════════════════════ */
-let mqttClient = null;
-let sessionLog = [];
-let liveOnline = false;
-
+let mqttClient  = null;
+let sessionLog  = [];   // completed sessions (logout payloads)
+let faultLog    = [];   // real-time fault events
+let liveData    = null; // current live payload
+let currentSAM  = 45;
+let currentRate = 2.5;
+ 
+/* ═══════════════════════════════════════════════════════════
+   TABS
+   ═══════════════════════════════════════════════════════════ */
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'monthly') renderMonthly();
+  if (name === 'target')  renderTarget();
+  if (name === 'faults')  renderFaultTotals();
+}
+ 
 /* ═══════════════════════════════════════════════════════════
    UTILITIES
    ═══════════════════════════════════════════════════════════ */
@@ -389,166 +605,404 @@ function fmtTime(seconds) {
   if (m > 0) return `${m}m ${s}s`;
   return `${s}s`;
 }
-
+function fmtMin(minutes) {
+  const m = Math.round(Number(minutes) || 0);
+  if (m >= 60) return `${Math.floor(m/60)}h ${m%60}m`;
+  return `${m}m`;
+}
 function fmtUnix(unix) {
   if (!unix) return "—";
-  const d = new Date(unix * 1000);
-  return d.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' });
+  return new Date(unix * 1000).toLocaleTimeString('en-PK', { hour:'2-digit', minute:'2-digit' });
 }
-
 function fmtDate(unix) {
   if (!unix) return "—";
   return new Date(unix * 1000).toLocaleDateString('en-PK', { day:'2-digit', month:'short', year:'numeric' });
 }
-
-function effBadge(val) {
+function effBadge(val, useGreen) {
   const v = parseFloat(val) || 0;
-  const cls = v >= 80 ? 'badge-green' : v >= 60 ? 'badge-amber' : 'badge-red';
+  const cls = v >= 80 ? 'bg' : v >= 60 ? 'ba' : 'br';
   return `<span class="badge ${cls}">${v.toFixed(1)}%</span>`;
 }
-
+function calcOT(inUnix, outUnix) {
+  if (!inUnix || !outUnix) return 0;
+  const outDate = new Date(outUnix * 1000);
+  const sixPM = new Date(outDate);
+  sixPM.setHours(18, 0, 0, 0);
+  if (outDate > sixPM) return Math.round((outDate - sixPM) / 60000);
+  return 0;
+}
 function toast(msg, dur = 2800) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), dur);
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
-   PERSISTENCE  (localStorage — works in a real browser file)
+   PERSISTENCE
    ═══════════════════════════════════════════════════════════ */
 function saveLog() {
-  try { localStorage.setItem('stitch_log', JSON.stringify(sessionLog)); } catch(e) {}
-  renderTable();
-  renderStats();
+  try { localStorage.setItem('stitch_log_v2', JSON.stringify(sessionLog)); } catch(e) {}
+  try { localStorage.setItem('stitch_faults', JSON.stringify(faultLog)); } catch(e) {}
+  renderSessionTable();
+  renderMonthly();
+  renderTarget();
+  renderFaultTotals();
 }
-
 function loadLog() {
-  try { sessionLog = JSON.parse(localStorage.getItem('stitch_log') || '[]'); }
-  catch { sessionLog = []; }
-  renderTable();
-  renderStats();
+  try { sessionLog = JSON.parse(localStorage.getItem('stitch_log_v2') || '[]'); } catch { sessionLog = []; }
+  try { faultLog   = JSON.parse(localStorage.getItem('stitch_faults')  || '[]'); } catch { faultLog = []; }
+  renderSessionTable();
+  renderMonthly();
+  renderTarget();
+  renderFaultTotals();
+  renderFaultTable();
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
-   LIVE PANEL UPDATE
+   LIVE PANEL
    ═══════════════════════════════════════════════════════════ */
 function updateLivePanel(data) {
-  liveOnline = true;
+  liveData = data;
   const banner = document.getElementById('live-banner');
-  banner.classList.remove('idle');
-  banner.classList.add('active');
-
+  banner.classList.remove('idle'); banner.classList.add('active');
   document.getElementById('live-avatar').textContent = '🟢';
   document.getElementById('live-name').textContent = data.operator || 'Operator';
   document.getElementById('live-sub').innerHTML =
-    `Logged in since <span class="green">${fmtUnix(data.in_unix)}</span> &nbsp;·&nbsp; Last update: ${new Date().toLocaleTimeString()}`;
-
-  document.getElementById('m-work').textContent     = fmtTime(data.work_s);
-  document.getElementById('m-pieces').textContent   = data.pieces ?? '—';
-  document.getElementById('m-faults').textContent   = data.faults ?? '—';
-  document.getElementById('m-needle').textContent   = fmtTime(data.needle_s);
-  document.getElementById('m-handling').textContent = fmtTime(data.handling_s);
-
-  const eff = parseFloat(data.efficiency) || 0;
-  document.getElementById('m-eff').textContent         = `${eff.toFixed(1)}%`;
-  document.getElementById('eff-bar').style.width        = `${Math.min(eff, 100)}%`;
-  document.getElementById('eff-pct-label').textContent  = `${eff.toFixed(1)}%`;
+    `Logged in since <span class="green">${fmtUnix(data.in_unix)}</span> &nbsp;·&nbsp; ${new Date().toLocaleTimeString()}`;
+ 
+  const workS = Number(data.work_s) || 0;
+  const workMin = Math.floor(workS / 60);
+ 
+  // OT: minutes after 18:00 from login time
+  let otMin = 0;
+  if (data.in_unix) {
+    const now = Math.floor(Date.now()/1000);
+    const todaySixPM = new Date(); todaySixPM.setHours(18,0,0,0);
+    const sixPMUnix = Math.floor(todaySixPM.getTime()/1000);
+    if (now > sixPMUnix) otMin = Math.round((now - sixPMUnix) / 60);
+  }
+ 
+  const samS  = Number(data.sam_s) || currentSAM;
+  const rate  = Number(data.rate)  || currentRate;
+  const samTarget = workS > 0 ? Math.floor(workS / samS) : 0;
+  const balance   = Math.max(0, samTarget - (Number(data.pieces) || 0));
+  const cycleTime = data.pieces > 0 ? (workS / data.pieces).toFixed(1) : '—';
+ 
+  document.getElementById('m-work').textContent    = fmtTime(workS);
+  document.getElementById('m-needle').textContent  = fmtTime(data.needle_s);
+  document.getElementById('m-handling').textContent= fmtTime(data.handling_s);
+  document.getElementById('m-ot').textContent      = `${otMin}m`;
+  document.getElementById('m-pieces').textContent  = data.pieces ?? '—';
+  document.getElementById('m-faults').textContent  = data.faults ?? '—';
+  document.getElementById('m-bursts').textContent  = data.bursts ?? '—';
+  document.getElementById('m-cycle').textContent   = cycleTime === '—' ? '—' : `${cycleTime}s`;
+ 
+  const eff    = parseFloat(data.efficiency)     || 0;
+  const samEff = parseFloat(data.sam_efficiency) || 0;
+  const earn   = parseFloat(data.earnings)       || 0;
+ 
+  document.getElementById('m-eff').textContent      = `${eff.toFixed(1)}%`;
+  document.getElementById('m-sam-eff').textContent  = `${samEff.toFixed(1)}%`;
+  document.getElementById('m-earnings').textContent = `Rs ${earn.toFixed(2)}`;
+  document.getElementById('m-sam-target').textContent = samTarget;
+  document.getElementById('m-balance').textContent  = balance;
+ 
+  document.getElementById('eff-bar').style.width       = `${Math.min(samEff, 100)}%`;
+  document.getElementById('eff-pct-label').textContent = `${samEff.toFixed(1)}%`;
+ 
+  // Fault breakdown
+  const ft = data.fault_types || [0,0,0,0];
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById(`fc-${i}`);
+    if (el) el.textContent = Array.isArray(ft) ? (ft[i] || 0) : 0;
+  }
 }
-
+ 
 function setIdlePanel() {
-  liveOnline = false;
+  liveData = null;
   const banner = document.getElementById('live-banner');
-  banner.classList.add('idle');
-  banner.classList.remove('active');
+  banner.classList.add('idle'); banner.classList.remove('active');
   document.getElementById('live-avatar').textContent = '👤';
   document.getElementById('live-name').textContent   = 'No operator logged in';
-  document.getElementById('live-sub').textContent    = 'Waiting for card tap…';
-  ['m-work','m-pieces','m-faults','m-needle','m-handling','m-eff'].forEach(id => {
-    document.getElementById(id).textContent = '—';
+  document.getElementById('live-sub').textContent    = 'Waiting for RFID card tap…';
+  ['m-work','m-needle','m-handling','m-ot','m-pieces','m-faults','m-bursts',
+   'm-cycle','m-eff','m-sam-eff','m-earnings','m-sam-target','m-balance'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '—';
   });
-  document.getElementById('eff-bar').style.width       = '0%';
+  document.getElementById('eff-bar').style.width = '0%';
   document.getElementById('eff-pct-label').textContent = '0%';
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById(`fc-${i}`);
+    if (el) el.textContent = '0';
+  }
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
-   TABLE RENDER
+   SESSION TABLE
    ═══════════════════════════════════════════════════════════ */
-function renderTable() {
+function renderSessionTable() {
   const tbody = document.getElementById('log-tbody');
   if (!sessionLog.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="empty-state"><span>📋</span>No sessions recorded yet. Records appear here after each logout.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="15" class="empty-state"><span>📋</span>Sessions appear here after each logout.</td></tr>`;
     return;
   }
-  const sorted = [...sessionLog].reverse();
-  tbody.innerHTML = sorted.map(r => `
-    <tr>
+  tbody.innerHTML = [...sessionLog].reverse().map(r => {
+    const workS  = (r.out_unix - r.in_unix);
+    const otMin  = calcOT(r.in_unix, r.out_unix);
+    const cycle  = r.cycle_time_s || (r.pieces > 0 ? (workS / r.pieces) : 0);
+    return `<tr>
       <td>${fmtDate(r.in_unix)}</td>
       <td>${r.operator || '—'}</td>
       <td>${fmtUnix(r.in_unix)}</td>
       <td>${fmtUnix(r.out_unix)}</td>
       <td>${r.work_min ?? '—'}</td>
+      <td>${otMin}</td>
       <td>${r.pieces ?? '—'}</td>
       <td>${r.faults ?? '—'}</td>
-      <td>${fmtTime(r.needle_s)}</td>
-      <td>${fmtTime(r.handling_s)}</td>
+      <td>${r.bursts ?? '—'}</td>
+      <td>${r.needle_s != null ? Number(r.needle_s).toFixed(0) : '—'}</td>
+      <td>${r.handling_s != null ? Number(r.handling_s).toFixed(0) : '—'}</td>
+      <td>${r.pieces > 0 ? cycle.toFixed(1) : '—'}</td>
       <td>${effBadge(r.efficiency)}</td>
-    </tr>
-  `).join('');
+      <td>${effBadge(r.sam_efficiency)}</td>
+      <td>Rs ${Number(r.earnings || 0).toFixed(2)}</td>
+    </tr>`;
+  }).join('');
 }
-
-function renderStats() {
-  const strip = document.getElementById('stats-strip');
-  if (!sessionLog.length) { strip.style.display = 'none'; return; }
-  strip.style.display = 'grid';
-
-  const totalPieces = sessionLog.reduce((s, r) => s + (r.pieces || 0), 0);
-  const totalFaults = sessionLog.reduce((s, r) => s + (r.faults || 0), 0);
-  const totalNeedle = sessionLog.reduce((s, r) => s + (r.needle_s || 0), 0);
-  const avgEff      = sessionLog.reduce((s, r) => s + (parseFloat(r.efficiency) || 0), 0) / sessionLog.length;
-
-  document.getElementById('agg-sessions').textContent = sessionLog.length;
-  document.getElementById('agg-pieces').textContent   = totalPieces;
-  document.getElementById('agg-faults').textContent   = totalFaults;
-  document.getElementById('agg-eff').textContent      = `${avgEff.toFixed(1)}%`;
-  document.getElementById('agg-needle').textContent   = fmtTime(totalNeedle);
+ 
+/* ═══════════════════════════════════════════════════════════
+   MONTHLY SUMMARY
+   Uses company formulas:
+   - Attendance = sessions / working days in month
+   - Total work = sum of work_min
+   - Efficiency (SAM) = (Σ pieces×SAM) / (Σ work_s) × 100
+   ═══════════════════════════════════════════════════════════ */
+function renderMonthly() {
+  const now  = new Date();
+  const yy   = now.getFullYear();
+  const mm   = now.getMonth();
+  document.getElementById('month-label').textContent =
+    now.toLocaleDateString('en-PK', { month:'long', year:'numeric' });
+ 
+  const thisMonth = sessionLog.filter(r => {
+    if (!r.in_unix) return false;
+    const d = new Date(r.in_unix * 1000);
+    return d.getFullYear() === yy && d.getMonth() === mm;
+  });
+ 
+  const sessions   = thisMonth.length;
+  const totPieces  = thisMonth.reduce((s,r) => s + (r.pieces||0), 0);
+  const totFaults  = thisMonth.reduce((s,r) => s + (r.faults||0), 0);
+  const totNeedle  = thisMonth.reduce((s,r) => s + (Number(r.needle_s)||0), 0);
+  const totWorkS   = thisMonth.reduce((s,r) => s + ((r.out_unix - r.in_unix)||0), 0);
+  const totWorkMin = Math.round(totWorkS / 60);
+  const totOT      = thisMonth.reduce((s,r) => s + calcOT(r.in_unix, r.out_unix), 0);
+  const totEarn    = thisMonth.reduce((s,r) => s + (Number(r.earnings)||0), 0);
+ 
+  // SAM efficiency formula: (Σ pieces × SAM_s) / (Σ work_s) × 100
+  const samS = currentSAM;
+  const samEff = totWorkS > 0 ? ((totPieces * samS) / totWorkS * 100) : 0;
+ 
+  // Avg needle eff
+  const avgNeedleEff = sessions > 0 ?
+    (thisMonth.reduce((s,r) => s + (parseFloat(r.efficiency)||0), 0) / sessions) : 0;
+ 
+  // Avg cycle time
+  const avgCycle = totPieces > 0 ? (totWorkS / totPieces) : 0;
+ 
+  // Best day
+  const bestDay = sessions > 0 ? Math.max(...thisMonth.map(r => r.pieces||0)) : 0;
+ 
+  // Attendance %
+  const attendPct = WORKING_DAYS_PER_MONTH > 0 ?
+    ((sessions / WORKING_DAYS_PER_MONTH) * 100).toFixed(1) : 0;
+ 
+  document.getElementById('mo-sessions').textContent   = sessions;
+  document.getElementById('mo-attend').textContent     = `${attendPct}%`;
+  document.getElementById('mo-work').textContent       = fmtMin(totWorkMin);
+  document.getElementById('mo-ot').textContent         = fmtMin(totOT);
+  document.getElementById('mo-pieces').textContent     = totPieces;
+  document.getElementById('mo-faults').textContent     = totFaults;
+  document.getElementById('mo-needle').textContent     = fmtTime(totNeedle);
+  document.getElementById('mo-needle-eff').textContent = `${avgNeedleEff.toFixed(1)}%`;
+  document.getElementById('mo-sam-eff').textContent    = `${samEff.toFixed(1)}%`;
+  document.getElementById('mo-earnings').textContent   = `Rs ${totEarn.toFixed(0)}`;
+  document.getElementById('mo-cycle').textContent      = avgCycle > 0 ? `${avgCycle.toFixed(1)}s` : '—';
+  document.getElementById('mo-best').textContent       = bestDay;
+ 
+  // Skill matrix
+  const skillTbody = document.getElementById('skill-tbody');
+  if (!thisMonth.length) {
+    skillTbody.innerHTML = `<tr><td colspan="7" class="empty-state"><span>📊</span>No sessions this month.</td></tr>`;
+    return;
+  }
+  skillTbody.innerHTML = [...thisMonth].reverse().map(r => {
+    const wS  = (r.out_unix - r.in_unix);
+    const ct  = r.pieces > 0 ? (wS / r.pieces).toFixed(1) : '—';
+    const se  = r.sam_efficiency != null ? effBadge(r.sam_efficiency) : '—';
+    return `<tr>
+      <td>${fmtDate(r.in_unix)}</td>
+      <td>${r.operator||'—'}</td>
+      <td>${r.machine||'—'}</td>
+      <td>${r.pieces||0}</td>
+      <td>${r.sam_s||currentSAM}</td>
+      <td>${ct}</td>
+      <td>${se}</td>
+    </tr>`;
+  }).join('');
 }
-
+ 
+/* ═══════════════════════════════════════════════════════════
+   TARGET vs OUTPUT
+   Formula: Target = work_min × 60 / SAM_s
+   Balance = Target − Actual
+   ═══════════════════════════════════════════════════════════ */
+function recalcTarget() {
+  currentSAM  = Number(document.getElementById('sam-input').value)  || 45;
+  currentRate = Number(document.getElementById('rate-input').value) || 2.5;
+  renderTarget();
+  toast('SAM/Rate updated.');
+}
+ 
+function renderTarget() {
+  const now    = new Date();
+  const todayStr = now.toDateString();
+  const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
+ 
+  const todaySessions = sessionLog.filter(r =>
+    r.in_unix && new Date(r.in_unix * 1000).toDateString() === todayStr);
+  const weekSessions  = sessionLog.filter(r =>
+    r.in_unix && new Date(r.in_unix * 1000) >= weekStart);
+  const monthSessions = sessionLog.filter(r => {
+    if (!r.in_unix) return false;
+    const d = new Date(r.in_unix * 1000);
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  });
+ 
+  function calcPeriod(list) {
+    const totalWorkS = list.reduce((s,r) => s + ((r.out_unix - r.in_unix)||0), 0);
+    const pieces     = list.reduce((s,r) => s + (r.pieces||0), 0);
+    const target     = totalWorkS > 0 ? Math.floor(totalWorkS / currentSAM) : 0;
+    return { pieces, target };
+  }
+ 
+  const td = calcPeriod(todaySessions);
+  const wk = calcPeriod(weekSessions);
+  const mo = calcPeriod(monthSessions);
+ 
+  function setBar(id, numId, actual, target) {
+    const pct = target > 0 ? Math.min((actual / target) * 100, 100) : 0;
+    document.getElementById('tb-' + id).style.width = `${pct}%`;
+    document.getElementById('tn-' + id).textContent = `${actual} / ${target}`;
+  }
+  setBar('today', 'today', td.pieces, td.target);
+  setBar('week',  'week',  wk.pieces, wk.target);
+  setBar('month', 'month', mo.pieces, mo.target);
+ 
+  // Per-session table
+  const tbody = document.getElementById('target-tbody');
+  if (!sessionLog.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><span>🎯</span>No sessions yet.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = [...sessionLog].reverse().map(r => {
+    const samS   = r.sam_s || currentSAM;
+    const workS  = (r.out_unix - r.in_unix) || 0;
+    const target = workS > 0 ? Math.floor(workS / samS) : 0;
+    const actual = r.pieces || 0;
+    const balance= Math.max(0, target - actual);
+    const pct    = target > 0 ? ((actual / target) * 100).toFixed(1) : 0;
+    const cls    = pct >= 80 ? 'bg' : pct >= 60 ? 'ba' : 'br';
+    return `<tr>
+      <td>${fmtDate(r.in_unix)}</td>
+      <td>${r.work_min ?? '—'}</td>
+      <td>${samS}</td>
+      <td>${target}</td>
+      <td>${actual}</td>
+      <td style="color:${balance > 0 ? 'var(--red)' : 'var(--green)'}">${balance}</td>
+      <td><span class="badge ${cls}">${pct}%</span></td>
+    </tr>`;
+  }).join('');
+}
+ 
+/* ═══════════════════════════════════════════════════════════
+   FAULT TABLE & TOTALS
+   ═══════════════════════════════════════════════════════════ */
+function renderFaultTable() {
+  const tbody = document.getElementById('fault-tbody');
+  if (!faultLog.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-state"><span>⚠️</span>No fault events yet.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = [...faultLog].reverse().map(f => {
+    const cls = f.resolved ? 'resolved' : 'unresolved';
+    const status = f.resolved
+      ? '<span class="badge bg">✓ Resolved</span>'
+      : '<span class="badge br">⚠ Open</span>';
+    return `<tr class="fault-event-row">
+      <td>${fmtUnix(f.ts_unix)} ${fmtDate(f.ts_unix)}</td>
+      <td>${f.operator||'—'}</td>
+      <td>${f.machine||'—'}</td>
+      <td>${f.fault_name||'—'}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('');
+}
+ 
+function renderFaultTotals() {
+  // Sum from all session logs
+  const totals = [0,0,0,0];
+  sessionLog.forEach(r => {
+    if (Array.isArray(r.fault_types)) {
+      r.fault_types.forEach((v,i) => { totals[i] = (totals[i]||0) + (v||0); });
+    }
+  });
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById(`afc-${i}`);
+    if (el) el.textContent = totals[i];
+  }
+}
+ 
 /* ═══════════════════════════════════════════════════════════
    ACTIONS
    ═══════════════════════════════════════════════════════════ */
 function clearHistory() {
-  if (!confirm('Clear all session records? This cannot be undone.')) return;
-  sessionLog = [];
+  if (!confirm('Clear all session records?')) return;
+  sessionLog = []; faultLog = [];
   saveLog();
   toast('History cleared.');
 }
-
+ 
 function exportCSV() {
-  if (!sessionLog.length) { toast('No records to export.'); return; }
-  const headers = ['date','operator','in_time','out_time','work_min','pieces','faults','needle_s','handling_s','efficiency'];
-  const rows = sessionLog.map(r => [
-    fmtDate(r.in_unix), r.operator,
-    fmtUnix(r.in_unix), fmtUnix(r.out_unix),
-    r.work_min, r.pieces, r.faults,
-    r.needle_s, r.handling_s,
-    (parseFloat(r.efficiency)||0).toFixed(1)
-  ]);
-  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  if (!sessionLog.length) { toast('No records.'); return; }
+  const h = ['date','operator','in','out','work_min','ot_min','pieces','faults','bursts','needle_s','handling_s','cycle_s','needle_eff','sam_eff','earnings_pkr'];
+  const rows = sessionLog.map(r => {
+    const wS = (r.out_unix - r.in_unix);
+    const ot = calcOT(r.in_unix, r.out_unix);
+    return [fmtDate(r.in_unix), r.operator, fmtUnix(r.in_unix), fmtUnix(r.out_unix),
+      r.work_min, ot, r.pieces, r.faults, r.bursts||0,
+      Number(r.needle_s||0).toFixed(1), Number(r.handling_s||0).toFixed(1),
+      r.pieces > 0 ? (wS/r.pieces).toFixed(1) : '',
+      Number(r.efficiency||0).toFixed(1), Number(r.sam_efficiency||0).toFixed(1),
+      Number(r.earnings||0).toFixed(2)];
+  });
+  const csv = [h, ...rows].map(r => r.join(',')).join('\n');
   const a = document.createElement('a');
   a.href = 'data:text/csv,' + encodeURIComponent(csv);
   a.download = `stitchtrack_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 }
-
+ 
 function exportJSON() {
-  if (!sessionLog.length) { toast('No records to export.'); return; }
+  if (!sessionLog.length) { toast('No records.'); return; }
   const a = document.createElement('a');
   a.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(sessionLog, null, 2));
   a.download = `stitchtrack_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
    CONNECTION UI
    ═══════════════════════════════════════════════════════════ */
@@ -556,80 +1010,91 @@ function setConnected(ok) {
   const pill  = document.getElementById('conn-pill');
   const dot   = document.getElementById('conn-dot');
   const label = document.getElementById('conn-label');
-  if (ok) {
-    pill.className    = 'conn-pill connected';
-    dot.className     = 'dot pulse';
-    label.textContent = 'Connected';
-  } else {
-    pill.className    = 'conn-pill disconnected';
-    dot.className     = 'dot';
-    label.textContent = 'Disconnected';
-  }
+  pill.className    = ok ? 'conn-pill connected' : 'conn-pill disconnected';
+  dot.className     = ok ? 'dot pulse' : 'dot';
+  label.textContent = ok ? 'Connected' : 'Disconnected';
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
    MQTT
    ═══════════════════════════════════════════════════════════ */
 function initMQTT() {
   const clientId = 'StitchWeb-' + Math.floor(Math.random() * 99999);
-
-  // FIX: Use MQTT_HOST and MQTT_PORT (were undefined as MQTT_HOST/MQTT_PORT before)
   mqttClient = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), clientId);
-
+ 
   mqttClient.onConnectionLost = (resp) => {
     console.warn('[MQTT] Connection lost:', resp.errorMessage);
     setConnected(false);
     setIdlePanel();
     setTimeout(initMQTT, 5000);
   };
-
+ 
   mqttClient.onMessageArrived = (msg) => {
     const topic   = msg.destinationName;
     const payload = msg.payloadString;
     console.log('[MQTT IN]', topic, payload);
-
+ 
     if (topic === TOPIC_LIVE) {
-      try {
-        const data = JSON.parse(payload);
-        updateLivePanel(data);
-      } catch(e) { console.error('live parse error', e); }
+      try { updateLivePanel(JSON.parse(payload)); }
+      catch(e) { console.error('live parse', e); }
     }
     else if (topic === TOPIC_LOGOUT) {
       try {
         const data = JSON.parse(payload);
+        // Parse fault_types array from JSON if it came as string
+        if (typeof data.fault_types === 'string') {
+          try { data.fault_types = JSON.parse(data.fault_types); } catch {}
+        }
         sessionLog.push(data);
         saveLog();
-        toast(`✅ Session saved — ${data.operator} · ${data.pieces} pcs`);
+        toast(`✅ ${data.operator} logged out · ${data.pieces} pcs · Rs ${Number(data.earnings||0).toFixed(0)}`);
         setIdlePanel();
-      } catch(e) { console.error('logout parse error', e); }
+      } catch(e) { console.error('logout parse', e); }
     }
     else if (topic === TOPIC_STATUS) {
       if (payload === 'IDLE' || payload === 'OFFLINE') setIdlePanel();
     }
+    else if (topic === TOPIC_FAULT) {
+      try {
+        const f = JSON.parse(payload);
+        // Update existing entry if resolved, otherwise push new
+        if (f.resolved) {
+          const idx = faultLog.findLastIndex(x =>
+            x.fault_idx === f.fault_idx && !x.resolved && x.operator === f.operator);
+          if (idx >= 0) faultLog[idx].resolved = true;
+          else faultLog.push(f);
+        } else {
+          faultLog.push(f);
+        }
+        try { localStorage.setItem('stitch_faults', JSON.stringify(faultLog)); } catch {}
+        renderFaultTable();
+        renderFaultTotals();
+        const statusText = f.resolved ? '✓ Resolved' : '⚠ New fault';
+        toast(`${statusText}: ${f.fault_name}`);
+      } catch(e) { console.error('fault parse', e); }
+    }
   };
-
+ 
   mqttClient.connect({
-    useSSL:       true,
-    cleanSession: true,
-    timeout:      10,
-    userName:     MQTT_USER,
-    password:     MQTT_PASS,
+    useSSL: true, cleanSession: true, timeout: 10,
+    userName: MQTT_USER, password: MQTT_PASS,
     onSuccess: () => {
       console.log('[MQTT] Connected!');
       setConnected(true);
       mqttClient.subscribe(TOPIC_LIVE,   { qos: 0 });
       mqttClient.subscribe(TOPIC_LOGOUT, { qos: 1 });
       mqttClient.subscribe(TOPIC_STATUS, { qos: 1 });
+      mqttClient.subscribe(TOPIC_FAULT,  { qos: 1 });
       toast('Connected to MQTT broker.');
     },
     onFailure: (err) => {
-      console.error('[MQTT] Connection failed:', err.errorMessage);
+      console.error('[MQTT] Failed:', err.errorMessage);
       setConnected(false);
       setTimeout(initMQTT, 5000);
     }
   });
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
    CLOCK
    ═══════════════════════════════════════════════════════════ */
@@ -639,7 +1104,7 @@ function tickClock() {
     now.toLocaleDateString('en-PK', { day:'2-digit', month:'short' }) + '  ' +
     now.toLocaleTimeString('en-PK', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
    INIT
    ═══════════════════════════════════════════════════════════ */

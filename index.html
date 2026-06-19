@@ -240,6 +240,10 @@
             } else if (status === "FAULT") {
                 badge.innerText = "Switch Failed ✗";
                 badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700";
+            } else if (status === "STANDBY") {
+                // NEW: neutral badge when system is OFF — not a fault, just idle
+                badge.innerText = "Standby (System Off)";
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-600";
             } else {
                 badge.innerText = "Awaiting Data...";
                 badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-500";

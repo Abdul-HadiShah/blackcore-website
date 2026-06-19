@@ -7,11 +7,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
 </head>
-<body class="bg-gray-100 font-sans text-gray-800">
+<body class="bg-white font-sans text-gray-800">
 
     <!-- 🔐 Secure Portal Access Overlay -->
     <div id="login-overlay" class="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-50">
-        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full mx-4">
+        <div class="bg-gray-100 p-8 rounded-xl shadow-2xl max-w-md w-full mx-4">
             <div class="flex justify-center mb-4">
                 <img src="KE.png" alt="K-Electric Logo" class="h-16 object-contain">
             </div>
@@ -41,7 +41,7 @@
                 <div class="h-6 w-[2px] bg-gray-300 hidden md:block"></div>
                 <h1 class="text-xl font-bold text-gray-700 tracking-wide">PMT Monitoring & Control</h1>
             </div>
-            <div class="text-xs text-gray-500 font-medium space-x-4 bg-white px-3 py-1.5 rounded-full shadow-xs">
+            <div class="text-xs text-gray-500 font-medium space-x-4 bg-gray-100 px-3 py-1.5 rounded-full shadow-xs">
                 <span id="live-clock">2026-06-05 | 00:00:00 AM</span>
                 <span>🌡️ Temp: <strong id="val-temp">--</strong>°C</span>
                 <span>💧 Humidity: <strong id="val-humidity">--</strong>%</span>
@@ -53,7 +53,7 @@
 
             <!-- Left Grid Configuration Column -->
             <div class="space-y-6 lg:col-span-1">
-                <div class="bg-white p-5 rounded-xl shadow-xs border border-gray-100">
+                <div class="bg-gray-100 p-5 rounded-xl shadow-xs border border-gray-100">
                     <h3 class="text-amber-500 font-bold flex items-center gap-1.5 mb-4">PMT Specifications ⚡</h3>
                     <ul class="space-y-3 text-sm font-medium text-gray-600">
                         <li class="flex items-center gap-2">⏱️ <span class="text-gray-400 font-normal">Power:</span> 250 KVA</li>
@@ -63,7 +63,7 @@
                 </div>
 
                 <!-- Load Shedding Schedule Box -->
-                <div class="bg-white p-5 rounded-xl shadow-xs border border-gray-100">
+                <div class="bg-gray-100 p-5 rounded-xl shadow-xs border border-gray-100">
                     <h3 class="text-blue-600 font-bold flex items-center gap-1.5 mb-4">Load Shedding Schedule 🕒</h3>
                     <div class="space-y-4 text-sm">
                         <div>
@@ -84,7 +84,7 @@
 
             <!-- Right Grid Configuration Column -->
             <div class="space-y-6 lg:col-span-2">
-                <div class="bg-white p-6 rounded-xl shadow-xs border border-gray-100 flex flex-col items-center">
+                <div class="bg-gray-100 p-6 rounded-xl shadow-xs border border-gray-100 flex flex-col items-center">
                     <h3 class="text-gray-600 font-bold text-sm self-start flex items-center gap-1.5 mb-4">⚙️ System Control</h3>
                     <div id="status-banner" class="w-full bg-red-600 text-white font-bold text-xl py-4 rounded-xl text-center shadow-inner tracking-wide mb-4 transition-all duration-300">
                         System Deactive
@@ -93,8 +93,8 @@
                         Activate System
                     </button>
 
-                    <!-- NEW: Relay Feedback Status -->
-                    <div class="w-full border-t border-gray-100 pt-4">
+                    <!-- Relay Feedback Status -->
+                    <div class="w-full border-t border-gray-200 pt-4">
                         <div class="flex items-center justify-between text-sm font-semibold">
                             <span class="text-gray-500">Relay Feedback:</span>
                             <span id="relay-feedback-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-500">Awaiting Data...</span>
@@ -102,20 +102,20 @@
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-xl shadow-xs border border-gray-100">
+                <div class="bg-gray-100 p-5 rounded-xl shadow-xs border border-gray-100">
                     <h3 class="text-emerald-600 font-bold flex items-center gap-1.5 mb-4">Phase Current Monitoring (Amperes) 📈</h3>
                     <div class="space-y-4">
                         <div>
                             <div class="flex justify-between text-xs font-bold text-gray-600 mb-1"><span>Phase R:</span> <span id="txt-phase-r">0 A</span></div>
-                            <div class="w-full bg-gray-100 h-4 rounded-full overflow-hidden"><div id="bar-phase-r" class="bg-amber-500 h-full transition-all duration-500" style="width: 0%"></div></div>
+                            <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden"><div id="bar-phase-r" class="bg-amber-500 h-full transition-all duration-500" style="width: 0%"></div></div>
                         </div>
                         <div>
                             <div class="flex justify-between text-xs font-bold text-gray-600 mb-1"><span>Phase S:</span> <span id="txt-phase-s">0 A</span></div>
-                            <div class="w-full bg-gray-100 h-4 rounded-full overflow-hidden"><div id="bar-phase-s" class="bg-gray-300 h-full transition-all duration-500" style="width: 0%"></div></div>
+                            <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden"><div id="bar-phase-s" class="bg-gray-300 h-full transition-all duration-500" style="width: 0%"></div></div>
                         </div>
                         <div>
                             <div class="flex justify-between text-xs font-bold text-gray-600 mb-1"><span>Phase T:</span> <span id="txt-phase-t">0 A</span></div>
-                            <div class="w-full bg-gray-100 h-4 rounded-full overflow-hidden"><div id="bar-phase-t" class="bg-gray-300 h-full transition-all duration-500" style="width: 0%"></div></div>
+                            <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden"><div id="bar-phase-t" class="bg-gray-300 h-full transition-all duration-500" style="width: 0%"></div></div>
                         </div>
                     </div>
                 </div>
@@ -154,7 +154,7 @@
 
             for (let i = 1; i <= count; i++) {
                 container.innerHTML += `
-                    <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
+                    <div class="p-3 bg-gray-200 border border-gray-300 rounded-lg space-y-2">
                         <span class="text-xs font-bold text-blue-600">Period ${i}</span>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
@@ -189,16 +189,16 @@
                 } else if (topic === "esp32/sched_sync") {
                     handleIncomingScheduleSync(payload);
                 } else if (topic === "esp32/feedback") {
-                    updateFeedbackBadge(payload);  // NEW
+                    updateFeedbackBadge(payload);
                 } else if (topic === "esp32/telemetry") {
                     try {
                         const data = JSON.parse(payload);
                         document.getElementById('val-temp').innerText = data.temp;
-                        document.getElementById('val-humidity').innerText = data.humidity; // NEW
+                        document.getElementById('val-humidity').innerText = data.humidity;
                         updatePhase('r', data.r);
                         updatePhase('s', data.s);
                         updatePhase('t', data.t);
-                        if (data.feedback) updateFeedbackBadge(data.feedback); // NEW: also reflected here
+                        if (data.feedback) updateFeedbackBadge(data.feedback);
                     } catch(e) { console.error(e); }
                 }
             };
@@ -215,7 +215,7 @@
                     mqttClient.subscribe("esp32/status", {qos: 1});
                     mqttClient.subscribe("esp32/telemetry", {qos: 0});
                     mqttClient.subscribe("esp32/sched_sync", {qos: 1});
-                    mqttClient.subscribe("esp32/feedback", {qos: 1}); // NEW
+                    mqttClient.subscribe("esp32/feedback", {qos: 1});
 
                     setTimeout(() => {
                         const reqMessage = new Paho.MQTT.Message("REQ_SCHED");
@@ -232,7 +232,6 @@
             mqttClient.connect(connectOptions);
         }
 
-        // NEW: updates the relay feedback badge color and text
         function updateFeedbackBadge(status) {
             const badge = document.getElementById('relay-feedback-badge');
             if (status === "OK") {
@@ -285,8 +284,6 @@
         function toggleSystem() {
             const nextState = (currentState === "ON") ? "OFF" : "ON";
             updateSystemState(nextState);
-
-            // NEW: show "awaiting" while we wait for fresh feedback after toggling
             updateFeedbackBadge("PENDING");
 
             const message = new Paho.MQTT.Message(nextState);

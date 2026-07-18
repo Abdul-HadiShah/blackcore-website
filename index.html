@@ -130,7 +130,7 @@
         // Supabase Initialization
         const SUPABASE_URL = "https://vkfbsasdjdvzeevkehfp.supabase.co"; 
         const SUPABASE_ANON_KEY = "sb_publishable_859XRrQanPUf6u-bvGilXw_MxQl_uPj";
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const MQTT_HOST = "9a9143ec37924c2c8c2bc10c92f1601c.s1.eu.hivemq.cloud";
         const MQTT_PORT = 8884;
@@ -145,7 +145,7 @@
             const p = document.getElementById('panel-pass').value;
             
             // Authenticate with Supabase
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
                 email: email,
                 password: p,
             });

@@ -324,10 +324,20 @@
     <button class="tab-btn" onclick="switchTab('monthly')">📅 Monthly</button>
     <button class="tab-btn" onclick="switchTab('faults')">⚠️ Faults</button>
     <button class="tab-btn" onclick="switchTab('target')">🎯 Target</button>
+    <button class="tab-btn" onclick="switchTab('cards')">🪪 Cards</button>
   </div>
  
   <!-- ═══════════════════ TAB: LIVE ═══════════════════ -->
   <div class="tab-panel active" id="tab-live">
+ 
+    <!-- MACHINE CONTROLS -->
+    <div class="sh" style="margin-top:0;">
+      <h2>Machine Controls <span class="badge br" id="fault-led-indicator" style="display:none;margin-left:6px;"></span></h2>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-sm" onclick="resolveFault()">⚠ Resolve Fault</button>
+        <button class="btn-sm" onclick="resetCounters()">⟲ Reset Counters</button>
+      </div>
+    </div>
  
     <!-- LIVE BANNER -->
     <div class="live-banner idle" id="live-banner">
@@ -366,6 +376,12 @@
       <div class="mg-2" style="margin-top:10px;">
         <div class="mc"><div class="lbl">SAM Target (pieces)</div><div class="val" id="m-sam-target">—</div><div class="sub">work time ÷ SAM</div></div>
         <div class="mc c-amber"><div class="lbl">Balance to Achieve</div><div class="val" id="m-balance">—</div><div class="sub">target − output</div></div>
+      </div>
+
+      <!-- Fixed daily target (as published directly by the device) -->
+      <div class="mg-2" style="margin-top:10px;">
+        <div class="mc"><div class="lbl">Daily Target</div><div class="val" id="m-daily-target">—</div><div class="sub">fixed pieces/day</div></div>
+        <div class="mc c-amber"><div class="lbl">Daily Balance</div><div class="val" id="m-daily-balance">—</div><div class="sub">from device</div></div>
       </div>
  
       <!-- Efficiency bar -->
@@ -548,6 +564,17 @@
     </div>
   </div><!-- /tab-target -->
  
+  <!-- ═══════════════════ TAB: CARDS ═══════════════════ -->
+  <div class="tab-panel" id="tab-cards">
+    <div class="sh"><h2>Card Assignment</h2></div>
+    <p style="font-family:var(--mono);font-size:0.7rem;color:var(--text-dim);margin-bottom:14px;line-height:1.6;">
+      Four physical RFID cards (0001–0004) circulate between operators and are shared by every machine.
+      Assign a name to a card below — the change is sent as a retained MQTT message, so every machine
+      (including ones that reconnect or reboot later) picks it up immediately.
+    </p>
+    <div class="month-grid" id="card-grid"></div>
+  </div><!-- /tab-cards -->
+ 
 </div><!-- /wrap -->
 <div id="toast"></div>
  
@@ -559,12 +586,20 @@ const MQTT_HOST    = "9a9143ec37924c2c8c2bc10c92f1601c.s1.eu.hivemq.cloud";
 const MQTT_PORT    = 8884;
 const MQTT_USER    = "Abdul";
 const MQTT_PASS    = "Ke-1234@";
-const TOPIC_LIVE   = "stitch/machine1/live";
-const TOPIC_LOGOUT = "stitch/machine1/logout";
-const TOPIC_STATUS = "stitch/machine1/status";
-const TOPIC_FAULT  = "stitch/machine1/fault";
+const MACHINE_ID   = "machine1";
+const TOPIC_LIVE   = `stitch/${MACHINE_ID}/live`;
+const TOPIC_LOGOUT = `stitch/${MACHINE_ID}/logout`;
+const TOPIC_STATUS = `stitch/${MACHINE_ID}/status`;
+const TOPIC_FAULT  = `stitch/${MACHINE_ID}/fault`;
+const TOPIC_CMD    = `stitch/${MACHINE_ID}/cmd`;          // dashboard -> device commands
+const TOPIC_CARD_ASSIGN_PREFIX = "stitch/cards/assign/";  // + slot 1-4, retained, shared by every machine
  
-const FAULT_NAMES = ["SKIP STITCH","BROKEN THREAD","NEEDLE BREAK","TENSION FAULT"];
+// Must match FAULT_NAMES[] in the ESP32 firmware (v3: No Feeding / Machine Problem / Accessories / Shade)
+const FAULT_NAMES = ["No Feeding","Machine Problem","Accessories","Shade"];
+ 
+// Must match DAILY_TARGET_PCS in the firmware — used only as a display label;
+// the actual balance shown comes straight from the device's target_balance field.
+const DAILY_TARGET_PCS = 400;
  
 // Working days in a month for attendance calculation
 const WORKING_DAYS_PER_MONTH = 26;
@@ -573,12 +608,14 @@ const SHIFT_MINUTES = 480; // 8 hours standard shift
 /* ═══════════════════════════════════════════════════════════
    STATE
    ═══════════════════════════════════════════════════════════ */
-let mqttClient  = null;
-let sessionLog  = [];   // completed sessions (logout payloads)
-let faultLog    = [];   // real-time fault events
-let liveData    = null; // current live payload
-let currentSAM  = 45;
-let currentRate = 2.5;
+let mqttClient     = null;
+let mqttConnected  = false;
+let sessionLog     = [];   // completed sessions (logout payloads)
+let faultLog       = [];   // real-time fault events
+let liveData       = null; // current live payload
+let currentSAM     = 45;
+let currentRate    = 2.5;
+let cardNames      = ["Card 0001","Card 0002","Card 0003","Card 0004"]; // synced via retained MQTT
  
 /* ═══════════════════════════════════════════════════════════
    TABS
@@ -591,6 +628,7 @@ function switchTab(name) {
   if (name === 'monthly') renderMonthly();
   if (name === 'target')  renderTarget();
   if (name === 'faults')  renderFaultTotals();
+  if (name === 'cards')   renderCardPanel();
 }
  
 /* ═══════════════════════════════════════════════════════════
@@ -668,8 +706,9 @@ function updateLivePanel(data) {
   banner.classList.remove('idle'); banner.classList.add('active');
   document.getElementById('live-avatar').textContent = '🟢';
   document.getElementById('live-name').textContent = data.operator || 'Operator';
+  const cardLbl = data.card_slot ? `Card ${String(data.card_slot).padStart(4,'0')} · ` : '';
   document.getElementById('live-sub').innerHTML =
-    `Logged in since <span class="green">${fmtUnix(data.in_unix)}</span> &nbsp;·&nbsp; ${new Date().toLocaleTimeString()}`;
+    `${cardLbl}Logged in since <span class="green">${fmtUnix(data.in_unix)}</span> &nbsp;·&nbsp; ${new Date().toLocaleTimeString()}`;
  
   const workS = Number(data.work_s) || 0;
   const workMin = Math.floor(workS / 60);
@@ -707,6 +746,9 @@ function updateLivePanel(data) {
   document.getElementById('m-earnings').textContent = `Rs ${earn.toFixed(2)}`;
   document.getElementById('m-sam-target').textContent = samTarget;
   document.getElementById('m-balance').textContent  = balance;
+
+  document.getElementById('m-daily-target').textContent  = DAILY_TARGET_PCS;
+  document.getElementById('m-daily-balance').textContent = data.target_balance ?? '—';
  
   document.getElementById('eff-bar').style.width       = `${Math.min(samEff, 100)}%`;
   document.getElementById('eff-pct-label').textContent = `${samEff.toFixed(1)}%`;
@@ -727,7 +769,8 @@ function setIdlePanel() {
   document.getElementById('live-name').textContent   = 'No operator logged in';
   document.getElementById('live-sub').textContent    = 'Waiting for RFID card tap…';
   ['m-work','m-needle','m-handling','m-ot','m-pieces','m-faults','m-bursts',
-   'm-cycle','m-eff','m-sam-eff','m-earnings','m-sam-target','m-balance'].forEach(id => {
+   'm-cycle','m-eff','m-sam-eff','m-earnings','m-sam-target','m-balance',
+   'm-daily-target','m-daily-balance'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = '—';
   });
@@ -949,6 +992,7 @@ function renderFaultTable() {
       <td>${status}</td>
     </tr>`;
   }).join('');
+  updateFaultLedIndicator();
 }
  
 function renderFaultTotals() {
@@ -962,6 +1006,32 @@ function renderFaultTotals() {
   for (let i = 0; i < 4; i++) {
     const el = document.getElementById(`afc-${i}`);
     if (el) el.textContent = totals[i];
+  }
+}
+
+// Fault category labels come from the firmware's FAULT_NAMES[] — render them
+// once so the grids never drift out of sync with a hardcoded label in the HTML.
+function renderFaultGridLabels() {
+  document.querySelectorAll('#live-fault-grid .f-name').forEach((el, i) => {
+    if (FAULT_NAMES[i]) el.textContent = FAULT_NAMES[i].toUpperCase();
+  });
+  document.querySelectorAll('#all-fault-grid .f-name').forEach((el, i) => {
+    if (FAULT_NAMES[i]) el.textContent = FAULT_NAMES[i].toUpperCase();
+  });
+}
+
+// Reflects the machine's FAULT_LED state: it stays lit until a supervisor
+// sends RESOLVE_FAULT, which the firmware treats as machine-wide (it doesn't
+// track which individual fault gets cleared), so we count all open events.
+function updateFaultLedIndicator() {
+  const el = document.getElementById('fault-led-indicator');
+  if (!el) return;
+  const open = faultLog.filter(f => !f.resolved).length;
+  if (open > 0) {
+    el.style.display = 'inline-block';
+    el.textContent = `⚠ ${open} unresolved fault${open > 1 ? 's' : ''}`;
+  } else {
+    el.style.display = 'none';
   }
 }
  
@@ -1004,9 +1074,80 @@ function exportJSON() {
 }
  
 /* ═══════════════════════════════════════════════════════════
+   MACHINE COMMANDS (dashboard -> device, over stitch/<machine>/cmd)
+   ═══════════════════════════════════════════════════════════ */
+function publishCommand(cmd) {
+  if (!mqttClient || !mqttConnected) { toast('Not connected to MQTT.'); return; }
+  const msg = new Paho.MQTT.Message(cmd);
+  msg.destinationName = TOPIC_CMD;
+  msg.qos = 1;
+  mqttClient.send(msg);
+  toast(`Sent "${cmd}" to ${MACHINE_ID}.`);
+}
+
+function resolveFault() {
+  if (!confirm('Clear the fault LED on this machine? This marks all open faults as resolved.')) return;
+  publishCommand('RESOLVE_FAULT');
+}
+
+function resetCounters() {
+  if (!confirm('Reset this machine\'s live counters (pieces, faults, needle time)? This cannot be undone.')) return;
+  publishCommand('RESET_COUNT');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CARD ASSIGNMENT (retained MQTT, shared by every machine)
+   ═══════════════════════════════════════════════════════════ */
+function loadCardNames() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('stitch_cards') || 'null');
+    if (Array.isArray(saved) && saved.length === 4) cardNames = saved;
+  } catch(e) {}
+}
+function saveCardNames() {
+  try { localStorage.setItem('stitch_cards', JSON.stringify(cardNames)); } catch(e) {}
+}
+
+function renderCardPanel() {
+  const grid = document.getElementById('card-grid');
+  if (!grid) return;
+  grid.innerHTML = cardNames.map((name, i) => `
+    <div class="month-card">
+      <div class="m-lbl">Card ${String(i + 1).padStart(4, '0')}</div>
+      <div class="m-val" style="font-size:1rem;">${name}</div>
+      <div style="display:flex;gap:6px;margin-top:10px;">
+        <input id="card-name-${i}" type="text" placeholder="New operator name"
+          style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:0.68rem;padding:6px 8px;border-radius:6px;">
+        <button class="btn-sm blue" onclick="assignCard(${i})">Assign</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function assignCard(slotIdx) {
+  const input = document.getElementById(`card-name-${slotIdx}`);
+  const name  = input ? input.value.trim() : '';
+  if (!name) { toast('Enter a name first.'); return; }
+  if (!mqttClient || !mqttConnected) { toast('Not connected to MQTT.'); return; }
+
+  const topic = TOPIC_CARD_ASSIGN_PREFIX + (slotIdx + 1);
+  const msg = new Paho.MQTT.Message(name);
+  msg.destinationName = topic;
+  msg.qos = 1;
+  msg.retained = true;
+  mqttClient.send(msg);
+
+  cardNames[slotIdx] = name;
+  saveCardNames();
+  renderCardPanel();
+  toast(`Card ${String(slotIdx + 1).padStart(4,'0')} assigned to ${name}.`);
+}
+
+/* ═══════════════════════════════════════════════════════════
    CONNECTION UI
    ═══════════════════════════════════════════════════════════ */
 function setConnected(ok) {
+  mqttConnected = ok;
   const pill  = document.getElementById('conn-pill');
   const dot   = document.getElementById('conn-dot');
   const label = document.getElementById('conn-label');
@@ -1057,21 +1198,34 @@ function initMQTT() {
     else if (topic === TOPIC_FAULT) {
       try {
         const f = JSON.parse(payload);
-        // Update existing entry if resolved, otherwise push new
         if (f.resolved) {
-          const idx = faultLog.findLastIndex(x =>
-            x.fault_idx === f.fault_idx && !x.resolved && x.operator === f.operator);
-          if (idx >= 0) faultLog[idx].resolved = true;
-          else faultLog.push(f);
+          // The firmware's RESOLVE_FAULT command clears the FAULT_LED for the
+          // whole machine at once — it does NOT report which fault_idx got
+          // cleared (publishFaultResolved() sends no fault_idx/fault_name).
+          // So a resolved:true message closes out every still-open fault
+          // logged for that machine, rather than matching a single one.
+          let closedAny = false;
+          faultLog.forEach(x => {
+            if (!x.resolved && x.machine === f.machine) { x.resolved = true; closedAny = true; }
+          });
+          if (!closedAny) faultLog.push(f); // nothing open locally — log the event anyway
         } else {
           faultLog.push(f);
         }
         try { localStorage.setItem('stitch_faults', JSON.stringify(faultLog)); } catch {}
         renderFaultTable();
         renderFaultTotals();
-        const statusText = f.resolved ? '✓ Resolved' : '⚠ New fault';
-        toast(`${statusText}: ${f.fault_name}`);
+        const statusText = f.resolved ? '✓ Fault(s) resolved' : '⚠ New fault';
+        toast(`${statusText}${f.fault_name ? ': ' + f.fault_name : ''} (${f.machine || MACHINE_ID})`);
       } catch(e) { console.error('fault parse', e); }
+    }
+    else if (topic.startsWith(TOPIC_CARD_ASSIGN_PREFIX)) {
+      const slotNum = parseInt(topic.substring(TOPIC_CARD_ASSIGN_PREFIX.length), 10);
+      if (slotNum >= 1 && slotNum <= 4 && payload) {
+        cardNames[slotNum - 1] = payload;
+        saveCardNames();
+        renderCardPanel();
+      }
     }
   };
  
@@ -1085,6 +1239,7 @@ function initMQTT() {
       mqttClient.subscribe(TOPIC_LOGOUT, { qos: 1 });
       mqttClient.subscribe(TOPIC_STATUS, { qos: 1 });
       mqttClient.subscribe(TOPIC_FAULT,  { qos: 1 });
+      mqttClient.subscribe(TOPIC_CARD_ASSIGN_PREFIX + '+', { qos: 1 });
       toast('Connected to MQTT broker.');
     },
     onFailure: (err) => {
@@ -1108,6 +1263,9 @@ function tickClock() {
 /* ═══════════════════════════════════════════════════════════
    INIT
    ═══════════════════════════════════════════════════════════ */
+loadCardNames();
+renderCardPanel();
+renderFaultGridLabels();
 loadLog();
 tickClock();
 setInterval(tickClock, 1000);

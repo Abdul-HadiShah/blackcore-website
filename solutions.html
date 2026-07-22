@@ -1131,6 +1131,8 @@ function assignCard(slotIdx) {
   if (!mqttClient || !mqttConnected) { toast('Not connected to MQTT.'); return; }
 
   const topic = TOPIC_CARD_ASSIGN_PREFIX + (slotIdx + 1);
+  console.log("Publishing to:", topic);
+  console.log("Payload:", name);
   const msg = new Paho.MQTT.Message(name);
   msg.destinationName = topic;
   msg.qos = 1;

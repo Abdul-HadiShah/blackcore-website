@@ -23,8 +23,6 @@
     --blue:      #60a5fa;
     --blue-dim:  #60a5fa18;
     --purple:    #a78bfa;
-    --purple-dim:#a78bfa18;
-    --muted:     #4b5570;
     --text:      #c8d0e0;
     --text-dim:  #6b7592;
     --mono:      'DM Mono', monospace;
@@ -38,1581 +36,400 @@
     color: var(--text);
     font-family: var(--sans);
     min-height: 100vh;
-    overflow-x: hidden;
+    padding-bottom: 60px;
   }
  
-  body::before {
-    content: '';
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 40px 40px;
-    opacity: 0.3;
-  }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
  
-  body::after {
-    content: '';
-    position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100;
-    background: linear-gradient(90deg, transparent, var(--green), transparent);
-    animation: scanline 4s ease-in-out infinite;
-  }
-  @keyframes scanline { 0%,100%{opacity:0;transform:scaleX(0.3);} 50%{opacity:1;transform:scaleX(1);} }
- 
-  .wrap { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 0 24px 60px; }
- 
-  /* ── HEADER ── */
   header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 20px 0 16px;
-    border-bottom: 1px solid var(--border2);
-    margin-bottom: 24px;
-    gap: 12px; flex-wrap: wrap;
+    padding: 20px 0 16px; border-bottom: 1px solid var(--border2);
+    margin-bottom: 24px; gap: 12px; flex-wrap: wrap;
   }
   .brand { display: flex; align-items: center; gap: 14px; }
   .brand-icon {
     width: 44px; height: 44px; border-radius: 10px;
     background: var(--green-dim); border: 1px solid var(--green);
-    display: grid; place-items: center; font-size: 22px; flex-shrink: 0;
+    display: grid; place-items: center; font-size: 22px;
   }
-  .brand-text h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
-  .brand-text p  { font-size: 0.68rem; font-family: var(--mono); color: var(--text-dim); margin-top: 2px; }
-  .header-right  { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .brand-text h1 { font-size: 1.3rem; font-weight: 800; color: #fff; }
+  .brand-text p  { font-size: 0.68rem; font-family: var(--mono); color: var(--text-dim); }
+ 
   .conn-pill {
     display: flex; align-items: center; gap: 7px;
-    font-family: var(--mono); font-size: 0.7rem;
-    padding: 5px 12px; border-radius: 999px;
-    border: 1px solid var(--border2); background: var(--surface);
-    transition: all 0.3s;
+    font-family: var(--mono); font-size: 0.7rem; padding: 5px 12px;
+    border-radius: 999px; border: 1px solid var(--border2); background: var(--surface);
   }
-  .conn-pill.connected  { border-color: var(--green); background: var(--green-dim); color: var(--green); }
-  .conn-pill.disconnected { color: var(--red); }
+  .conn-pill.connected { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+  .conn-pill.disconnected { border-color: var(--red); color: var(--red); background: var(--red-dim); }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-  .dot.pulse { animation: blink 1.2s step-end infinite; }
-  @keyframes blink { 50%{opacity:0;} }
-  #live-clock { font-family: var(--mono); font-size: 0.7rem; color: var(--text-dim); }
- 
-  /* ── TAB NAV ── */
-  .tab-nav {
-    display: flex; gap: 4px; margin-bottom: 22px;
-    border-bottom: 1px solid var(--border2); padding-bottom: 0;
-    flex-wrap: wrap;
-  }
+
+  .tab-nav { display: flex; gap: 4px; margin-bottom: 22px; border-bottom: 1px solid var(--border2); }
   .tab-btn {
-    font-family: var(--mono); font-size: 0.68rem; font-weight: 500;
-    padding: 8px 16px; cursor: pointer;
-    border: 1px solid transparent; border-bottom: none;
-    background: transparent; color: var(--text-dim);
-    border-radius: 8px 8px 0 0;
-    transition: all 0.2s; letter-spacing: 0.05em;
-    text-transform: uppercase;
+    font-family: var(--mono); font-size: 0.7rem; padding: 10px 18px; cursor: pointer;
+    border: 1px solid transparent; background: transparent; color: var(--text-dim);
+    border-radius: 8px 8px 0 0; transition: all 0.2s; text-transform: uppercase;
   }
-  .tab-btn:hover { color: var(--text); background: var(--surface); }
-  .tab-btn.active {
-    color: var(--green); background: var(--surface);
-    border-color: var(--border2); border-bottom-color: var(--surface);
-    margin-bottom: -1px;
-  }
+  .tab-btn.active { color: var(--green); background: var(--surface); border-color: var(--border2); border-bottom-color: var(--surface); }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
-  /* ── MACHINE SWITCHER STRIP ── */
-  .machine-strip { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+  .machine-strip { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
   .machine-chip {
-    flex: 1; min-width: 150px; background: var(--surface); border: 1px solid var(--border2);
-    border-radius: 10px; padding: 10px 14px; cursor: pointer; transition: all 0.2s;
+    flex: 1; min-width: 160px; background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.2s;
   }
-  .machine-chip:hover { background: var(--surface2); }
-  .machine-chip.selected { border-color: var(--green); background: var(--green-dim); }
-  .machine-chip .mc-top {
-    display: flex; align-items: center; gap: 7px;
-    font-family: var(--mono); font-size: 0.62rem; color: var(--text-dim);
-    text-transform: uppercase; letter-spacing: 0.06em;
-  }
-  .mc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
-  .mc-dot.online  { background: var(--green); animation: blink 1.6s step-end infinite; }
-  .mc-dot.idle    { background: var(--amber); }
-  .mc-dot.offline { background: var(--red); }
-  .machine-chip .mc-name { font-size: 0.92rem; font-weight: 700; color: #fff; margin-top: 6px; }
-  .machine-chip .mc-sub  { font-size: 0.62rem; font-family: var(--mono); color: var(--text-dim); margin-top: 3px; }
+  .machine-chip.selected { border-color: var(--green); background: var(--surface2); }
+  .machine-chip .mc-top { display: flex; align-items: center; justify-content: space-between; font-family: var(--mono); font-size: 0.65rem; }
+  .mc-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .mc-status-dot.online { background: var(--green); }
+  .mc-status-dot.idle { background: var(--amber); }
 
-  select.filter-select {
-    background: var(--surface); border: 1px solid var(--border2); color: var(--text);
-    font-family: var(--mono); font-size: 0.65rem; padding: 5px 8px; border-radius: 6px;
+  .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+  @media(max-width: 900px){ .grid-layout { grid-template-columns: 1fr; } }
+
+  .card { background: var(--surface); border: 1px solid var(--border2); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+  .card-title { font-size: 0.85rem; font-family: var(--mono); color: var(--text-dim); text-transform: uppercase; margin-bottom: 16px; }
+
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+  .metric-box { background: var(--bg); border: 1px solid var(--border); padding: 12px; border-radius: 8px; }
+  .metric-box .label { font-size: 0.65rem; font-family: var(--mono); color: var(--text-dim); }
+  .metric-box .val { font-size: 1.2rem; font-weight: 700; color: #fff; margin-top: 4px; }
+
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 0.7rem; font-family: var(--mono); color: var(--text-dim); margin-bottom: 6px; }
+  .form-control {
+    width: 100%; background: var(--bg); border: 1px solid var(--border2); color: var(--text);
+    font-family: var(--mono); font-size: 0.8rem; padding: 8px 12px; border-radius: 6px; outline: none;
   }
-  input.ctrl-input {
-    background: var(--bg); border: 1px solid var(--border2); color: var(--text);
-    font-family: var(--mono); font-size: 0.7rem; padding: 5px 8px; border-radius: 6px;
+  .btn {
+    background: var(--green); color: #000; font-family: var(--mono); font-weight: 700;
+    font-size: 0.75rem; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; width: 100%;
+    text-transform: uppercase; transition: opacity 0.2s;
   }
- 
-  /* ── LIVE BANNER ── */
-  .live-banner {
-    border-radius: 14px; border: 1px solid var(--border2);
-    background: var(--surface); padding: 20px 24px;
-    margin-bottom: 20px; transition: all 0.4s;
-    position: relative; overflow: hidden;
-  }
-  .live-banner.active {
-    border-color: var(--green);
-    background: linear-gradient(135deg, var(--surface), #0a1a12);
-    box-shadow: 0 0 40px #00e5a012;
-  }
-  .live-banner.active::before {
-    content: 'LIVE';
-    position: absolute; top: 12px; right: 16px;
-    font-family: var(--mono); font-size: 0.6rem;
-    color: var(--green); letter-spacing: 0.15em;
-    padding: 3px 8px; border-radius: 4px;
-    background: var(--green-dim); border: 1px solid var(--green);
-    animation: blink 1.2s step-end infinite;
-  }
-  .live-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
-  .live-avatar {
-    width: 46px; height: 46px; border-radius: 10px;
-    background: var(--surface); border: 1px solid var(--border2);
-    display: grid; place-items: center; font-size: 22px; flex-shrink: 0;
-  }
-  .live-banner.active .live-avatar { background: var(--green-dim); border-color: var(--green); }
-  .live-info h2 { font-size: 1rem; font-weight: 700; color: #fff; }
-  .live-info p  { font-size: 0.7rem; font-family: var(--mono); color: var(--text-dim); margin-top: 3px; }
-  .green { color: var(--green); }
- 
-  /* ── METRIC GRIDS ── */
-  .mg-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
-  .mg-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
-  .mg-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 10px; }
-  .mc {
-    background: var(--bg); border: 1px solid var(--border2);
-    border-radius: 10px; padding: 13px 15px;
-  }
-  .mc .lbl {
-    font-size: 0.6rem; font-family: var(--mono);
-    color: var(--text-dim); letter-spacing: 0.08em;
-    text-transform: uppercase; margin-bottom: 7px;
-  }
-  .mc .val { font-size: 1.25rem; font-weight: 700; color: #fff; line-height: 1; }
-  .mc .sub { font-size: 0.62rem; color: var(--text-dim); font-family: var(--mono); margin-top: 4px; }
-  .mc.c-green { border-color: var(--green); background: var(--green-dim); }
-  .mc.c-green .val { color: var(--green); }
-  .mc.c-amber { border-color: var(--amber); background: var(--amber-dim); }
-  .mc.c-amber .val { color: var(--amber); }
-  .mc.c-red   { border-color: var(--red);   background: var(--red-dim);   }
-  .mc.c-red   .val { color: var(--red);   }
-  .mc.c-blue  { border-color: var(--blue);  background: var(--blue-dim);  }
-  .mc.c-blue  .val { color: var(--blue);  }
-  .mc.c-purple{ border-color: var(--purple);background: var(--purple-dim);}
-  .mc.c-purple .val { color: var(--purple); }
- 
-  /* ── EFF BAR ── */
-  .eff-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
-  .eff-bar-wrap { flex: 1; height: 5px; border-radius: 999px; background: var(--border2); overflow: hidden; }
-  .eff-bar { height: 100%; border-radius: 999px; background: var(--green); transition: width 0.8s cubic-bezier(.4,0,.2,1); width: 0%; }
-  .eff-pct { font-family: var(--mono); font-size: 0.72rem; color: var(--green); min-width: 44px; text-align: right; }
- 
-  /* ── FAULT BREAKDOWN ── */
-  .fault-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
-    margin-top: 10px;
-  }
-  .fault-cell {
-    background: var(--surface2); border: 1px solid var(--border2);
-    border-radius: 8px; padding: 10px 12px;
-    display: flex; flex-direction: column; gap: 4px;
-  }
-  .fault-cell .f-name { font-size: 0.6rem; font-family: var(--mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
-  .fault-cell .f-count { font-size: 1.1rem; font-weight: 700; color: var(--red); }
- 
-  /* ── SECTION HEADER ── */
-  .sh {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 12px; margin-top: 22px; flex-wrap: wrap; gap: 8px;
-  }
-  .sh h2 {
-    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--text-dim);
-    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  }
-  .sh h2::before { content:''; display:block; width:3px; height:13px; border-radius:2px; background:var(--green); }
-  .btn-sm {
-    font-family: var(--mono); font-size: 0.65rem;
-    padding: 5px 11px; border-radius: 6px; cursor: pointer;
-    border: 1px solid var(--border2); background: var(--surface);
-    color: var(--text-dim); transition: all 0.2s;
-  }
-  .btn-sm:hover { border-color: var(--red); color: var(--red); }
-  .btn-sm.blue:hover { border-color: var(--blue); color: var(--blue); }
- 
-  /* ── TABLE ── */
-  .tbl-wrap { border: 1px solid var(--border2); border-radius: 12px; overflow: hidden; overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-  thead tr { background: var(--surface); }
-  thead th {
-    padding: 10px 13px; text-align: left;
-    font-family: var(--mono); font-size: 0.6rem;
-    color: var(--text-dim); letter-spacing: 0.07em; text-transform: uppercase;
-    border-bottom: 1px solid var(--border2); white-space: nowrap;
-  }
-  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
-  tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: var(--surface); }
-  tbody td { padding: 9px 13px; font-family: var(--mono); color: var(--text); white-space: nowrap; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 0.62rem; font-weight: 600; }
-  .bg   { background: var(--green-dim);  color: var(--green);  border: 1px solid var(--green);  }
-  .ba   { background: var(--amber-dim);  color: var(--amber);  border: 1px solid var(--amber);  }
-  .br   { background: var(--red-dim);    color: var(--red);    border: 1px solid var(--red);    }
-  .bb   { background: var(--blue-dim);   color: var(--blue);   border: 1px solid var(--blue);   }
- 
-  .empty-state { text-align: center; padding: 36px 20px; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); }
-  .empty-state span { display: block; font-size: 1.8rem; margin-bottom: 8px; }
- 
-  /* ── TOAST ── */
-  #toast {
-    position: fixed; bottom: 28px; right: 28px; z-index: 200;
-    font-family: var(--mono); font-size: 0.7rem;
-    padding: 10px 18px; border-radius: 8px;
-    background: var(--surface); border: 1px solid var(--green); color: var(--green);
-    transform: translateY(80px); opacity: 0;
-    transition: all 0.3s cubic-bezier(.4,0,.2,1); pointer-events: none;
-  }
-  #toast.show { transform: translateY(0); opacity: 1; }
- 
-  /* ── MONTHLY SUMMARY / CARD / BUNDLE GRID CARDS ── */
-  .month-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 12px; margin-top: 4px;
-  }
-  .month-card {
-    background: var(--surface); border: 1px solid var(--border2);
-    border-radius: 10px; padding: 14px 16px;
-  }
-  .month-card .m-lbl { font-size: 0.6rem; font-family: var(--mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.07em; }
-  .month-card .m-val { font-size: 1.15rem; font-weight: 700; color: #fff; margin-top: 6px; }
-  .month-card .m-sub { font-size: 0.6rem; font-family: var(--mono); color: var(--text-dim); margin-top: 3px; }
- 
-  /* ── FAULT EVENT LOG ── */
-  .fault-event-row td.resolved { color: var(--green); }
-  .fault-event-row td.unresolved { color: var(--red); }
- 
-  /* ── TARGET BAR ── */
-  .target-section { margin-top: 12px; }
-  .target-row { display: flex; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-  .target-row:last-child { border-bottom: none; }
-  .target-label { font-size: 0.72rem; font-family: var(--mono); color: var(--text-dim); min-width: 90px; }
-  .target-bar-wrap { flex: 1; height: 8px; border-radius: 999px; background: var(--border2); overflow: hidden; }
-  .target-bar { height: 100%; border-radius: 999px; background: var(--green); transition: width 0.8s cubic-bezier(.4,0,.2,1); }
-  .target-nums { font-size: 0.7rem; font-family: var(--mono); color: var(--text); min-width: 100px; text-align: right; }
- 
-  @media (max-width: 768px) {
-    .mg-4 { grid-template-columns: repeat(2, 1fr); }
-    .mg-3 { grid-template-columns: repeat(2, 1fr); }
-    .fault-grid { grid-template-columns: repeat(2, 1fr); }
-    .month-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-  @media (max-width: 480px) {
-    .mg-4, .mg-3, .mg-2 { grid-template-columns: 1fr 1fr; }
-    .fault-grid { grid-template-columns: repeat(2, 1fr); }
-  }
+  .btn:hover { opacity: 0.9; }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-warn { background: var(--amber); color: #000; }
+
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.75rem; }
+  th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-dim); font-weight: 500; }
 </style>
 </head>
 <body>
+
 <div class="wrap">
- 
-  <!-- HEADER -->
   <header>
     <div class="brand">
       <div class="brand-icon">🧵</div>
       <div class="brand-text">
-        <h1>StitchTrack</h1>
-        <p>OPERATOR MONITORING — J. TEXTILE FACTORY</p>
+        <h1>StitchTrack HQ</h1>
+        <p>Realtime ESP32 Production & Machine Config</p>
       </div>
     </div>
-    <div class="header-right">
-      <span id="live-clock">--:--:--</span>
-      <div class="conn-pill disconnected" id="conn-pill">
-        <span class="dot" id="conn-dot"></span>
-        <span id="conn-label">Disconnected</span>
-      </div>
+    <div id="conn-pill" class="conn-pill disconnected">
+      <div class="dot"></div> <span id="conn-text">DISCONNECTED</span>
     </div>
   </header>
 
-  <!-- MACHINE SWITCHER — click a machine to control/view it individually -->
-  <div class="machine-strip" id="machine-strip"></div>
- 
-  <!-- TAB NAV -->
   <div class="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('live')">📡 Live</button>
-    <button class="tab-btn" onclick="switchTab('sessions')">📋 Sessions</button>
-    <button class="tab-btn" onclick="switchTab('monthly')">📅 Monthly</button>
-    <button class="tab-btn" onclick="switchTab('faults')">⚠️ Faults</button>
-    <button class="tab-btn" onclick="switchTab('target')">🎯 Target</button>
-    <button class="tab-btn" onclick="switchTab('cards')">🪪 Cards</button>
-    <button class="tab-btn" onclick="switchTab('bundles')">📦 Bundles</button>
+    <button class="tab-btn active" onclick="switchTab('live')">Live Dashboard</button>
+    <button class="tab-btn" onclick="switchTab('config')">Machine Settings</button>
+    <button class="tab-btn" onclick="switchTab('cards')">Operator Cards</button>
+    <button class="tab-btn" onclick="switchTab('bundles')">Bundles (D1-D4)</button>
   </div>
- 
-  <!-- ═══════════════════ TAB: LIVE ═══════════════════ -->
-  <div class="tab-panel active" id="tab-live">
- 
-    <!-- MACHINE CONTROLS — always scoped to the selected machine only -->
-    <div class="sh" style="margin-top:0;">
-      <h2>Machine Controls — <span id="ctrl-machine-label">—</span>
-        <span class="badge br" id="fault-led-indicator" style="display:none;"></span>
-      </h2>
+
+  <div class="machine-strip">
+    <div class="machine-chip selected" id="chip-machine1" onclick="selectMachine('machine1')">
+      <div class="mc-top"><span>M-01</span><div class="mc-status-dot" id="dot-machine1"></div></div>
+      <div class="mc-name">Machine 1</div>
+      <div class="mc-sub" id="op-machine1">--</div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px;">
-      <button class="btn-sm" onclick="resolveFault()">⚠ Resolve Fault</button>
-      <button class="btn-sm" onclick="resetCounters()">⟲ Reset Counters</button>
-      <span style="display:flex;align-items:center;gap:6px;">
-        <input id="set-target-input" class="ctrl-input" type="number" min="1" step="1" placeholder="Target pcs" style="width:100px;">
-        <button class="btn-sm blue" onclick="sendSetTarget()">Set Target</button>
-      </span>
-      <span style="display:flex;align-items:center;gap:6px;">
-        <input id="set-sam-input" class="ctrl-input" type="number" min="0.1" step="0.1" placeholder="SAM (s)" style="width:100px;">
-        <button class="btn-sm blue" onclick="sendSetSam()">Set SAM</button>
-      </span>
+    <div class="machine-chip" id="chip-machine2" onclick="selectMachine('machine2')">
+      <div class="mc-top"><span>M-02</span><div class="mc-status-dot" id="dot-machine2"></div></div>
+      <div class="mc-name">Machine 2</div>
+      <div class="mc-sub" id="op-machine2">--</div>
     </div>
- 
-    <!-- LIVE BANNER -->
-    <div class="live-banner idle" id="live-banner">
-      <div class="live-top">
-        <div class="live-avatar" id="live-avatar">👤</div>
-        <div class="live-info">
-          <h2 id="live-name">No operator logged in</h2>
-          <p id="live-sub">Waiting for RFID card tap…</p>
+    <div class="machine-chip" id="chip-machine3" onclick="selectMachine('machine3')">
+      <div class="mc-top"><span>M-03</span><div class="mc-status-dot" id="dot-machine3"></div></div>
+      <div class="mc-name">Machine 3</div>
+      <div class="mc-sub" id="op-machine3">--</div>
+    </div>
+    <div class="machine-chip" id="chip-machine4" onclick="selectMachine('machine4')">
+      <div class="mc-top"><span>M-04</span><div class="mc-status-dot" id="dot-machine4"></div></div>
+      <div class="mc-name">Machine 4</div>
+      <div class="mc-sub" id="op-machine4">--</div>
+    </div>
+  </div>
+
+  <!-- TAB 1: LIVE DASHBOARD -->
+  <div id="tab-live" class="tab-panel active">
+    <div class="grid-layout">
+      <div>
+        <div class="card">
+          <div class="card-title">Live Session — <span id="selected-mc-label">Machine 1</span></div>
+          <div class="metrics-grid">
+            <div class="metric-box"><div class="label">OPERATOR</div><div class="val" id="val-op">--</div></div>
+            <div class="metric-box"><div class="label">OPERATION</div><div class="val" id="val-operation">--</div></div>
+            <div class="metric-box"><div class="label">PIECES / TARGET</div><div class="val" id="val-pcs">0 / 0</div></div>
+            <div class="metric-box"><div class="label">EFFICIENCY</div><div class="val" id="val-eff">0%</div></div>
+            <div class="metric-box"><div class="label">SAM EFFICIENCY</div><div class="val" id="val-sam-eff">0%</div></div>
+            <div class="metric-box"><div class="label">EARNINGS (PKR)</div><div class="val" id="val-earnings">0.00</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Time Breakdown</div>
+          <div class="metrics-grid">
+            <div class="metric-box"><div class="label">WORK TIME</div><div class="val" id="val-work">0m</div></div>
+            <div class="metric-box"><div class="label">NEEDLE TIME</div><div class="val" id="val-needle">0s</div></div>
+            <div class="metric-box"><div class="label">HANDLING TIME</div><div class="val" id="val-handle">0s</div></div>
+            <div class="metric-box"><div class="label">FAULTS</div><div class="val" id="val-faults">0</div></div>
+          </div>
         </div>
       </div>
- 
-      <!-- Row 1: Time metrics -->
-      <div class="mg-4">
-        <div class="mc"><div class="lbl">Work Time</div><div class="val" id="m-work">—</div><div class="sub">IN → now</div></div>
-        <div class="mc"><div class="lbl">Needle Time</div><div class="val" id="m-needle">—</div><div class="sub">vibration active</div></div>
-        <div class="mc"><div class="lbl">Handling Time</div><div class="val" id="m-handling">—</div><div class="sub">work − needle</div></div>
-        <div class="mc c-amber"><div class="lbl">Overtime</div><div class="val" id="m-ot">—</div><div class="sub">after 18:00</div></div>
+      <div>
+        <div class="card">
+          <div class="card-title">Supervisor Commands</div>
+          <div class="form-group">
+            <button class="btn btn-warn" style="margin-bottom: 8px;" onclick="sendCommand('RESOLVE_FAULT')">Clear Fault LED</button>
+            <button class="btn btn-danger" onclick="sendCommand('RESET_COUNT')">Reset Machine Counters</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">OTA Update</div>
+          <div class="form-group">
+            <label>Binary URL</label>
+            <input type="text" id="ota-url" class="form-control" placeholder="https://domain.com/firmware.bin">
+          </div>
+          <button class="btn" onclick="triggerOTA()">Trigger OTA Update</button>
+        </div>
       </div>
- 
-      <!-- Row 2: Output metrics -->
-      <div class="mg-4">
-        <div class="mc c-blue"><div class="lbl">Pieces (Instant)</div><div class="val" id="m-pieces">—</div><div class="sub">this session</div></div>
-        <div class="mc c-red"><div class="lbl">Faults</div><div class="val" id="m-faults">—</div><div class="sub">total logged</div></div>
-        <div class="mc"><div class="lbl">Bursts / Stops</div><div class="val" id="m-bursts">—</div><div class="sub">vib transitions</div></div>
-        <div class="mc"><div class="lbl">Cycle Time</div><div class="val" id="m-cycle">—</div><div class="sub">avg sec/piece</div></div>
-      </div>
- 
-      <!-- Row 3: Performance -->
-      <div class="mg-3">
-        <div class="mc c-green"><div class="lbl">Needle Efficiency</div><div class="val" id="m-eff">—</div><div class="sub">needle / work × 100</div></div>
-        <div class="mc c-green"><div class="lbl">SAM Efficiency</div><div class="val" id="m-sam-eff">—</div><div class="sub">(pieces×SAM) / work × 100</div></div>
-        <div class="mc c-purple"><div class="lbl">Earnings (Est.)</div><div class="val" id="m-earnings">—</div><div class="sub">pieces × rate PKR</div></div>
-      </div>
+    </div>
+  </div>
 
-      <!-- Target — set manually via the controls above, or automatically by a
-           scanned bundle tag. target_source/target_pcs/target_balance all come
-           straight from the device, so this is always authoritative. -->
-      <div class="mg-2" style="margin-top:10px;">
-        <div class="mc"><div class="lbl">Target (pieces)</div><div class="val" id="m-target">—</div><div class="sub" id="m-target-source">source: manual</div></div>
-        <div class="mc c-amber"><div class="lbl">Balance</div><div class="val" id="m-balance">—</div><div class="sub">target − pieces</div></div>
+  <!-- TAB 2: MACHINE CONFIGURATION -->
+  <div id="tab-config" class="tab-panel">
+    <div class="card" style="max-width: 600px;">
+      <div class="card-title">Configure <span id="cfg-mc-label">Machine 1</span></div>
+      <div class="form-group">
+        <label>Operation Name</label>
+        <input type="text" id="cfg-operation" class="form-control" placeholder="e.g. Chakoti Attach">
       </div>
+      <div class="form-group">
+        <label>Piece Rate (PKR per Piece)</label>
+        <input type="number" step="0.01" id="cfg-rate" class="form-control" placeholder="2.50">
+      </div>
+      <div class="form-group">
+        <label>Daily Target Pieces</label>
+        <input type="number" id="cfg-target" class="form-control" placeholder="400">
+      </div>
+      <div class="form-group">
+        <label>Operation SAM (Seconds)</label>
+        <input type="number" step="0.1" id="cfg-sam" class="form-control" placeholder="45.0">
+      </div>
+      <button class="btn" onclick="saveMachineConfig()">Save Machine Configuration</button>
+    </div>
+  </div>
 
-      <!-- Active bundle, only shown when target_source is "bundle" -->
-      <div class="mg-2" style="margin-top:10px;display:none;" id="bundle-info-row">
-        <div class="mc c-purple"><div class="lbl">Active Bundle</div><div class="val" id="m-bundle-design">—</div><div class="sub" id="m-bundle-qty">—</div></div>
-      </div>
- 
-      <!-- Efficiency bar -->
-      <div class="eff-row">
-        <span style="font-family:var(--mono);font-size:0.6rem;color:var(--text-dim);white-space:nowrap;">SAM EFF</span>
-        <div class="eff-bar-wrap"><div class="eff-bar" id="eff-bar"></div></div>
-        <div class="eff-pct" id="eff-pct-label">0%</div>
-      </div>
- 
-      <!-- Fault breakdown -->
-      <div class="sh" style="margin-top:16px;"><h2>Fault Breakdown</h2></div>
-      <div class="fault-grid" id="live-fault-grid">
-        <div class="fault-cell"><div class="f-name">NO FEEDING</div><div class="f-count" id="fc-0">0</div></div>
-        <div class="fault-cell"><div class="f-name">MACHINE PROBLEM</div><div class="f-count" id="fc-1">0</div></div>
-        <div class="fault-cell"><div class="f-name">ACCESSORIES</div><div class="f-count" id="fc-2">0</div></div>
-        <div class="fault-cell"><div class="f-name">SHADE</div><div class="f-count" id="fc-3">0</div></div>
-      </div>
-    </div><!-- /live-banner -->
- 
-  </div><!-- /tab-live -->
- 
-  <!-- ═══════════════════ TAB: SESSIONS ═══════════════════ -->
-  <div class="tab-panel" id="tab-sessions">
-    <div class="sh">
-      <h2>Session Log</h2>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <select class="filter-select report-machine-filter" onchange="setReportMachineFilter(this.value)"></select>
-        <button class="btn-sm blue" onclick="exportCSV()">⬇ CSV</button>
-        <button class="btn-sm blue" onclick="exportJSON()">⬇ JSON</button>
-        <button class="btn-sm" onclick="clearHistory()">Clear</button>
-      </div>
-    </div>
-    <div class="tbl-wrap">
+  <!-- TAB 3: OPERATOR CARDS -->
+  <div id="tab-cards" class="tab-panel">
+    <div class="card">
+      <div class="card-title">Assign Operator Names to Cards</div>
       <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Machine</th>
-            <th>Operator</th>
-            <th>In</th>
-            <th>Out</th>
-            <th>Work (min)</th>
-            <th>OT (min)</th>
-            <th>Pieces</th>
-            <th>Target</th>
-            <th>Faults</th>
-            <th>Bursts</th>
-            <th>Needle (s)</th>
-            <th>Handling (s)</th>
-            <th>Cycle (s)</th>
-            <th>Needle Eff</th>
-            <th>SAM Eff</th>
-            <th>Earnings (PKR)</th>
-          </tr>
-        </thead>
-        <tbody id="log-tbody">
-          <tr><td colspan="17" class="empty-state"><span>📋</span>Sessions appear here after each logout.</td></tr>
+        <thead><tr><th>Slot</th><th>Card ID</th><th>Assigned Name</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Card 0001</td><td><input type="text" id="card-1" class="form-control"></td><td><button class="btn" onclick="saveCard(1)">Save</button></td></tr>
+          <tr><td>2</td><td>Card 0002</td><td><input type="text" id="card-2" class="form-control"></td><td><button class="btn" onclick="saveCard(2)">Save</button></td></tr>
+          <tr><td>3</td><td>Card 0003</td><td><input type="text" id="card-3" class="form-control"></td><td><button class="btn" onclick="saveCard(3)">Save</button></td></tr>
+          <tr><td>4</td><td>Card 0004</td><td><input type="text" id="card-4" class="form-control"></td><td><button class="btn" onclick="saveCard(4)">Save</button></td></tr>
         </tbody>
       </table>
     </div>
-  </div><!-- /tab-sessions -->
- 
-  <!-- ═══════════════════ TAB: MONTHLY ═══════════════════ -->
-  <div class="tab-panel" id="tab-monthly">
-    <div class="sh">
-      <h2>Monthly Summary</h2>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <select class="filter-select report-machine-filter" onchange="setReportMachineFilter(this.value)"></select>
-        <span id="month-label" style="font-family:var(--mono);font-size:0.68rem;color:var(--text-dim);"></span>
-      </div>
-    </div>
-    <div class="month-grid">
-      <div class="month-card"><div class="m-lbl">Sessions</div><div class="m-val" id="mo-sessions">0</div><div class="m-sub">days worked</div></div>
-      <div class="month-card"><div class="m-lbl">Attendance %</div><div class="m-val" id="mo-attend">—</div><div class="m-sub">sessions / working days</div></div>
-      <div class="month-card"><div class="m-lbl">Total Work Time</div><div class="m-val" id="mo-work">—</div><div class="m-sub">sum of all sessions</div></div>
-      <div class="month-card"><div class="m-lbl">Total OT</div><div class="m-val" id="mo-ot">—</div><div class="m-sub">overtime minutes</div></div>
-      <div class="month-card"><div class="m-lbl">Total Pieces</div><div class="m-val" id="mo-pieces">0</div><div class="m-sub">monthly output</div></div>
-      <div class="month-card"><div class="m-lbl">Total Faults</div><div class="m-val" id="mo-faults">0</div><div class="m-sub">all fault types</div></div>
-      <div class="month-card"><div class="m-lbl">Total Needle Time</div><div class="m-val" id="mo-needle">—</div><div class="m-sub">vibration time</div></div>
-      <div class="month-card"><div class="m-lbl">Avg Needle Eff</div><div class="m-val" id="mo-needle-eff">—</div><div class="m-sub">avg across sessions</div></div>
-      <div class="month-card"><div class="m-lbl">Avg SAM Eff</div><div class="m-val" id="mo-sam-eff">—</div><div class="m-sub">SAM-based efficiency</div></div>
-      <div class="month-card"><div class="m-lbl">Total Earnings</div><div class="m-val" id="mo-earnings">—</div><div class="m-sub">PKR sum</div></div>
-      <div class="month-card"><div class="m-lbl">Avg Cycle Time</div><div class="m-val" id="mo-cycle">—</div><div class="m-sub">sec / piece</div></div>
-      <div class="month-card"><div class="m-lbl">Best Day (pieces)</div><div class="m-val" id="mo-best">—</div><div class="m-sub">highest single day</div></div>
-    </div>
- 
-    <!-- Skill matrix: operation-wise breakdown per session -->
-    <div class="sh" style="margin-top:24px;"><h2>Skill Matrix (Cycle Time per Session)</h2></div>
-    <div class="tbl-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Operator</th>
-            <th>Machine</th>
-            <th>Pieces</th>
-            <th>SAM (s)</th>
-            <th>Cycle Time (s/pc)</th>
-            <th>SAM Efficiency</th>
-          </tr>
-        </thead>
-        <tbody id="skill-tbody">
-          <tr><td colspan="7" class="empty-state"><span>📊</span>Skill matrix built from session history.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div><!-- /tab-monthly -->
- 
-  <!-- ═══════════════════ TAB: FAULTS ═══════════════════ -->
-  <div class="tab-panel" id="tab-faults">
-    <div class="sh">
-      <h2>Fault Event Log</h2>
-      <select class="filter-select report-machine-filter" onchange="setReportMachineFilter(this.value)"></select>
-    </div>
-    <div class="tbl-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Operator</th>
-            <th>Machine</th>
-            <th>Fault Type</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="fault-tbody">
-          <tr><td colspan="5" class="empty-state"><span>⚠️</span>Fault events appear here in real time.</td></tr>
-        </tbody>
-      </table>
-    </div>
- 
-    <div class="sh" style="margin-top:24px;"><h2>Cumulative Fault Totals</h2></div>
-    <div class="fault-grid" id="all-fault-grid">
-      <div class="fault-cell"><div class="f-name">NO FEEDING</div><div class="f-count" id="afc-0">0</div></div>
-      <div class="fault-cell"><div class="f-name">MACHINE PROBLEM</div><div class="f-count" id="afc-1">0</div></div>
-      <div class="fault-cell"><div class="f-name">ACCESSORIES</div><div class="f-count" id="afc-2">0</div></div>
-      <div class="fault-cell"><div class="f-name">SHADE</div><div class="f-count" id="afc-3">0</div></div>
-    </div>
-  </div><!-- /tab-faults -->
- 
-  <!-- ═══════════════════ TAB: TARGET ═══════════════════ -->
-  <div class="tab-panel" id="tab-target">
-    <div class="sh">
-      <h2>SAM Target vs Output</h2>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <select class="filter-select report-machine-filter" onchange="setReportMachineFilter(this.value)"></select>
-        <span style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);">Fallback SAM (s):</span>
-        <input id="sam-input" class="ctrl-input" type="number" value="45" min="1" max="3600" style="width:70px;">
-        <span style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);">Fallback Rate (PKR):</span>
-        <input id="rate-input" class="ctrl-input" type="number" value="2.5" min="0" step="0.1" style="width:70px;">
-        <button class="btn-sm blue" onclick="recalcTarget()">Apply</button>
-      </div>
-    </div>
-    <p style="font-family:var(--mono);font-size:0.6rem;color:var(--text-dim);margin:-6px 0 10px;line-height:1.5;">
-      Each machine now reports its own SAM live — the fallback above is only used for older
-      session records that predate this. To change a machine's actual SAM or Target, use the
-      Machine Controls on the Live tab (select the machine first).
-    </p>
- 
-    <div class="target-section" id="target-section">
-      <div class="target-row">
-        <span class="target-label">Today Output</span>
-        <div class="target-bar-wrap"><div class="target-bar" id="tb-today" style="width:0%"></div></div>
-        <span class="target-nums" id="tn-today">0 / 0</span>
-      </div>
-      <div class="target-row">
-        <span class="target-label">This Week</span>
-        <div class="target-bar-wrap"><div class="target-bar" id="tb-week" style="width:0%"></div></div>
-        <span class="target-nums" id="tn-week">0 / 0</span>
-      </div>
-      <div class="target-row">
-        <span class="target-label">This Month</span>
-        <div class="target-bar-wrap"><div class="target-bar" id="tb-month" style="width:0%"></div></div>
-        <span class="target-nums" id="tn-month">0 / 0</span>
-      </div>
-    </div>
- 
-    <div class="sh" style="margin-top:24px;"><h2>Daily Output vs Target</h2></div>
-    <div class="tbl-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Machine</th>
-            <th>Work Time (min)</th>
-            <th>SAM (s)</th>
-            <th>Target (pieces)</th>
-            <th>Actual Output</th>
-            <th>Balance</th>
-            <th>Achievement %</th>
-          </tr>
-        </thead>
-        <tbody id="target-tbody">
-          <tr><td colspan="8" class="empty-state"><span>🎯</span>Target breakdown per session.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div><!-- /tab-target -->
- 
-  <!-- ═══════════════════ TAB: CARDS ═══════════════════ -->
-  <div class="tab-panel" id="tab-cards">
-    <div class="sh"><h2>Card Assignment</h2></div>
-    <p style="font-family:var(--mono);font-size:0.7rem;color:var(--text-dim);margin-bottom:14px;line-height:1.6;">
-      Four physical RFID cards (0001–0004) circulate between operators and are shared by every machine.
-      Assign a name to a card below — the change is sent as a retained MQTT message, so every machine
-      (including ones that reconnect or reboot later) picks it up immediately.
-    </p>
-    <div class="month-grid" id="card-grid"></div>
-  </div><!-- /tab-cards -->
+  </div>
 
-  <!-- ═══════════════════ TAB: BUNDLES ═══════════════════ -->
-  <div class="tab-panel" id="tab-bundles">
-    <div class="sh"><h2>Bundle Assignment</h2></div>
-    <p style="font-family:var(--mono);font-size:0.7rem;color:var(--text-dim);margin-bottom:14px;line-height:1.6;">
-      Four more RFID tags (D1–D4) are shared by every machine, separate from the operator cards.
-      Give each one a design number and a piece count — when a labourer scans that tag mid-session
-      (after tapping their operator card), its piece count automatically becomes their target on
-      whichever machine they scanned it at.
-    </p>
-    <div class="month-grid" id="bundle-grid"></div>
-
-    <div class="sh" style="margin-top:24px;"><h2>Bundle Scan Log</h2></div>
-    <div class="tbl-wrap">
+  <!-- TAB 4: BUNDLES -->
+  <div id="tab-bundles" class="tab-panel">
+    <div class="card">
+      <div class="card-title">Assign Bundle Tag Details (Shared D1-D4)</div>
       <table>
-        <thead>
+        <thead><tr><th>Slot</th><th>Design Number</th><th>Piece Quantity</th><th>Action</th></tr></thead>
+        <tbody>
           <tr>
-            <th>Time</th>
-            <th>Machine</th>
-            <th>Operator</th>
-            <th>Design</th>
-            <th>Pieces</th>
+            <td>D1</td>
+            <td><input type="text" id="bundle-d1" class="form-control"></td>
+            <td><input type="number" id="bundle-p1" class="form-control"></td>
+            <td><button class="btn" onclick="saveBundle(1)">Save</button></td>
           </tr>
-        </thead>
-        <tbody id="bundle-scan-tbody">
-          <tr><td colspan="5" class="empty-state"><span>📦</span>Bundle scans appear here in real time.</td></tr>
+          <tr>
+            <td>D2</td>
+            <td><input type="text" id="bundle-d2" class="form-control"></td>
+            <td><input type="number" id="bundle-p2" class="form-control"></td>
+            <td><button class="btn" onclick="saveBundle(2)">Save</button></td>
+          </tr>
+          <tr>
+            <td>D3</td>
+            <td><input type="text" id="bundle-d3" class="form-control"></td>
+            <td><input type="number" id="bundle-p3" class="form-control"></td>
+            <td><button class="btn" onclick="saveBundle(3)">Save</button></td>
+          </tr>
+          <tr>
+            <td>D4</td>
+            <td><input type="text" id="bundle-d4" class="form-control"></td>
+            <td><input type="number" id="bundle-p4" class="form-control"></td>
+            <td><button class="btn" onclick="saveBundle(4)">Save</button></td>
+          </tr>
         </tbody>
       </table>
     </div>
-  </div><!-- /tab-bundles -->
- 
-</div><!-- /wrap -->
-<div id="toast"></div>
- 
+  </div>
+
+</div>
+
 <script>
-/* ═══════════════════════════════════════════════════════════
-   CONFIG
-   ═══════════════════════════════════════════════════════════ */
-const MQTT_HOST = "9a9143ec37924c2c8c2bc10c92f1601c.s1.eu.hivemq.cloud";
-const MQTT_PORT = 8884;
-const MQTT_USER = "Abdul";
-const MQTT_PASS = "Ke-1234@";
+  const MQTT_HOST = "9a9143ec37924c2c8c2bc10c92f1601c.s1.eu.hivemq.cloud";
+  const MQTT_PORT = 8884; // WebSocket WSS port
+  const MQTT_USER = "Abdul";
+  const MQTT_PASS = "Ke-1234@";
 
-// Every physical machine this dashboard should track — add/remove entries
-// here to match how many ESP32s you have. Each string MUST exactly match
-// that device's MACHINE_ID in firmware.
-const MACHINES = ["machine1", "machine2", "machine3", "machine4"];
+  let client;
+  let currentMachine = "machine1";
+  let machineData = {
+    machine1: {}, machine2: {}, machine3: {}, machine4: {}
+  };
 
-// Must match FAULT_NAMES[] in the firmware.
-const FAULT_NAMES = ["No Feeding","Machine Problem","Accessories","Shade"];
+  function initMQTT() {
+    const clientId = "dashboard-" + Math.random().toString(16).substring(2, 10);
+    client = new Paho.MQTT.Client(MQTT_HOST, MQTT_PORT, clientId);
+    
+    client.onConnectionLost = onConnectionLost;
+    client.onMessageArrived = onMessageArrived;
 
-const WORKING_DAYS_PER_MONTH = 26;
-
-const TOPIC_CARDS_ASSIGN_PREFIX   = "stitch/cards/assign/";
-const TOPIC_BUNDLES_ASSIGN_PREFIX = "stitch/bundles/assign/";
-const topicLive       = m => `stitch/${m}/live`;
-const topicLogout     = m => `stitch/${m}/logout`;
-const topicStatus     = m => `stitch/${m}/status`;
-const topicFault      = m => `stitch/${m}/fault`;
-const topicBundleScan = m => `stitch/${m}/bundle`;
-const topicCmd        = m => `stitch/${m}/cmd`;
-const topicSetTarget  = m => `stitch/${m}/set/target`;
-const topicSetSam     = m => `stitch/${m}/set/sam`;
- 
-/* ═══════════════════════════════════════════════════════════
-   STATE
-   ═══════════════════════════════════════════════════════════ */
-let mqttClient    = null;
-let mqttConnected = false;
-let selectedMachine = MACHINES[0];
-
-let liveByMachine   = {};  // machine -> latest `live` payload (present only while ONLINE)
-let statusByMachine = {};  // machine -> 'ONLINE' | 'IDLE' | 'OFFLINE'
-
-let sessionLog      = [];  // flat, every row carries .machine
-let faultLog        = [];  // flat, every row carries .machine
-let bundleScanLog    = []; // flat, every row carries .machine
-
-let cardNames = ["Card 0001","Card 0002","Card 0003","Card 0004"]; // shared across all machines
-let bundles   = [{design:"D1",pieces:0},{design:"D2",pieces:0},{design:"D3",pieces:0},{design:"D4",pieces:0}]; // shared
-
-// Fallback SAM/rate used only for older session records that predate the
-// device reporting sam_s/rate itself — NOT the live device configuration.
-let currentSAM  = 45;
-let currentRate = 2.5;
-
-// '' = all machines. Shared by the Sessions/Monthly/Faults/Target report tabs.
-let reportMachineFilter = '';
- 
-/* ═══════════════════════════════════════════════════════════
-   TABS
-   ═══════════════════════════════════════════════════════════ */
-function switchTab(name) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  event.target.classList.add('active');
-  if (name === 'monthly') renderMonthly();
-  if (name === 'target')  renderTarget();
-  if (name === 'faults')  { renderFaultTable(); renderFaultTotals(); }
-  if (name === 'cards')   renderCardPanel();
-  if (name === 'bundles') { renderBundlePanel(); renderBundleScanTable(); }
-}
- 
-/* ═══════════════════════════════════════════════════════════
-   UTILITIES
-   ═══════════════════════════════════════════════════════════ */
-function fmtTime(seconds) {
-  seconds = Math.max(0, Math.round(Number(seconds) || 0));
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  if (h > 0) return `${h}h ${m}m`;
-  if (m > 0) return `${m}m ${s}s`;
-  return `${s}s`;
-}
-function fmtMin(minutes) {
-  const m = Math.round(Number(minutes) || 0);
-  if (m >= 60) return `${Math.floor(m/60)}h ${m%60}m`;
-  return `${m}m`;
-}
-function fmtUnix(unix) {
-  if (!unix) return "—";
-  return new Date(unix * 1000).toLocaleTimeString('en-PK', { hour:'2-digit', minute:'2-digit' });
-}
-function fmtDate(unix) {
-  if (!unix) return "—";
-  return new Date(unix * 1000).toLocaleDateString('en-PK', { day:'2-digit', month:'short', year:'numeric' });
-}
-function effBadge(val) {
-  const v = parseFloat(val) || 0;
-  const cls = v >= 80 ? 'bg' : v >= 60 ? 'ba' : 'br';
-  return `<span class="badge ${cls}">${v.toFixed(1)}%</span>`;
-}
-function calcOT(inUnix, outUnix) {
-  if (!inUnix || !outUnix) return 0;
-  const outDate = new Date(outUnix * 1000);
-  const sixPM = new Date(outDate);
-  sixPM.setHours(18, 0, 0, 0);
-  if (outDate > sixPM) return Math.round((outDate - sixPM) / 60000);
-  return 0;
-}
-function toast(msg, dur = 2800) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), dur);
-}
-function filterByMachine(list) {
-  return reportMachineFilter ? list.filter(r => r.machine === reportMachineFilter) : list;
-}
- 
-/* ═══════════════════════════════════════════════════════════
-   PERSISTENCE
-   ═══════════════════════════════════════════════════════════ */
-function saveLog() {
-  try { localStorage.setItem('stitch_log_v3', JSON.stringify(sessionLog)); } catch(e) {}
-  try { localStorage.setItem('stitch_faults_v2', JSON.stringify(faultLog)); } catch(e) {}
-  renderSessionTable();
-  renderMonthly();
-  renderTarget();
-  renderFaultTotals();
-}
-function loadLog() {
-  try { sessionLog = JSON.parse(localStorage.getItem('stitch_log_v3') || '[]'); } catch { sessionLog = []; }
-  try { faultLog   = JSON.parse(localStorage.getItem('stitch_faults_v2')  || '[]'); } catch { faultLog = []; }
-  try { bundleScanLog = JSON.parse(localStorage.getItem('stitch_bundle_scans') || '[]'); } catch { bundleScanLog = []; }
-  renderSessionTable();
-  renderMonthly();
-  renderTarget();
-  renderFaultTotals();
-  renderFaultTable();
-  renderBundleScanTable();
-}
-
-function loadCardNames() {
-  try {
-    const saved = JSON.parse(localStorage.getItem('stitch_cards') || 'null');
-    if (Array.isArray(saved) && saved.length === 4) cardNames = saved;
-  } catch(e) {}
-}
-function saveCardNames() {
-  try { localStorage.setItem('stitch_cards', JSON.stringify(cardNames)); } catch(e) {}
-}
-function loadBundlesLocal() {
-  try {
-    const saved = JSON.parse(localStorage.getItem('stitch_bundles') || 'null');
-    if (Array.isArray(saved) && saved.length === 4) bundles = saved;
-  } catch(e) {}
-}
-function saveBundlesLocal() {
-  try { localStorage.setItem('stitch_bundles', JSON.stringify(bundles)); } catch(e) {}
-}
-
-/* ═══════════════════════════════════════════════════════════
-   MACHINE SWITCHER STRIP
-   ═══════════════════════════════════════════════════════════ */
-function renderMachineStrip() {
-  const el = document.getElementById('machine-strip');
-  if (!el) return;
-  el.innerHTML = MACHINES.map(m => {
-    const status = statusByMachine[m] || 'OFFLINE';
-    const dotCls = status === 'ONLINE' ? 'online' : status === 'IDLE' ? 'idle' : 'offline';
-    const live = liveByMachine[m];
-    const name = (status === 'ONLINE' && live) ? (live.operator || 'Operator') : (status === 'IDLE' ? 'Idle' : 'Offline');
-    const sub  = (status === 'ONLINE' && live) ? `${live.pieces ?? 0} / ${live.target_pcs ?? '—'} pcs` : '—';
-    return `<div class="machine-chip ${m === selectedMachine ? 'selected' : ''}" onclick="selectMachine('${m}')">
-      <div class="mc-top"><span class="mc-dot ${dotCls}"></span>${m}</div>
-      <div class="mc-name">${name}</div>
-      <div class="mc-sub">${sub}</div>
-    </div>`;
-  }).join('');
-}
-
-function selectMachine(m) {
-  selectedMachine = m;
-  renderMachineStrip();
-  const lbl = document.getElementById('ctrl-machine-label');
-  if (lbl) lbl.textContent = m;
-  const status = statusByMachine[m];
-  const live = liveByMachine[m];
-  if (status === 'ONLINE' && live) updateLivePanel(live); else setIdlePanel();
-  updateFaultLedIndicator();
-}
- 
-/* ═══════════════════════════════════════════════════════════
-   LIVE PANEL (shows whichever machine is selected)
-   ═══════════════════════════════════════════════════════════ */
-function updateLivePanel(data) {
-  const banner = document.getElementById('live-banner');
-  banner.classList.remove('idle'); banner.classList.add('active');
-  document.getElementById('live-avatar').textContent = '🟢';
-  document.getElementById('live-name').textContent = data.operator || 'Operator';
-  const cardLbl = data.card_slot ? `Card ${String(data.card_slot).padStart(4,'0')} · ` : '';
-  document.getElementById('live-sub').innerHTML =
-    `${cardLbl}Logged in since <span class="green">${fmtUnix(data.in_unix)}</span> &nbsp;·&nbsp; ${new Date().toLocaleTimeString()}`;
- 
-  const workS = Number(data.work_s) || 0;
- 
-  let otMin = 0;
-  if (data.in_unix) {
-    const now = Math.floor(Date.now()/1000);
-    const todaySixPM = new Date(); todaySixPM.setHours(18,0,0,0);
-    const sixPMUnix = Math.floor(todaySixPM.getTime()/1000);
-    if (now > sixPMUnix) otMin = Math.round((now - sixPMUnix) / 60);
-  }
- 
-  const cycleTime = data.pieces > 0 ? (workS / data.pieces).toFixed(1) : '—';
- 
-  document.getElementById('m-work').textContent    = fmtTime(workS);
-  document.getElementById('m-needle').textContent  = fmtTime(data.needle_s);
-  document.getElementById('m-handling').textContent= fmtTime(data.handling_s);
-  document.getElementById('m-ot').textContent      = `${otMin}m`;
-  document.getElementById('m-pieces').textContent  = data.pieces ?? '—';
-  document.getElementById('m-faults').textContent  = data.faults ?? '—';
-  document.getElementById('m-bursts').textContent  = data.bursts ?? '—';
-  document.getElementById('m-cycle').textContent   = cycleTime === '—' ? '—' : `${cycleTime}s`;
- 
-  const eff    = parseFloat(data.efficiency)     || 0;
-  const samEff = parseFloat(data.sam_efficiency) || 0;
-  const earn   = parseFloat(data.earnings)       || 0;
- 
-  document.getElementById('m-eff').textContent      = `${eff.toFixed(1)}%`;
-  document.getElementById('m-sam-eff').textContent  = `${samEff.toFixed(1)}%`;
-  document.getElementById('m-earnings').textContent = `Rs ${earn.toFixed(2)}`;
-
-  // Target/balance — authoritative straight from the device (manual or bundle-sourced)
-  document.getElementById('m-target').textContent  = data.target_pcs ?? '—';
-  document.getElementById('m-balance').textContent = data.target_balance ?? '—';
-  const isBundle = data.target_source === 'bundle';
-  document.getElementById('m-target-source').textContent = `source: ${data.target_source || 'manual'}`;
-
-  const bundleRow = document.getElementById('bundle-info-row');
-  if (isBundle && data.bundle_design) {
-    bundleRow.style.display = '';
-    document.getElementById('m-bundle-design').textContent = data.bundle_design;
-    document.getElementById('m-bundle-qty').textContent = `Qty: ${data.bundle_pieces ?? '—'}`;
-  } else {
-    bundleRow.style.display = 'none';
-  }
- 
-  document.getElementById('eff-bar').style.width       = `${Math.min(samEff, 100)}%`;
-  document.getElementById('eff-pct-label').textContent = `${samEff.toFixed(1)}%`;
- 
-  const ft = data.fault_types || [0,0,0,0];
-  for (let i = 0; i < 4; i++) {
-    const el = document.getElementById(`fc-${i}`);
-    if (el) el.textContent = Array.isArray(ft) ? (ft[i] || 0) : 0;
-  }
-
-  // Prefill the Set Target / Set SAM inputs with the device's current values,
-  // but only if the operator hasn't already started typing something else.
-  const targetInput = document.getElementById('set-target-input');
-  const samInput     = document.getElementById('set-sam-input');
-  if (targetInput && document.activeElement !== targetInput) targetInput.placeholder = `Target pcs (now ${data.target_pcs ?? '—'})`;
-  if (samInput && document.activeElement !== samInput) samInput.placeholder = `SAM s (now ${data.sam_s ?? '—'})`;
-}
- 
-function setIdlePanel() {
-  const banner = document.getElementById('live-banner');
-  banner.classList.add('idle'); banner.classList.remove('active');
-  document.getElementById('live-avatar').textContent = '👤';
-  document.getElementById('live-name').textContent   = 'No operator logged in';
-  document.getElementById('live-sub').textContent    = `Waiting for RFID card tap on ${selectedMachine}…`;
-  ['m-work','m-needle','m-handling','m-ot','m-pieces','m-faults','m-bursts',
-   'm-cycle','m-eff','m-sam-eff','m-earnings','m-target','m-balance'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = '—';
-  });
-  document.getElementById('m-target-source').textContent = 'source: manual';
-  document.getElementById('bundle-info-row').style.display = 'none';
-  document.getElementById('eff-bar').style.width = '0%';
-  document.getElementById('eff-pct-label').textContent = '0%';
-  for (let i = 0; i < 4; i++) {
-    const el = document.getElementById(`fc-${i}`);
-    if (el) el.textContent = '0';
-  }
-}
- 
-/* ═══════════════════════════════════════════════════════════
-   SESSION TABLE
-   ═══════════════════════════════════════════════════════════ */
-function renderSessionTable() {
-  const tbody = document.getElementById('log-tbody');
-  const rows = filterByMachine(sessionLog);
-  if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="17" class="empty-state"><span>📋</span>Sessions appear here after each logout.</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = [...rows].reverse().map(r => {
-    const workS  = (r.out_unix - r.in_unix);
-    const otMin  = calcOT(r.in_unix, r.out_unix);
-    const cycle  = r.cycle_time_s || (r.pieces > 0 ? (workS / r.pieces) : 0);
-    return `<tr>
-      <td>${fmtDate(r.in_unix)}</td>
-      <td>${r.machine || '—'}</td>
-      <td>${r.operator || '—'}</td>
-      <td>${fmtUnix(r.in_unix)}</td>
-      <td>${fmtUnix(r.out_unix)}</td>
-      <td>${r.work_min ?? '—'}</td>
-      <td>${otMin}</td>
-      <td>${r.pieces ?? '—'}</td>
-      <td>${r.target_pcs ?? '—'}</td>
-      <td>${r.faults ?? '—'}</td>
-      <td>${r.bursts ?? '—'}</td>
-      <td>${r.needle_s != null ? Number(r.needle_s).toFixed(0) : '—'}</td>
-      <td>${r.handling_s != null ? Number(r.handling_s).toFixed(0) : '—'}</td>
-      <td>${r.pieces > 0 ? cycle.toFixed(1) : '—'}</td>
-      <td>${effBadge(r.efficiency)}</td>
-      <td>${effBadge(r.sam_efficiency)}</td>
-      <td>Rs ${Number(r.earnings || 0).toFixed(2)}</td>
-    </tr>`;
-  }).join('');
-}
- 
-/* ═══════════════════════════════════════════════════════════
-   MONTHLY SUMMARY
-   ═══════════════════════════════════════════════════════════ */
-function renderMonthly() {
-  const now  = new Date();
-  const yy   = now.getFullYear();
-  const mm   = now.getMonth();
-  document.getElementById('month-label').textContent =
-    now.toLocaleDateString('en-PK', { month:'long', year:'numeric' }) +
-    (reportMachineFilter ? ` — ${reportMachineFilter}` : ' — all machines');
- 
-  const scoped = filterByMachine(sessionLog);
-  const thisMonth = scoped.filter(r => {
-    if (!r.in_unix) return false;
-    const d = new Date(r.in_unix * 1000);
-    return d.getFullYear() === yy && d.getMonth() === mm;
-  });
- 
-  const sessions   = thisMonth.length;
-  const totPieces  = thisMonth.reduce((s,r) => s + (r.pieces||0), 0);
-  const totFaults  = thisMonth.reduce((s,r) => s + (r.faults||0), 0);
-  const totNeedle  = thisMonth.reduce((s,r) => s + (Number(r.needle_s)||0), 0);
-  const totWorkS   = thisMonth.reduce((s,r) => s + ((r.out_unix - r.in_unix)||0), 0);
-  const totWorkMin = Math.round(totWorkS / 60);
-  const totOT      = thisMonth.reduce((s,r) => s + calcOT(r.in_unix, r.out_unix), 0);
-  const totEarn    = thisMonth.reduce((s,r) => s + (Number(r.earnings)||0), 0);
- 
-  const samS = currentSAM;
-  const samEff = totWorkS > 0 ? ((totPieces * samS) / totWorkS * 100) : 0;
- 
-  const avgNeedleEff = sessions > 0 ?
-    (thisMonth.reduce((s,r) => s + (parseFloat(r.efficiency)||0), 0) / sessions) : 0;
- 
-  const avgCycle = totPieces > 0 ? (totWorkS / totPieces) : 0;
-  const bestDay = sessions > 0 ? Math.max(...thisMonth.map(r => r.pieces||0)) : 0;
-  const attendPct = WORKING_DAYS_PER_MONTH > 0 ?
-    ((sessions / WORKING_DAYS_PER_MONTH) * 100).toFixed(1) : 0;
- 
-  document.getElementById('mo-sessions').textContent   = sessions;
-  document.getElementById('mo-attend').textContent     = `${attendPct}%`;
-  document.getElementById('mo-work').textContent       = fmtMin(totWorkMin);
-  document.getElementById('mo-ot').textContent         = fmtMin(totOT);
-  document.getElementById('mo-pieces').textContent     = totPieces;
-  document.getElementById('mo-faults').textContent     = totFaults;
-  document.getElementById('mo-needle').textContent     = fmtTime(totNeedle);
-  document.getElementById('mo-needle-eff').textContent = `${avgNeedleEff.toFixed(1)}%`;
-  document.getElementById('mo-sam-eff').textContent    = `${samEff.toFixed(1)}%`;
-  document.getElementById('mo-earnings').textContent   = `Rs ${totEarn.toFixed(0)}`;
-  document.getElementById('mo-cycle').textContent      = avgCycle > 0 ? `${avgCycle.toFixed(1)}s` : '—';
-  document.getElementById('mo-best').textContent       = bestDay;
- 
-  const skillTbody = document.getElementById('skill-tbody');
-  if (!thisMonth.length) {
-    skillTbody.innerHTML = `<tr><td colspan="7" class="empty-state"><span>📊</span>No sessions this month.</td></tr>`;
-    return;
-  }
-  skillTbody.innerHTML = [...thisMonth].reverse().map(r => {
-    const wS  = (r.out_unix - r.in_unix);
-    const ct  = r.pieces > 0 ? (wS / r.pieces).toFixed(1) : '—';
-    const se  = r.sam_efficiency != null ? effBadge(r.sam_efficiency) : '—';
-    return `<tr>
-      <td>${fmtDate(r.in_unix)}</td>
-      <td>${r.operator||'—'}</td>
-      <td>${r.machine||'—'}</td>
-      <td>${r.pieces||0}</td>
-      <td>${r.sam_s||currentSAM}</td>
-      <td>${ct}</td>
-      <td>${se}</td>
-    </tr>`;
-  }).join('');
-}
- 
-/* ═══════════════════════════════════════════════════════════
-   TARGET vs OUTPUT
-   ═══════════════════════════════════════════════════════════ */
-function recalcTarget() {
-  currentSAM  = Number(document.getElementById('sam-input').value)  || 45;
-  currentRate = Number(document.getElementById('rate-input').value) || 2.5;
-  renderTarget();
-  toast('Fallback SAM/Rate updated (used only for older records without sam_s).');
-}
- 
-function renderTarget() {
-  const now    = new Date();
-  const todayStr = now.toDateString();
-  const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
- 
-  const scoped = filterByMachine(sessionLog);
-  const todaySessions = scoped.filter(r =>
-    r.in_unix && new Date(r.in_unix * 1000).toDateString() === todayStr);
-  const weekSessions  = scoped.filter(r =>
-    r.in_unix && new Date(r.in_unix * 1000) >= weekStart);
-  const monthSessions = scoped.filter(r => {
-    if (!r.in_unix) return false;
-    const d = new Date(r.in_unix * 1000);
-    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-  });
- 
-  function calcPeriod(list) {
-    // Prefer each session's own target_pcs (device-reported); fall back to
-    // SAM-based estimate only for old records that lack it.
-    let pieces = 0, target = 0;
-    list.forEach(r => {
-      pieces += (r.pieces || 0);
-      if (r.target_pcs != null) {
-        target += r.target_pcs;
-      } else {
-        const samS  = r.sam_s || currentSAM;
-        const workS = (r.out_unix - r.in_unix) || 0;
-        target += workS > 0 ? Math.floor(workS / samS) : 0;
-      }
+    client.connect({
+      useSSL: true,
+      userName: MQTT_USER,
+      password: MQTT_PASS,
+      onSuccess: onConnect,
+      onFailure: (err) => console.error("MQTT Connect Error:", err)
     });
-    return { pieces, target };
-  }
- 
-  const td = calcPeriod(todaySessions);
-  const wk = calcPeriod(weekSessions);
-  const mo = calcPeriod(monthSessions);
- 
-  function setBar(id, actual, target) {
-    const pct = target > 0 ? Math.min((actual / target) * 100, 100) : 0;
-    document.getElementById('tb-' + id).style.width = `${pct}%`;
-    document.getElementById('tn-' + id).textContent = `${actual} / ${target}`;
-  }
-  setBar('today', td.pieces, td.target);
-  setBar('week',  wk.pieces, wk.target);
-  setBar('month', mo.pieces, mo.target);
- 
-  const tbody = document.getElementById('target-tbody');
-  if (!scoped.length) {
-    tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><span>🎯</span>No sessions yet.</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = [...scoped].reverse().map(r => {
-    const samS   = r.sam_s || currentSAM;
-    const workS  = (r.out_unix - r.in_unix) || 0;
-    const target = r.target_pcs != null ? r.target_pcs : (workS > 0 ? Math.floor(workS / samS) : 0);
-    const actual = r.pieces || 0;
-    const balance= Math.max(0, target - actual);
-    const pct    = target > 0 ? ((actual / target) * 100).toFixed(1) : 0;
-    const cls    = pct >= 80 ? 'bg' : pct >= 60 ? 'ba' : 'br';
-    return `<tr>
-      <td>${fmtDate(r.in_unix)}</td>
-      <td>${r.machine||'—'}</td>
-      <td>${r.work_min ?? '—'}</td>
-      <td>${samS}</td>
-      <td>${target}</td>
-      <td>${actual}</td>
-      <td style="color:${balance > 0 ? 'var(--red)' : 'var(--green)'}">${balance}</td>
-      <td><span class="badge ${cls}">${pct}%</span></td>
-    </tr>`;
-  }).join('');
-}
- 
-/* ═══════════════════════════════════════════════════════════
-   FAULT TABLE & TOTALS
-   ═══════════════════════════════════════════════════════════ */
-function renderFaultTable() {
-  const tbody = document.getElementById('fault-tbody');
-  const rows = filterByMachine(faultLog);
-  if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty-state"><span>⚠️</span>No fault events yet.</td></tr>`;
-    updateFaultLedIndicator();
-    return;
-  }
-  tbody.innerHTML = [...rows].reverse().map(f => {
-    const cls = f.resolved ? 'resolved' : 'unresolved';
-    const status = f.resolved
-      ? '<span class="badge bg">✓ Resolved</span>'
-      : '<span class="badge br">⚠ Open</span>';
-    return `<tr class="fault-event-row">
-      <td>${fmtUnix(f.ts_unix)} ${fmtDate(f.ts_unix)}</td>
-      <td>${f.operator||'—'}</td>
-      <td>${f.machine||'—'}</td>
-      <td>${f.fault_name||'—'}</td>
-      <td>${status}</td>
-    </tr>`;
-  }).join('');
-  updateFaultLedIndicator();
-}
- 
-function renderFaultTotals() {
-  const totals = [0,0,0,0];
-  filterByMachine(sessionLog).forEach(r => {
-    if (Array.isArray(r.fault_types)) {
-      r.fault_types.forEach((v,i) => { totals[i] = (totals[i]||0) + (v||0); });
-    }
-  });
-  for (let i = 0; i < 4; i++) {
-    const el = document.getElementById(`afc-${i}`);
-    if (el) el.textContent = totals[i];
-  }
-}
-
-function renderFaultGridLabels() {
-  document.querySelectorAll('#live-fault-grid .f-name').forEach((el, i) => {
-    if (FAULT_NAMES[i]) el.textContent = FAULT_NAMES[i].toUpperCase();
-  });
-  document.querySelectorAll('#all-fault-grid .f-name').forEach((el, i) => {
-    if (FAULT_NAMES[i]) el.textContent = FAULT_NAMES[i].toUpperCase();
-  });
-}
-
-// Reflects the SELECTED machine's fault LED only — each machine tracks and
-// resolves its own faults independently, so this never mixes machines.
-function updateFaultLedIndicator() {
-  const el = document.getElementById('fault-led-indicator');
-  if (!el) return;
-  const open = faultLog.filter(f => !f.resolved && f.machine === selectedMachine).length;
-  if (open > 0) {
-    el.style.display = 'inline-block';
-    el.textContent = `⚠ ${open} unresolved on ${selectedMachine}`;
-  } else {
-    el.style.display = 'none';
-  }
-}
- 
-/* ═══════════════════════════════════════════════════════════
-   REPORT MACHINE FILTER (Sessions / Monthly / Faults / Target)
-   ═══════════════════════════════════════════════════════════ */
-function renderMachineFilterOptions() {
-  document.querySelectorAll('.report-machine-filter').forEach(sel => {
-    sel.innerHTML = `<option value="">All machines</option>` +
-      MACHINES.map(m => `<option value="${m}">${m}</option>`).join('');
-    sel.value = reportMachineFilter;
-  });
-}
-function setReportMachineFilter(val) {
-  reportMachineFilter = val;
-  document.querySelectorAll('.report-machine-filter').forEach(sel => { sel.value = val; });
-  renderSessionTable();
-  renderMonthly();
-  renderFaultTable();
-  renderFaultTotals();
-  renderTarget();
-}
- 
-/* ═══════════════════════════════════════════════════════════
-   ACTIONS — session log
-   ═══════════════════════════════════════════════════════════ */
-function clearHistory() {
-  if (!confirm('Clear all session and fault records (all machines)?')) return;
-  sessionLog = []; faultLog = [];
-  saveLog();
-  renderFaultTable();
-  toast('History cleared.');
-}
- 
-function exportCSV() {
-  const rows0 = filterByMachine(sessionLog);
-  if (!rows0.length) { toast('No records.'); return; }
-  const h = ['date','machine','operator','in','out','work_min','ot_min','pieces','target_pcs','faults','bursts','needle_s','handling_s','cycle_s','needle_eff','sam_eff','earnings_pkr'];
-  const rows = rows0.map(r => {
-    const wS = (r.out_unix - r.in_unix);
-    const ot = calcOT(r.in_unix, r.out_unix);
-    return [fmtDate(r.in_unix), r.machine, r.operator, fmtUnix(r.in_unix), fmtUnix(r.out_unix),
-      r.work_min, ot, r.pieces, r.target_pcs ?? '', r.faults, r.bursts||0,
-      Number(r.needle_s||0).toFixed(1), Number(r.handling_s||0).toFixed(1),
-      r.pieces > 0 ? (wS/r.pieces).toFixed(1) : '',
-      Number(r.efficiency||0).toFixed(1), Number(r.sam_efficiency||0).toFixed(1),
-      Number(r.earnings||0).toFixed(2)];
-  });
-  const csv = [h, ...rows].map(r => r.join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv,' + encodeURIComponent(csv);
-  a.download = `stitchtrack_${reportMachineFilter || 'all'}_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-}
- 
-function exportJSON() {
-  const rows = filterByMachine(sessionLog);
-  if (!rows.length) { toast('No records.'); return; }
-  const a = document.createElement('a');
-  a.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(rows, null, 2));
-  a.download = `stitchtrack_${reportMachineFilter || 'all'}_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-}
- 
-/* ═══════════════════════════════════════════════════════════
-   MACHINE COMMANDS — always scoped to selectedMachine only
-   ═══════════════════════════════════════════════════════════ */
-function publishCommand(cmd) {
-  if (!mqttClient || !mqttConnected) { toast('Not connected to MQTT.'); return; }
-  const msg = new Paho.MQTT.Message(cmd);
-  msg.destinationName = topicCmd(selectedMachine);
-  msg.qos = 1;
-  mqttClient.send(msg);
-  toast(`Sent "${cmd}" to ${selectedMachine}.`);
-}
-
-function resolveFault() {
-  if (!confirm(`Clear the fault LED on ${selectedMachine}? This marks all of THIS machine's open faults as resolved (other machines are unaffected).`)) return;
-  publishCommand('RESOLVE_FAULT');
-}
-
-function resetCounters() {
-  if (!confirm(`Reset ${selectedMachine}'s live counters (pieces, faults, needle time)? This cannot be undone, and only affects ${selectedMachine}.`)) return;
-  publishCommand('RESET_COUNT');
-}
-
-function sendSetTarget() {
-  const input = document.getElementById('set-target-input');
-  const v = Number(input.value);
-  if (!v || v <= 0) { toast('Enter a valid target > 0.'); return; }
-  if (!mqttClient || !mqttConnected) { toast('Not connected to MQTT.'); return; }
-  const msg = new Paho.MQTT.Message(String(Math.round(v)));
-  msg.destinationName = topicSetTarget(selectedMachine);
-  msg.qos = 1;
-  msg.retained = true;
-  mqttClient.send(msg);
-  toast(`Target for ${selectedMachine} set to ${Math.round(v)} pieces.`);
-  input.value = '';
-}
-
-function sendSetSam() {
-  const input = document.getElementById('set-sam-input');
-  const v = Number(input.value);
-  if (!v || v <= 0) { toast('Enter a valid SAM > 0.'); return; }
-  if (!mqttClient || !mqttConnected) { toast('Not connected to MQTT.'); return; }
-  const msg = new Paho.MQTT.Message(String(v));
-  msg.destinationName = topicSetSam(selectedMachine);
-  msg.qos = 1;
-  msg.retained = true;
-  mqttClient.send(msg);
-  toast(`SAM for ${selectedMachine} set to ${v}s.`);
-  input.value = '';
-}
-
-/* ═══════════════════════════════════════════════════════════
-   CARD ASSIGNMENT (shared across all machines)
-   ═══════════════════════════════════════════════════════════ */
-function renderCardPanel() {
-  const grid = document.getElementById('card-grid');
-  if (!grid) return;
-  grid.innerHTML = cardNames.map((name, i) => `
-    <div class="month-card">
-      <div class="m-lbl">Card ${String(i + 1).padStart(4, '0')}</div>
-      <div class="m-val" style="font-size:1rem;">${name}</div>
-      <div style="display:flex;gap:6px;margin-top:10px;">
-        <input id="card-name-${i}" type="text" placeholder="New operator name"
-          style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:0.68rem;padding:6px 8px;border-radius:6px;">
-        <button class="btn-sm blue" onclick="assignCard(${i})">Assign</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-function assignCard(slotIdx) {
-  const input = document.getElementById(`card-name-${slotIdx}`);
-  const name  = input ? input.value.trim() : '';
-  if (!name) { toast('Enter a name first.'); return; }
-  if (!mqttClient || !mqttConnected) { toast('Not connected to MQTT.'); return; }
-
-  const topic = TOPIC_CARDS_ASSIGN_PREFIX + (slotIdx + 1);
-  const msg = new Paho.MQTT.Message(name);
-  msg.destinationName = topic;
-  msg.qos = 1;
-  msg.retained = true;
-  mqttClient.send(msg);
-
-  cardNames[slotIdx] = name;
-  saveCardNames();
-  renderCardPanel();
-  toast(`Card ${String(slotIdx + 1).padStart(4,'0')} assigned to ${name}.`);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   BUNDLE ASSIGNMENT (shared across all machines)
-   ═══════════════════════════════════════════════════════════ */
-function renderBundlePanel() {
-  const grid = document.getElementById('bundle-grid');
-  if (!grid) return;
-  grid.innerHTML = bundles.map((b, i) => `
-    <div class="month-card">
-      <div class="m-lbl">D${i + 1}</div>
-      <div class="m-val" style="font-size:1rem;">${b.design}</div>
-      <div class="m-sub">Qty: ${b.pieces}</div>
-      <div style="display:flex;gap:6px;margin-top:10px;">
-        <input id="bundle-design-${i}" type="text" placeholder="Design #"
-          style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:0.68rem;padding:6px 8px;border-radius:6px;">
-        <input id="bundle-pieces-${i}" type="number" min="1" placeholder="Qty"
-          style="width:64px;background:var(--bg);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:0.68rem;padding:6px 8px;border-radius:6px;">
-      </div>
-      <button class="btn-sm blue" style="margin-top:8px;width:100%;" onclick="assignBundle(${i})">Assign</button>
-    </div>
-  `).join('');
-}
-
-function assignBundle(slotIdx) {
-  const designInput = document.getElementById(`bundle-design-${slotIdx}`);
-  const piecesInput = document.getElementById(`bundle-pieces-${slotIdx}`);
-  const design = designInput ? designInput.value.trim() : '';
-  const pieces = Number(piecesInput ? piecesInput.value : NaN);
-  if (!design) { toast('Enter a design number.'); return; }
-  if (!pieces || pieces <= 0) { toast('Enter a valid piece count.'); return; }
-  if (!mqttClient || !mqttConnected) { toast('Not connected to MQTT.'); return; }
-
-  const topic = TOPIC_BUNDLES_ASSIGN_PREFIX + (slotIdx + 1);
-  const payload = JSON.stringify({ design, pieces: Math.round(pieces) });
-  const msg = new Paho.MQTT.Message(payload);
-  msg.destinationName = topic;
-  msg.qos = 1;
-  msg.retained = true;
-  mqttClient.send(msg);
-
-  bundles[slotIdx] = { design, pieces: Math.round(pieces) };
-  saveBundlesLocal();
-  renderBundlePanel();
-  toast(`D${slotIdx + 1} assigned: ${design} × ${pieces} pcs.`);
-}
-
-function renderBundleScanTable() {
-  const tbody = document.getElementById('bundle-scan-tbody');
-  if (!tbody) return;
-  if (!bundleScanLog.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty-state"><span>📦</span>Bundle scans appear here in real time.</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = [...bundleScanLog].reverse().slice(0, 300).map(b => `
-    <tr>
-      <td>${fmtUnix(b.ts_unix)} ${fmtDate(b.ts_unix)}</td>
-      <td>${b.machine || '—'}</td>
-      <td>${b.operator || '—'}</td>
-      <td>${b.design || '—'}</td>
-      <td>${b.pieces ?? '—'}</td>
-    </tr>`).join('');
-}
-
-/* ═══════════════════════════════════════════════════════════
-   CONNECTION UI
-   ═══════════════════════════════════════════════════════════ */
-function setConnected(ok) {
-  mqttConnected = ok;
-  const pill  = document.getElementById('conn-pill');
-  const dot   = document.getElementById('conn-dot');
-  const label = document.getElementById('conn-label');
-  pill.className    = ok ? 'conn-pill connected' : 'conn-pill disconnected';
-  dot.className     = ok ? 'dot pulse' : 'dot';
-  label.textContent = ok ? 'Connected' : 'Disconnected';
-}
- 
-/* ═══════════════════════════════════════════════════════════
-   PER-MACHINE MESSAGE HANDLERS
-   ═══════════════════════════════════════════════════════════ */
-function handleLive(machine, payloadStr) {
-  try {
-    const data = JSON.parse(payloadStr);
-    data.machine = data.machine || machine;
-    liveByMachine[machine] = data;
-    statusByMachine[machine] = 'ONLINE';
-    renderMachineStrip();
-    if (machine === selectedMachine) updateLivePanel(data);
-  } catch(e) { console.error('live parse', e); }
-}
-
-function handleStatus(machine, payload) {
-  statusByMachine[machine] = payload;
-  if (payload !== 'ONLINE') delete liveByMachine[machine];
-  renderMachineStrip();
-  if (machine === selectedMachine && payload !== 'ONLINE') setIdlePanel();
-  updateFaultLedIndicator();
-}
-
-function handleLogout(machine, payloadStr) {
-  try {
-    const data = JSON.parse(payloadStr);
-    if (typeof data.fault_types === 'string') {
-      try { data.fault_types = JSON.parse(data.fault_types); } catch {}
-    }
-    data.machine = data.machine || machine;
-    sessionLog.push(data);
-    saveLog();
-    toast(`✅ [${machine}] ${data.operator} logged out · ${data.pieces} pcs · Rs ${Number(data.earnings||0).toFixed(0)}`);
-    statusByMachine[machine] = 'IDLE';
-    delete liveByMachine[machine];
-    renderMachineStrip();
-    if (machine === selectedMachine) setIdlePanel();
-  } catch(e) { console.error('logout parse', e); }
-}
-
-function handleFault(machine, payloadStr) {
-  try {
-    const f = JSON.parse(payloadStr);
-    f.machine = f.machine || machine;
-    if (f.resolved) {
-      // RESOLVE_FAULT clears the LED for one machine at once and doesn't
-      // report which individual fault_idx got cleared — close out every
-      // still-open fault logged for THAT machine only.
-      let closedAny = false;
-      faultLog.forEach(x => {
-        if (!x.resolved && x.machine === f.machine) { x.resolved = true; closedAny = true; }
-      });
-      if (!closedAny) faultLog.push(f);
-    } else {
-      faultLog.push(f);
-    }
-    try { localStorage.setItem('stitch_faults_v2', JSON.stringify(faultLog)); } catch {}
-    renderFaultTable();
-    renderFaultTotals();
-    const statusText = f.resolved ? '✓ Fault(s) resolved' : '⚠ New fault';
-    toast(`${statusText}${f.fault_name ? ': ' + f.fault_name : ''} (${f.machine})`);
-  } catch(e) { console.error('fault parse', e); }
-}
-
-function handleBundleScanMsg(machine, payloadStr) {
-  try {
-    const b = JSON.parse(payloadStr);
-    b.machine = b.machine || machine;
-    bundleScanLog.push(b);
-    try { localStorage.setItem('stitch_bundle_scans', JSON.stringify(bundleScanLog)); } catch {}
-    renderBundleScanTable();
-    toast(`📦 [${machine}] Bundle ${b.design} (${b.pieces} pcs) loaded`);
-  } catch(e) { console.error('bundle scan parse', e); }
-}
-
-function handleCardAssign(slotNum, payload) {
-  if (slotNum >= 1 && slotNum <= 4 && payload) {
-    cardNames[slotNum - 1] = payload;
-    saveCardNames();
-    renderCardPanel();
-  }
-}
-
-function handleBundleAssign(slotNum, payload) {
-  if (slotNum < 1 || slotNum > 4 || !payload) return;
-  try {
-    const obj = JSON.parse(payload);
-    bundles[slotNum - 1] = { design: obj.design || `D${slotNum}`, pieces: Number(obj.pieces) || 0 };
-    saveBundlesLocal();
-    renderBundlePanel();
-  } catch(e) { console.error('bundle assign parse', e); }
-}
-
-/* Routes an incoming MQTT message to the right per-machine or shared
-   handler based on its topic. */
-function routeMessage(topic, payload) {
-  if (topic.startsWith(TOPIC_CARDS_ASSIGN_PREFIX)) {
-    const slotNum = parseInt(topic.substring(TOPIC_CARDS_ASSIGN_PREFIX.length), 10);
-    handleCardAssign(slotNum, payload);
-    return;
-  }
-  if (topic.startsWith(TOPIC_BUNDLES_ASSIGN_PREFIX)) {
-    const slotNum = parseInt(topic.substring(TOPIC_BUNDLES_ASSIGN_PREFIX.length), 10);
-    handleBundleAssign(slotNum, payload);
-    return;
   }
 
-  const parts = topic.split('/'); // ["stitch", "<machine>", "<suffix...>"]
-  if (parts[0] !== 'stitch' || parts.length < 3) return;
-  const machine = parts[1];
-  const suffix  = parts.slice(2).join('/');
+  function onConnect() {
+    document.getElementById("conn-pill").className = "conn-pill connected";
+    document.getElementById("conn-text").innerText = "CONNECTED";
 
-  switch (suffix) {
-    case 'live':    handleLive(machine, payload);           break;
-    case 'logout':  handleLogout(machine, payload);         break;
-    case 'status':  handleStatus(machine, payload);         break;
-    case 'fault':   handleFault(machine, payload);          break;
-    case 'bundle':  handleBundleScanMsg(machine, payload);  break;
-    // 'cmd', 'set/target', 'set/sam' are dashboard -> device only; nothing to do here.
+    client.subscribe("stitch/+/live");
+    client.subscribe("stitch/+/status");
+    client.subscribe("stitch/cards/assign/+");
+    client.subscribe("stitch/bundles/assign/+");
   }
-}
 
-/* ═══════════════════════════════════════════════════════════
-   MQTT
-   ═══════════════════════════════════════════════════════════ */
-function initMQTT() {
-  const clientId = 'StitchWeb-' + Math.floor(Math.random() * 99999);
-  mqttClient = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), clientId);
- 
-  mqttClient.onConnectionLost = (resp) => {
-    console.warn('[MQTT] Connection lost:', resp.errorMessage);
-    setConnected(false);
-    statusByMachine = {};
-    liveByMachine = {};
-    renderMachineStrip();
-    setIdlePanel();
+  function onConnectionLost(resp) {
+    document.getElementById("conn-pill").className = "conn-pill disconnected";
+    document.getElementById("conn-text").innerText = "DISCONNECTED";
     setTimeout(initMQTT, 5000);
-  };
- 
-  mqttClient.onMessageArrived = (msg) => {
-    console.log('[MQTT IN]', msg.destinationName, msg.payloadString);
-    routeMessage(msg.destinationName, msg.payloadString);
-  };
- 
-  mqttClient.connect({
-    useSSL: true, cleanSession: true, timeout: 10,
-    userName: MQTT_USER, password: MQTT_PASS,
-    onSuccess: () => {
-      console.log('[MQTT] Connected!');
-      setConnected(true);
-      // Wildcard-subscribe every machine's live/logout/status/fault/bundle
-      // stream in one shot, plus the two shared assignment topics.
-      mqttClient.subscribe('stitch/+/live',   { qos: 0 });
-      mqttClient.subscribe('stitch/+/logout', { qos: 1 });
-      mqttClient.subscribe('stitch/+/status', { qos: 1 });
-      mqttClient.subscribe('stitch/+/fault',  { qos: 1 });
-      mqttClient.subscribe('stitch/+/bundle', { qos: 1 });
-      mqttClient.subscribe(TOPIC_CARDS_ASSIGN_PREFIX + '+', { qos: 1 });
-      mqttClient.subscribe(TOPIC_BUNDLES_ASSIGN_PREFIX + '+', { qos: 1 });
-      toast('Connected to MQTT broker.');
-    },
-    onFailure: (err) => {
-      console.error('[MQTT] Failed:', err.errorMessage);
-      setConnected(false);
-      setTimeout(initMQTT, 5000);
+  }
+
+  function onMessageArrived(msg) {
+    const topic = msg.destinationName;
+    const payload = msg.payloadString;
+
+    if (topic.includes("/live")) {
+      const parts = topic.split('/');
+      const mc = parts[1];
+      try {
+        const data = JSON.parse(payload);
+        machineData[mc] = data;
+        updateUI();
+      } catch(e) {}
+    } else if (topic.includes("/status")) {
+      const mc = topic.split('/')[1];
+      const dot = document.getElementById("dot-" + mc);
+      if (dot) dot.className = "mc-status-dot " + (payload === "ONLINE" ? "online" : "idle");
     }
-  });
-}
- 
-/* ═══════════════════════════════════════════════════════════
-   CLOCK
-   ═══════════════════════════════════════════════════════════ */
-function tickClock() {
-  const now = new Date();
-  document.getElementById('live-clock').textContent =
-    now.toLocaleDateString('en-PK', { day:'2-digit', month:'short' }) + '  ' +
-    now.toLocaleTimeString('en-PK', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-}
- 
-/* ═══════════════════════════════════════════════════════════
-   INIT
-   ═══════════════════════════════════════════════════════════ */
-loadCardNames();
-loadBundlesLocal();
-renderCardPanel();
-renderBundlePanel();
-renderFaultGridLabels();
-renderMachineFilterOptions();
-renderMachineStrip();
-document.getElementById('ctrl-machine-label').textContent = selectedMachine;
-loadLog();
-tickClock();
-setInterval(tickClock, 1000);
-initMQTT();
+  }
+
+  function selectMachine(mc) {
+    currentMachine = mc;
+    document.querySelectorAll(".machine-chip").forEach(c => c.classList.remove("selected"));
+    document.getElementById("chip-" + mc).classList.add("selected");
+    document.getElementById("selected-mc-label").innerText = mc.toUpperCase();
+    document.getElementById("cfg-mc-label").innerText = mc.toUpperCase();
+    updateUI();
+  }
+
+  function updateUI() {
+    const data = machineData[currentMachine] || {};
+    document.getElementById("val-op").innerText = data.operator || "--";
+    document.getElementById("val-operation").innerText = data.operation || "--";
+    document.getElementById("val-pcs").innerText = `${data.pieces || 0} / ${data.target_pcs || 0}`;
+    document.getElementById("val-eff").innerText = `${(data.efficiency || 0).toFixed(1)}%`;
+    document.getElementById("val-sam-eff").innerText = `${(data.sam_efficiency || 0).toFixed(1)}%`;
+    document.getElementById("val-earnings").innerText = (data.earnings || 0).toFixed(2);
+    document.getElementById("val-work").innerText = `${Math.floor((data.work_s || 0)/60)}m`;
+    document.getElementById("val-needle").innerText = `${(data.needle_s || 0).toFixed(0)}s`;
+    document.getElementById("val-handle").innerText = `${(data.handling_s || 0).toFixed(0)}s`;
+    document.getElementById("val-faults").innerText = data.faults || 0;
+
+    ["machine1", "machine2", "machine3", "machine4"].forEach(mc => {
+      const el = document.getElementById("op-" + mc);
+      if (el && machineData[mc]) el.innerText = machineData[mc].operation || "--";
+    });
+  }
+
+  function publishRetained(topic, payload) {
+    const msg = new Paho.MQTT.Message(payload);
+    msg.destinationName = topic;
+    msg.retained = true;
+    client.send(msg);
+  }
+
+  function saveMachineConfig() {
+    const op = document.getElementById("cfg-operation").value.trim();
+    const rate = document.getElementById("cfg-rate").value;
+    const target = document.getElementById("cfg-target").value;
+    const sam = document.getElementById("cfg-sam").value;
+
+    if (op) publishRetained(`stitch/${currentMachine}/set/operation`, op);
+    if (rate) publishRetained(`stitch/${currentMachine}/set/rate`, rate);
+    if (target) publishRetained(`stitch/${currentMachine}/set/target`, target);
+    if (sam) publishRetained(`stitch/${currentMachine}/set/sam`, sam);
+
+    alert(`Configuration sent to ${currentMachine}!`);
+  }
+
+  function saveCard(slot) {
+    const name = document.getElementById("card-" + slot).value.trim();
+    if (name) publishRetained(`stitch/cards/assign/${slot}`, name);
+  }
+
+  function saveBundle(slot) {
+    const design = document.getElementById("bundle-d" + slot).value.trim();
+    const pieces = document.getElementById("bundle-p" + slot).value;
+    if (design && pieces) {
+      const payload = JSON.stringify({ design: design, pieces: parseInt(pieces) });
+      publishRetained(`stitch/bundles/assign/${slot}`, payload);
+    }
+  }
+
+  function sendCommand(cmd) {
+    const msg = new Paho.MQTT.Message(cmd);
+    msg.destinationName = `stitch/${currentMachine}/cmd`;
+    client.send(msg);
+  }
+
+  function triggerOTA() {
+    const url = document.getElementById("ota-url").value.trim();
+    if (url) sendCommand("OTA:" + url);
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    event.target.classList.add("active");
+    document.getElementById("tab-" + name).classList.add("active");
+  }
+
+  window.onload = initMQTT;
 </script>
 </body>
 </html>

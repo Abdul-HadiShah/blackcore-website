@@ -81,7 +81,7 @@
   }
   .machine-chip.selected { border-color: var(--green); background: var(--surface2); }
   .machine-chip .mc-top { display: flex; align-items: center; justify-content: space-between; font-family: var(--mono); font-size: 0.65rem; }
-  .mc-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .mc-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); }
   .mc-status-dot.online { background: var(--green); }
   .mc-status-dot.idle { background: var(--amber); }
 
@@ -133,10 +133,10 @@
   </header>
 
   <div class="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('live')">Live Dashboard</button>
-    <button class="tab-btn" onclick="switchTab('config')">Machine Settings</button>
-    <button class="tab-btn" onclick="switchTab('cards')">Operator Cards</button>
-    <button class="tab-btn" onclick="switchTab('bundles')">Bundles (D1-D4)</button>
+    <button class="tab-btn active" onclick="switchTab('live', event)">Live Dashboard</button>
+    <button class="tab-btn" onclick="switchTab('config', event)">Machine Settings</button>
+    <button class="tab-btn" onclick="switchTab('cards', event)">Operator Cards (1-5)</button>
+    <button class="tab-btn" onclick="switchTab('bundles', event)">Bundles (D1-D10)</button>
   </div>
 
   <div class="machine-strip">
@@ -167,7 +167,7 @@
     <div class="grid-layout">
       <div>
         <div class="card">
-          <div class="card-title">Live Session — <span id="selected-mc-label">Machine 1</span></div>
+          <div class="card-title">Live Session — <span id="selected-mc-label">MACHINE1</span></div>
           <div class="metrics-grid">
             <div class="metric-box"><div class="label">OPERATOR</div><div class="val" id="val-op">--</div></div>
             <div class="metric-box"><div class="label">OPERATION</div><div class="val" id="val-operation">--</div></div>
@@ -210,7 +210,7 @@
   <!-- TAB 2: MACHINE CONFIGURATION -->
   <div id="tab-config" class="tab-panel">
     <div class="card" style="max-width: 600px;">
-      <div class="card-title">Configure <span id="cfg-mc-label">Machine 1</span></div>
+      <div class="card-title">Configure <span id="cfg-mc-label">MACHINE1</span></div>
       <div class="form-group">
         <label>Operation Name</label>
         <input type="text" id="cfg-operation" class="form-control" placeholder="e.g. Chakoti Attach">
@@ -231,53 +231,27 @@
     </div>
   </div>
 
-  <!-- TAB 3: OPERATOR CARDS -->
+  <!-- TAB 3: OPERATOR CARDS (1-5) -->
   <div id="tab-cards" class="tab-panel">
     <div class="card">
-      <div class="card-title">Assign Operator Names to Cards</div>
+      <div class="card-title">Assign Operator Names & UIDs to User Cards (5 Max)</div>
       <table>
-        <thead><tr><th>Slot</th><th>Card ID</th><th>Assigned Name</th><th>Action</th></tr></thead>
-        <tbody>
-          <tr><td>1</td><td>Card 0001</td><td><input type="text" id="card-1" class="form-control"></td><td><button class="btn" onclick="saveCard(1)">Save</button></td></tr>
-          <tr><td>2</td><td>Card 0002</td><td><input type="text" id="card-2" class="form-control"></td><td><button class="btn" onclick="saveCard(2)">Save</button></td></tr>
-          <tr><td>3</td><td>Card 0003</td><td><input type="text" id="card-3" class="form-control"></td><td><button class="btn" onclick="saveCard(3)">Save</button></td></tr>
-          <tr><td>4</td><td>Card 0004</td><td><input type="text" id="card-4" class="form-control"></td><td><button class="btn" onclick="saveCard(4)">Save</button></td></tr>
+        <thead><tr><th>Slot</th><th>Card UID (HEX)</th><th>Assigned Operator Name</th><th>Action</th></tr></thead>
+        <tbody id="cards-table-body">
+          <!-- Dynamically populated 5 User Cards -->
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- TAB 4: BUNDLES -->
+  <!-- TAB 4: BUNDLES (D1-D10) -->
   <div id="tab-bundles" class="tab-panel">
     <div class="card">
-      <div class="card-title">Assign Bundle Tag Details (Shared D1-D4)</div>
+      <div class="card-title">Assign Bundle Tag Details (D1 to D10)</div>
       <table>
-        <thead><tr><th>Slot</th><th>Design Number</th><th>Piece Quantity</th><th>Action</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>D1</td>
-            <td><input type="text" id="bundle-d1" class="form-control"></td>
-            <td><input type="number" id="bundle-p1" class="form-control"></td>
-            <td><button class="btn" onclick="saveBundle(1)">Save</button></td>
-          </tr>
-          <tr>
-            <td>D2</td>
-            <td><input type="text" id="bundle-d2" class="form-control"></td>
-            <td><input type="number" id="bundle-p2" class="form-control"></td>
-            <td><button class="btn" onclick="saveBundle(2)">Save</button></td>
-          </tr>
-          <tr>
-            <td>D3</td>
-            <td><input type="text" id="bundle-d3" class="form-control"></td>
-            <td><input type="number" id="bundle-p3" class="form-control"></td>
-            <td><button class="btn" onclick="saveBundle(3)">Save</button></td>
-          </tr>
-          <tr>
-            <td>D4</td>
-            <td><input type="text" id="bundle-d4" class="form-control"></td>
-            <td><input type="number" id="bundle-p4" class="form-control"></td>
-            <td><button class="btn" onclick="saveBundle(4)">Save</button></td>
-          </tr>
+        <thead><tr><th>Slot</th><th>Bundle Tag UID (HEX)</th><th>Design Number</th><th>Piece Quantity</th><th>Action</th></tr></thead>
+        <tbody id="bundles-table-body">
+          <!-- Dynamically populated 10 Bundle Cards -->
         </tbody>
       </table>
     </div>
@@ -296,6 +270,36 @@
   let machineData = {
     machine1: {}, machine2: {}, machine3: {}, machine4: {}
   };
+
+  // Render Table UI for 5 User Tags and 10 Bundle Tags
+  function renderTables() {
+    const cardTbody = document.getElementById("cards-table-body");
+    cardTbody.innerHTML = "";
+    for (let i = 1; i <= 5; i++) {
+      cardTbody.innerHTML += `
+        <tr>
+          <td>User ${i}</td>
+          <td><input type="text" id="card-uid-${i}" class="form-control" placeholder="e.g. A3 8F 12 90"></td>
+          <td><input type="text" id="card-name-${i}" class="form-control" placeholder="Operator Name"></td>
+          <td><button class="btn" onclick="saveCard(${i})">Save</button></td>
+        </tr>
+      `;
+    }
+
+    const bundleTbody = document.getElementById("bundles-table-body");
+    bundleTbody.innerHTML = "";
+    for (let i = 1; i <= 10; i++) {
+      bundleTbody.innerHTML += `
+        <tr>
+          <td>D${i}</td>
+          <td><input type="text" id="bundle-uid-${i}" class="form-control" placeholder="e.g. 1B 4C 88 2A"></td>
+          <td><input type="text" id="bundle-d${i}" class="form-control" placeholder="Design #"></td>
+          <td><input type="number" id="bundle-p${i}" class="form-control" placeholder="Pcs"></td>
+          <td><button class="btn" onclick="saveBundle(${i})">Save</button></td>
+        </tr>
+      `;
+    }
+  }
 
   function initMQTT() {
     const clientId = "dashboard-" + Math.random().toString(16).substring(2, 10);
@@ -398,16 +402,27 @@
   }
 
   function saveCard(slot) {
-    const name = document.getElementById("card-" + slot).value.trim();
-    if (name) publishRetained(`stitch/cards/assign/${slot}`, name);
+    const uid = document.getElementById("card-uid-" + slot).value.trim().toUpperCase();
+    const name = document.getElementById("card-name-" + slot).value.trim();
+    if (name) {
+      const payload = JSON.stringify({ uid: uid, name: name });
+      publishRetained(`stitch/cards/assign/${slot}`, payload);
+      alert(`User Card ${slot} saved!`);
+    } else {
+      alert("Please enter an Operator Name.");
+    }
   }
 
   function saveBundle(slot) {
+    const uid = document.getElementById("bundle-uid-" + slot).value.trim().toUpperCase();
     const design = document.getElementById("bundle-d" + slot).value.trim();
     const pieces = document.getElementById("bundle-p" + slot).value;
     if (design && pieces) {
-      const payload = JSON.stringify({ design: design, pieces: parseInt(pieces) });
+      const payload = JSON.stringify({ uid: uid, design: design, pieces: parseInt(pieces) });
       publishRetained(`stitch/bundles/assign/${slot}`, payload);
+      alert(`Bundle D${slot} saved!`);
+    } else {
+      alert("Please enter both Design Number and Piece Quantity.");
     }
   }
 
@@ -422,14 +437,17 @@
     if (url) sendCommand("OTA:" + url);
   }
 
-  function switchTab(name) {
+  function switchTab(name, evt) {
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
     document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-    event.target.classList.add("active");
+    if(evt && evt.target) evt.target.classList.add("active");
     document.getElementById("tab-" + name).classList.add("active");
   }
 
-  window.onload = initMQTT;
+  window.onload = () => {
+    renderTables();
+    initMQTT();
+  };
 </script>
 </body>
 </html>

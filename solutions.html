@@ -310,10 +310,6 @@
     width: 100%; max-width: 400px; background: var(--bg); border: 1px solid var(--border2);
     color: var(--text); font-family: var(--mono); font-size: 0.8rem; padding: 8px 12px; border-radius: 6px;
   }
-  .form-hint {
-    font-family: var(--mono); font-size: 0.6rem; color: var(--text-dim);
-    margin-top: 6px; line-height: 1.5;
-  }
  
   @media (max-width: 768px) {
     .mg-4 { grid-template-columns: repeat(2, 1fr); }
@@ -394,32 +390,33 @@
       </div>
  
       <div class="mg-4">
-        <div class="mc"><div class="lbl">Work Time</div><div class="val" id="m-work">—</div><div class="sub">IN → now (this login)</div></div>
-        <div class="mc"><div class="lbl">Needle Time</div><div class="val" id="m-needle">—</div><div class="sub">vibration active, this login</div></div>
-        <div class="mc"><div class="lbl">Handling Time</div><div class="val" id="m-handling">—</div><div class="sub">work − needle, this login</div></div>
+        <div class="mc"><div class="lbl">Work Time (Session)</div><div class="val" id="m-work">—</div><div class="sub">IN → now, this login</div></div>
+        <div class="mc"><div class="lbl">Needle Time</div><div class="val" id="m-needle">—</div><div class="sub">vibration active</div></div>
+        <div class="mc"><div class="lbl">Handling Time</div><div class="val" id="m-handling">—</div><div class="sub">work − needle</div></div>
         <div class="mc c-amber"><div class="lbl">Overtime</div><div class="val" id="m-ot">—</div><div class="sub">after 18:00</div></div>
       </div>
  
       <div class="mg-4">
-        <div class="mc c-blue"><div class="lbl">Pieces (Instant)</div><div class="val" id="m-pieces">—</div><div class="sub">this login</div></div>
-        <div class="mc c-red"><div class="lbl">Faults</div><div class="val" id="m-faults">—</div><div class="sub">this login</div></div>
-        <div class="mc"><div class="lbl">Bursts / Stops</div><div class="val" id="m-bursts">—</div><div class="sub">vib transitions, this login</div></div>
-        <div class="mc"><div class="lbl">Cycle Time</div><div class="val" id="m-cycle">—</div><div class="sub">avg sec/piece, this login</div></div>
+        <div class="mc c-blue"><div class="lbl">Pieces (This Session)</div><div class="val" id="m-pieces">—</div><div class="sub">since this login</div></div>
+        <div class="mc c-purple"><div class="lbl">Pieces (Day Total)</div><div class="val" id="m-day-pieces">—</div><div class="sub">carried over + today</div></div>
+        <div class="mc c-red"><div class="lbl">Faults</div><div class="val" id="m-faults">—</div><div class="sub">total logged today</div></div>
+        <div class="mc"><div class="lbl">Bursts / Stops</div><div class="val" id="m-bursts">—</div><div class="sub">vib transitions</div></div>
       </div>
- 
+
       <div class="mg-3">
+        <div class="mc"><div class="lbl">Cycle Time</div><div class="val" id="m-cycle">—</div><div class="sub">avg sec/piece (session)</div></div>
         <div class="mc c-green"><div class="lbl">Needle Efficiency</div><div class="val" id="m-eff">—</div><div class="sub">needle / work × 100</div></div>
         <div class="mc c-green"><div class="lbl">SAM Efficiency</div><div class="val" id="m-sam-eff">—</div><div class="sub">(pieces×SAM) / work × 100</div></div>
-        <div class="mc c-purple"><div class="lbl">Earnings (Est.)</div><div class="val" id="m-earnings">—</div><div class="sub">pieces × rate PKR, this login</div></div>
+      </div>
+
+      <div class="mg-2">
+        <div class="mc c-purple"><div class="lbl">Earnings (Est.)</div><div class="val" id="m-earnings">—</div><div class="sub">day pieces × rate PKR</div></div>
+        <div class="mc"><div class="lbl">Target (pieces)</div><div class="val" id="m-target">—</div><div class="sub" id="m-target-source">source: manual</div></div>
       </div>
 
       <div class="mg-2" style="margin-top:10px;">
-        <div class="mc"><div class="lbl">Target (pieces)</div><div class="val" id="m-target">—</div><div class="sub" id="m-target-source">source: manual</div></div>
-        <div class="mc c-amber"><div class="lbl">Balance</div><div class="val" id="m-balance">—</div><div class="sub">target − pieces (today)</div></div>
-      </div>
-
-      <div class="mg-2" style="margin-top:10px;display:none;" id="bundle-info-row">
-        <div class="mc c-purple"><div class="lbl">Active Bundle</div><div class="val" id="m-bundle-design">—</div><div class="sub" id="m-bundle-qty">—</div></div>
+        <div class="mc c-amber"><div class="lbl">Balance</div><div class="val" id="m-balance">—</div><div class="sub">target − day pieces</div></div>
+        <div class="mc" id="bundle-info-row" style="display:none;"><div class="lbl">Active Bundle</div><div class="val" id="m-bundle-design">—</div><div class="sub" id="m-bundle-qty">—</div></div>
       </div>
  
       <div class="eff-row">
@@ -428,7 +425,7 @@
         <div class="eff-pct" id="eff-pct-label">0%</div>
       </div>
  
-      <div class="sh" style="margin-top:16px;"><h2>Fault Breakdown (Today, cumulative)</h2></div>
+      <div class="sh" style="margin-top:16px;"><h2>Fault Breakdown</h2></div>
       <div class="fault-grid" id="live-fault-grid">
         <div class="fault-cell"><div class="f-name">NO FEEDING</div><div class="f-count" id="fc-0">0</div></div>
         <div class="fault-cell"><div class="f-name">MACHINE PROBLEM</div><div class="f-count" id="fc-1">0</div></div>
@@ -449,6 +446,9 @@
         <button class="btn-sm" onclick="clearHistory()">Clear</button>
       </div>
     </div>
+    <p style="font-family:var(--mono);font-size:0.62rem;color:var(--text-dim);margin-bottom:10px;">
+      "Pieces" / "Work" below are <span class="green">per-session</span> (this login only) so totals across a day don't double-count. "Day Total" is the cumulative figure at the moment of that logout.
+    </p>
     <div class="tbl-wrap">
       <table>
         <thead>
@@ -461,6 +461,7 @@
             <th>Work (min)</th>
             <th>OT (min)</th>
             <th>Pieces</th>
+            <th>Day Total Pcs</th>
             <th>Target</th>
             <th>Faults</th>
             <th>Bursts</th>
@@ -473,7 +474,7 @@
           </tr>
         </thead>
         <tbody id="log-tbody">
-          <tr><td colspan="17" class="empty-state"><span>📋</span>Sessions appear here after each logout.</td></tr>
+          <tr><td colspan="18" class="empty-state"><span>📋</span>Sessions appear here after each logout.</td></tr>
         </tbody>
       </table>
     </div>
@@ -489,18 +490,18 @@
       </div>
     </div>
     <div class="month-grid">
-      <div class="month-card"><div class="m-lbl">Sessions</div><div class="m-val" id="mo-sessions">0</div><div class="m-sub">unique days worked</div></div>
-      <div class="month-card"><div class="m-lbl">Attendance %</div><div class="m-val" id="mo-attend">—</div><div class="m-sub">days / working days</div></div>
-      <div class="month-card"><div class="m-lbl">Total Work Time</div><div class="m-val" id="mo-work">—</div><div class="m-sub">sum of all sessions</div></div>
+      <div class="month-card"><div class="m-lbl">Sessions</div><div class="m-val" id="mo-sessions">0</div><div class="m-sub">logins worked</div></div>
+      <div class="month-card"><div class="m-lbl">Attendance %</div><div class="m-val" id="mo-attend">—</div><div class="m-sub">days present / working days</div></div>
+      <div class="month-card"><div class="m-lbl">Total Work Time</div><div class="m-val" id="mo-work">—</div><div class="m-sub">sum of session segments</div></div>
       <div class="month-card"><div class="m-lbl">Total OT</div><div class="m-val" id="mo-ot">—</div><div class="m-sub">overtime minutes</div></div>
-      <div class="month-card"><div class="m-lbl">Total Pieces</div><div class="m-val" id="mo-pieces">0</div><div class="m-sub">monthly output</div></div>
+      <div class="month-card"><div class="m-lbl">Total Pieces</div><div class="m-val" id="mo-pieces">0</div><div class="m-sub">monthly output (segment sum)</div></div>
       <div class="month-card"><div class="m-lbl">Total Faults</div><div class="m-val" id="mo-faults">0</div><div class="m-sub">all fault types</div></div>
       <div class="month-card"><div class="m-lbl">Total Needle Time</div><div class="m-val" id="mo-needle">—</div><div class="m-sub">vibration time</div></div>
       <div class="month-card"><div class="m-lbl">Avg Needle Eff</div><div class="m-val" id="mo-needle-eff">—</div><div class="m-sub">avg across sessions</div></div>
       <div class="month-card"><div class="m-lbl">Avg SAM Eff</div><div class="m-val" id="mo-sam-eff">—</div><div class="m-sub">SAM-based efficiency</div></div>
       <div class="month-card"><div class="m-lbl">Total Earnings</div><div class="m-val" id="mo-earnings">—</div><div class="m-sub">PKR sum</div></div>
       <div class="month-card"><div class="m-lbl">Avg Cycle Time</div><div class="m-val" id="mo-cycle">—</div><div class="m-sub">sec / piece</div></div>
-      <div class="month-card"><div class="m-lbl">Best Day (pieces)</div><div class="m-val" id="mo-best">—</div><div class="m-sub">highest single machine-day</div></div>
+      <div class="month-card"><div class="m-lbl">Best Day (pieces)</div><div class="m-val" id="mo-best">—</div><div class="m-sub">highest single day total</div></div>
     </div>
  
     <div class="sh" style="margin-top:24px;"><h2>Skill Matrix (Cycle Time per Session)</h2></div>
@@ -614,7 +615,7 @@
   <div class="tab-panel" id="tab-cards">
     <div class="sh"><h2>Card Assignment & Remote Registration</h2></div>
     <p style="font-family:var(--mono);font-size:0.7rem;color:var(--text-dim);margin-bottom:14px;line-height:1.6;">
-      Assign operator names directly or put the active machine (<span class="green" id="cards-machine-label">machine1</span>) into Remote Registration Mode. Scan a physical card on the machine to assign its UID to the target slot automatically.
+      Assign operator names directly, or press "Tap to Reg" to put the active machine (<span class="green" id="cards-machine-label">machine1</span>) into a 20-second Remote Registration window. Scan a physical card on the machine and its UID is bound to that slot automatically — no reflashing required.
     </p>
     <div class="month-grid" id="card-grid"></div>
   </div>
@@ -623,7 +624,7 @@
   <div class="tab-panel" id="tab-bundles">
     <div class="sh"><h2>Bundle Assignment & Remote Registration</h2></div>
     <p style="font-family:var(--mono);font-size:0.7rem;color:var(--text-dim);margin-bottom:14px;line-height:1.6;">
-      Configure bundle parameters or trigger Remote Registration for RFID bundle tags on machine <span class="green" id="bundles-machine-label">machine1</span>.
+      Configure bundle parameters or trigger Remote Registration (20-second window) for RFID bundle tags on machine <span class="green" id="bundles-machine-label">machine1</span>.
     </p>
     <div class="month-grid" id="bundle-grid"></div>
 
@@ -676,7 +677,6 @@
       <div class="form-group">
         <label>Piece Rate (PKR)</label>
         <input type="number" id="setting-rate" min="0" step="0.01" placeholder="2.50">
-        <div class="form-hint">The firmware doesn't expose an MQTT topic for piece rate (it's a per-device compile-time constant). This value is saved locally in the dashboard only, for its own earnings/target estimates — it is not pushed to the machine.</div>
       </div>
 
       <div style="display:flex; gap:10px; margin-top:20px;">
@@ -694,21 +694,9 @@
    CONFIG
    ═══════════════════════════════════════════════════════════ */
 const MQTT_HOST = "9a9143ec37924c2c8c2bc10c92f1601c.s1.eu.hivemq.cloud";
-const MQTT_PORT = 8884;   // HiveMQ Cloud WebSocket-TLS port for browser clients
-                          // (the ESP32 firmware connects on 8883 MQTT-TLS — that's a
-                          // different transport on the same broker, not a mismatch)
-
-// v10 FIX: these MUST be the SAME broker credentials the ESP32 firmware
-// authenticates with (see mqtt_user / mqtt_password in StitchTrack_v10.ino).
-// The dashboard was previously using a different username/password than the
-// machines ("Abdul" / "Ke-1234@" vs the firmware's "Stitchtrack" / "U&I54321"),
-// which — unless that second account was deliberately created in the HiveMQ
-// Cloud console — means the dashboard could never actually authenticate
-// against the same broker the machines publish to. Aligned to the firmware's
-// credentials below; double-check against your HiveMQ Cloud console if you
-// have intentionally set up separate accounts.
-const MQTT_USER = "Stitchtrack";
-const MQTT_PASS = "U&I54321";
+const MQTT_PORT = 8884;
+const MQTT_USER = "Abdul";
+const MQTT_PASS = "Ke-1234@";
 
 const MACHINES = ["machine1", "machine2", "machine3", "machine4"];
 const FAULT_NAMES = ["No Feeding","Machine Problem","Accessories","Shade"];
@@ -726,35 +714,6 @@ const topicCmd        = m => `stitch/${m}/cmd`;
 const topicSetTarget  = m => `stitch/${m}/set/target`;
 const topicSetSam     = m => `stitch/${m}/set/sam`;
 const topicSetOp      = m => `stitch/${m}/set/operation`;
-
-/* ═══════════════════════════════════════════════════════════
-   v10 DATA MODEL NOTE (read this before touching the render fns)
-   ═══════════════════════════════════════════════════════════
-   The ESP32 firmware (v10) publishes TWO parallel sets of numbers on every
-   /live and /logout message:
-
-     - Top-level fields (pieces, needle_s, handling_s, faults, bursts,
-       work_s/work_min, efficiency, sam_efficiency, earnings, cycle_time_s)
-       are DAY-CUMULATIVE — they include everything since the operator's
-       FIRST login of the day, and carry over across multiple same-day
-       logins on the same card slot.
-
-     - segment_* fields (segment_pieces, segment_needle_s, segment_handling_s,
-       segment_bursts, segment_faults, segment_earnings, segment_work_s /
-       segment_work_min, and — on /logout only — segment_cycle_time_s,
-       segment_efficiency, segment_sam_efficiency) cover ONLY this login.
-
-   This is explicitly the "SEGMENT vs DAY-TOTAL FIX" called out in the v10
-   firmware changelog: summing the day-cumulative fields across sessions
-   (e.g. two same-day logins reporting 100 then 180 total pieces) double-
-   counts the day. Every place in this dashboard that reports "this
-   session" / rolls sessions up into a period total now reads the
-   segment_* fields (with a fallback to the legacy field for older
-   locally-cached records that predate this fix). The one exception is
-   target_pcs, which is a single daily value (not incremental per login) —
-   so period rollups take it once per (day, machine), from that day's
-   most recent session, instead of summing it per login.
-   ═══════════════════════════════════════════════════════════ */
  
 /* ═══════════════════════════════════════════════════════════
    STATE
@@ -767,7 +726,7 @@ let liveByMachine   = {};
 let statusByMachine = {};  
 
 let sessionLog      = [];  
-let faultLog         = [];  
+let faultLog        = [];  
 let bundleScanLog   = []; 
 
 let cardNames = ["Card 0001","Card 0002","Card 0003","Card 0004"]; 
@@ -784,6 +743,18 @@ let machineSettings = {
 let currentSAM  = 45;
 let currentRate = 2.5;
 let reportMachineFilter = '';
+
+/* v10: helper — read a segment-scoped field with graceful fallback to the
+   legacy (day-total) field, so old records saved before this firmware/
+   dashboard update still render instead of showing blank/undefined. */
+function segPieces(r)  { return (r.segment_pieces  != null) ? r.segment_pieces  : (r.pieces || 0); }
+function segWorkS(r)   { return (r.segment_work_s  != null) ? r.segment_work_s  : Math.max(0, (r.out_unix - r.in_unix) || 0); }
+function segNeedleS(r) { return (r.segment_needle_s!= null) ? r.segment_needle_s: (r.needle_s || 0); }
+function segHandleS(r) { return (r.segment_handling_s != null) ? r.segment_handling_s : (r.handling_s || 0); }
+function segFaults(r)  { return (r.segment_faults  != null) ? r.segment_faults  : (r.faults || 0); }
+function segBursts(r)  { return (r.segment_bursts  != null) ? r.segment_bursts  : (r.bursts || 0); }
+function segEarnings(r){ return (r.segment_earnings!= null) ? r.segment_earnings: (r.earnings || 0); }
+function dayPieces(r)  { return (r.day_pieces != null) ? r.day_pieces : (r.pieces || 0); }
  
 /* ═══════════════════════════════════════════════════════════
    TABS
@@ -840,40 +811,14 @@ function calcOT(inUnix, outUnix) {
   if (outDate > sixPM) return Math.round((outDate - sixPM) / 60000);
   return 0;
 }
+function toast(msg, dur = 2800) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
 function filterByMachine(list) {
   return reportMachineFilter ? list.filter(r => r.machine === reportMachineFilter) : list;
-}
-
-/* Segment-first accessors — this login's value, falling back to the
-   legacy day-cumulative field for records saved before this fix. */
-function segPiecesOf(r)   { return r.segment_pieces      != null ? Number(r.segment_pieces)      : (Number(r.pieces)   || 0); }
-function segNeedleOf(r)   { return r.segment_needle_s     != null ? Number(r.segment_needle_s)    : (Number(r.needle_s)  || 0); }
-function segHandlingOf(r) { return r.segment_handling_s   != null ? Number(r.segment_handling_s)  : (Number(r.handling_s)|| 0); }
-function segFaultsOf(r)   { return r.segment_faults        != null ? Number(r.segment_faults)      : (Number(r.faults)   || 0); }
-function segBurstsOf(r)   { return r.segment_bursts        != null ? Number(r.segment_bursts)      : (Number(r.bursts)   || 0); }
-function segEarningsOf(r) { return r.segment_earnings      != null ? Number(r.segment_earnings)    : (Number(r.earnings) || 0); }
-function segEffOf(r)      { return r.segment_efficiency    != null ? Number(r.segment_efficiency)  : (Number(r.efficiency)     || 0); }
-function segSamEffOf(r)   { return r.segment_sam_efficiency != null ? Number(r.segment_sam_efficiency) : (Number(r.sam_efficiency) || 0); }
-function segWorkMinOf(r)  { return r.segment_work_min      != null ? r.segment_work_min : (r.work_min ?? '—'); }
-
-/* Groups a list of session rows by (calendar day, machine) — used for any
-   period rollup so a daily target (a single, non-incremental value) is
-   only counted once per day even if the operator logged in more than once,
-   while pieces/etc are still SUMMED via the segment_* accessors above. */
-function groupSessionsByDay(list) {
-  const map = {};
-  list.forEach(r => {
-    if (!r.in_unix) return;
-    const dayKey = new Date(r.in_unix * 1000).toDateString();
-    const key = dayKey + '|' + (r.machine || '');
-    if (!map[key]) map[key] = { dayKey, machine: r.machine || '', pieces: 0, target: 0, lastOut: 0 };
-    map[key].pieces += segPiecesOf(r);
-    if (r.target_pcs != null && (r.out_unix || 0) >= map[key].lastOut) {
-      map[key].target = Number(r.target_pcs) || 0;
-      map[key].lastOut = r.out_unix || 0;
-    }
-  });
-  return Object.values(map);
 }
  
 /* ═══════════════════════════════════════════════════════════
@@ -929,7 +874,7 @@ function renderMachineStrip() {
     const dotCls = status === 'ONLINE' ? 'online' : status === 'IDLE' ? 'idle' : 'offline';
     const live = liveByMachine[m];
     const name = (status === 'ONLINE' && live) ? (live.operator || 'Operator') : (status === 'IDLE' ? 'Idle' : 'Offline');
-    const sub  = (status === 'ONLINE' && live) ? `${live.pieces ?? 0} / ${live.target_pcs ?? '—'} pcs today` : '—';
+    const sub  = (status === 'ONLINE' && live) ? `${dayPieces(live)} / ${live.target_pcs ?? '—'} pcs` : '—';
     return `<div class="machine-chip ${m === selectedMachine ? 'selected' : ''}" onclick="selectMachine('${m}')">
       <div class="mc-top"><span class="mc-dot ${dotCls}"></span>${m}</div>
       <div class="mc-name">${name}</div>
@@ -967,23 +912,14 @@ function updateLivePanel(data) {
   document.getElementById('live-avatar').textContent = '🟢';
   document.getElementById('live-name').textContent = data.operator || 'Operator';
   const cardLbl = data.card_slot ? `Card ${String(data.card_slot).padStart(4,'0')} · ` : '';
-  const opLbl   = data.operation ? ` · ${data.operation}` : '';
   document.getElementById('live-sub').innerHTML =
-    `${cardLbl}Logged in since <span class="green">${fmtUnix(data.in_unix)}</span>${opLbl} &nbsp;·&nbsp; ${new Date().toLocaleTimeString()}`;
-
-  // v10 FIX: every box on this card is labelled "this login" / "this
-  // session", so it must read the segment_* fields — the top-level
-  // fields (work_s, pieces, needle_s, ...) are day-cumulative and would
-  // show numbers left over from an earlier login the moment a second
-  // same-day login starts.
-  const segWorkS   = Number(data.segment_work_s) || 0;
-  const segPieces  = data.segment_pieces != null ? Number(data.segment_pieces) : 0;
-  const segNeedleS = Number(data.segment_needle_s) || 0;
-  const segHandleS = Number(data.segment_handling_s) || 0;
-  const segBursts  = Number(data.segment_bursts) || 0;
-  const segFaults  = Number(data.segment_faults) || 0;
-  const segEarn    = Number(data.segment_earnings) || 0;
-  const samS       = Number(data.sam_s) || currentSAM;
+    `${cardLbl}Logged in since <span class="green">${fmtUnix(data.in_unix)}</span> &nbsp;·&nbsp; ${new Date().toLocaleTimeString()}`;
+ 
+  // v10: session work/pieces use the segment_* fields (this login only);
+  // day totals are shown separately so nothing gets double-counted.
+  const workS    = (data.segment_work_s != null) ? Number(data.segment_work_s) : Number(data.work_s) || 0;
+  const pieces   = segPieces(data);
+  const dayPcs   = dayPieces(data);
  
   let otMin = 0;
   if (data.in_unix) {
@@ -993,43 +929,33 @@ function updateLivePanel(data) {
     if (now > sixPMUnix) otMin = Math.round((now - sixPMUnix) / 60);
   }
  
-  const cycleTime = segPieces > 0 ? (segWorkS / segPieces).toFixed(1) : '—';
+  const cycleTime = pieces > 0 ? (workS / pieces).toFixed(1) : '—';
  
-  document.getElementById('m-work').textContent    = fmtTime(segWorkS);
-  document.getElementById('m-needle').textContent  = fmtTime(segNeedleS);
-  document.getElementById('m-handling').textContent= fmtTime(segHandleS);
+  document.getElementById('m-work').textContent    = fmtTime(workS);
+  document.getElementById('m-needle').textContent  = fmtTime(data.needle_s);
+  document.getElementById('m-handling').textContent= fmtTime(data.handling_s);
   document.getElementById('m-ot').textContent      = `${otMin}m`;
-  document.getElementById('m-pieces').textContent  = segPieces;
-  document.getElementById('m-faults').textContent  = segFaults;
-  document.getElementById('m-bursts').textContent  = segBursts;
+  document.getElementById('m-pieces').textContent  = pieces;
+  document.getElementById('m-day-pieces').textContent = dayPcs;
+  document.getElementById('m-faults').textContent  = data.faults ?? '—';
+  document.getElementById('m-bursts').textContent  = data.bursts ?? '—';
   document.getElementById('m-cycle').textContent   = cycleTime === '—' ? '—' : `${cycleTime}s`;
  
-  // segment_efficiency / segment_sam_efficiency only exist on the /logout
-  // payload — the firmware's /live message doesn't send them — so derive
-  // them here the same way publishLogout() does on the device.
-  const eff    = segWorkS > 0 ? (segNeedleS / segWorkS * 100) : 0;
-  const samEff = (segWorkS > 0 && segPieces > 0) ? (segPieces * samS / segWorkS * 100) : 0;
+  const eff    = parseFloat(data.efficiency)     || 0;
+  const samEff = parseFloat(data.sam_efficiency) || 0;
+  const earn   = parseFloat(data.earnings)       || 0;
  
   document.getElementById('m-eff').textContent      = `${eff.toFixed(1)}%`;
   document.getElementById('m-sam-eff').textContent  = `${samEff.toFixed(1)}%`;
-  document.getElementById('m-earnings').textContent = `Rs ${segEarn.toFixed(2)}`;
+  document.getElementById('m-earnings').textContent = `Rs ${earn.toFixed(2)}`;
 
   document.getElementById('m-target').textContent  = data.target_pcs ?? '—';
   document.getElementById('m-balance').textContent = data.target_balance ?? '—';
-
-  // v10 FIX: the firmware never actually sends a `target_source` field
-  // (it was never part of the /live or /logout payload), so this always
-  // evaluated to false and the "Active Bundle" panel below could never
-  // display, no matter how a bundle tag was scanned. Bundle activity is
-  // detected instead from bundle_design / bundle_pieces (and bundle_count
-  // to indicate the daily target currently includes bundle quantities).
-  const bundleCount   = Number(data.bundle_count) || 0;
-  const isBundleActive = !!(data.bundle_design && Number(data.bundle_pieces) > 0);
-  document.getElementById('m-target-source').textContent =
-    `source: ${bundleCount > 0 ? 'manual + bundles' : 'manual'}`;
+  const isBundle = data.target_source === 'bundle';
+  document.getElementById('m-target-source').textContent = `source: ${data.target_source || 'manual'}`;
 
   const bundleRow = document.getElementById('bundle-info-row');
-  if (isBundleActive) {
+  if (isBundle && data.bundle_design) {
     bundleRow.style.display = '';
     document.getElementById('m-bundle-design').textContent = data.bundle_design;
     document.getElementById('m-bundle-qty').textContent = `Qty: ${data.bundle_pieces ?? '—'}`;
@@ -1040,9 +966,6 @@ function updateLivePanel(data) {
   document.getElementById('eff-bar').style.width       = `${Math.min(samEff, 100)}%`;
   document.getElementById('eff-pct-label').textContent = `${samEff.toFixed(1)}%`;
  
-  // fault_types is only published as a day-cumulative array (the firmware
-  // doesn't split it per login), so this grid intentionally shows today's
-  // running totals across all of this machine's logins, not just this one.
   const ft = data.fault_types || [0,0,0,0];
   for (let i = 0; i < 4; i++) {
     const el = document.getElementById(`fc-${i}`);
@@ -1061,7 +984,7 @@ function setIdlePanel() {
   document.getElementById('live-avatar').textContent = '👤';
   document.getElementById('live-name').textContent   = 'No operator logged in';
   document.getElementById('live-sub').textContent    = `Waiting for RFID card tap on ${selectedMachine}…`;
-  ['m-work','m-needle','m-handling','m-ot','m-pieces','m-faults','m-bursts',
+  ['m-work','m-needle','m-handling','m-ot','m-pieces','m-day-pieces','m-faults','m-bursts',
    'm-cycle','m-eff','m-sam-eff','m-earnings','m-target','m-balance'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = '—';
@@ -1083,39 +1006,33 @@ function renderSessionTable() {
   const tbody = document.getElementById('log-tbody');
   const rows = filterByMachine(sessionLog);
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="17" class="empty-state"><span>📋</span>Sessions appear here after each logout.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="18" class="empty-state"><span>📋</span>Sessions appear here after each logout.</td></tr>`;
     return;
   }
   tbody.innerHTML = [...rows].reverse().map(r => {
-    const workS  = (r.out_unix - r.in_unix);
+    const workS  = segWorkS(r);
+    const pieces = segPieces(r);
     const otMin  = calcOT(r.in_unix, r.out_unix);
-    const pcs    = segPiecesOf(r);
-    const needleS  = segNeedleOf(r);
-    const handleS  = segHandlingOf(r);
-    const faultsN  = segFaultsOf(r);
-    const burstsN  = segBurstsOf(r);
-    const earnN    = segEarningsOf(r);
-    const effN     = r.segment_efficiency     != null ? r.segment_efficiency     : r.efficiency;
-    const samEffN  = r.segment_sam_efficiency != null ? r.segment_sam_efficiency : r.sam_efficiency;
-    const cycle  = r.segment_cycle_time_s != null ? Number(r.segment_cycle_time_s) : (pcs > 0 ? (workS / pcs) : 0);
+    const cycle  = r.segment_cycle_time_s || (pieces > 0 ? (workS / pieces) : 0);
     return `<tr>
       <td>${fmtDate(r.in_unix)}</td>
       <td>${r.machine || '—'}</td>
       <td>${r.operator || '—'}</td>
       <td>${fmtUnix(r.in_unix)}</td>
       <td>${fmtUnix(r.out_unix)}</td>
-      <td>${segWorkMinOf(r)}</td>
+      <td>${r.segment_work_min ?? Math.round(workS/60)}</td>
       <td>${otMin}</td>
-      <td>${pcs}</td>
+      <td>${pieces}</td>
+      <td>${dayPieces(r)}</td>
       <td>${r.target_pcs ?? '—'}</td>
-      <td>${faultsN}</td>
-      <td>${burstsN}</td>
-      <td>${needleS.toFixed(0)}</td>
-      <td>${handleS.toFixed(0)}</td>
-      <td>${pcs > 0 ? cycle.toFixed(1) : '—'}</td>
-      <td>${effBadge(effN)}</td>
-      <td>${effBadge(samEffN)}</td>
-      <td>Rs ${earnN.toFixed(2)}</td>
+      <td>${segFaults(r)}</td>
+      <td>${segBursts(r)}</td>
+      <td>${Number(segNeedleS(r)).toFixed(0)}</td>
+      <td>${Number(segHandleS(r)).toFixed(0)}</td>
+      <td>${pieces > 0 ? cycle.toFixed(1) : '—'}</td>
+      <td>${effBadge(r.segment_efficiency ?? r.efficiency)}</td>
+      <td>${effBadge(r.segment_sam_efficiency ?? r.sam_efficiency)}</td>
+      <td>Rs ${Number(segEarnings(r)).toFixed(2)}</td>
     </tr>`;
   }).join('');
 }
@@ -1138,37 +1055,31 @@ function renderMonthly() {
     return d.getFullYear() === yy && d.getMonth() === mm;
   });
  
-  // v10 FIX: rolled up from segment_* fields (this login only) instead of
-  // the day-cumulative top-level fields, so a second same-day login no
-  // longer double-counts that day's totals. See the "v10 DATA MODEL NOTE"
-  // near the top of this script.
   const sessions   = thisMonth.length;
-  const totPieces  = thisMonth.reduce((s,r) => s + segPiecesOf(r), 0);
-  const totFaults  = thisMonth.reduce((s,r) => s + segFaultsOf(r), 0);
-  const totNeedle  = thisMonth.reduce((s,r) => s + segNeedleOf(r), 0);
-  const totWorkS   = thisMonth.reduce((s,r) => s + ((r.out_unix - r.in_unix)||0), 0);
+  // v10: sum SEGMENT values across sessions — summing day-totals here is
+  // exactly the double-counting bug (100 + 180 instead of 180).
+  const totPieces  = thisMonth.reduce((s,r) => s + segPieces(r), 0);
+  const totFaults  = thisMonth.reduce((s,r) => s + segFaults(r), 0);
+  const totNeedle  = thisMonth.reduce((s,r) => s + (Number(segNeedleS(r))||0), 0);
+  const totWorkS   = thisMonth.reduce((s,r) => s + segWorkS(r), 0);
   const totWorkMin = Math.round(totWorkS / 60);
   const totOT      = thisMonth.reduce((s,r) => s + calcOT(r.in_unix, r.out_unix), 0);
-  const totEarn    = thisMonth.reduce((s,r) => s + segEarningsOf(r), 0);
+  const totEarn    = thisMonth.reduce((s,r) => s + (Number(segEarnings(r))||0), 0);
  
   const samS = currentSAM;
   const samEff = totWorkS > 0 ? ((totPieces * samS) / totWorkS * 100) : 0;
  
   const avgNeedleEff = sessions > 0 ?
-    (thisMonth.reduce((s,r) => s + segEffOf(r), 0) / sessions) : 0;
+    (thisMonth.reduce((s,r) => s + (parseFloat(r.segment_efficiency ?? r.efficiency)||0), 0) / sessions) : 0;
  
   const avgCycle = totPieces > 0 ? (totWorkS / totPieces) : 0;
-
-  // "Best day" and "days worked" both need day-level grouping (not raw
-  // session/login counts) so multiple same-day logins aren't counted as
-  // separate days or summed into an inflated single-day total.
-  const dayGroups  = groupSessionsByDay(thisMonth);
-  const bestDay    = dayGroups.length ? Math.max(...dayGroups.map(d => d.pieces)) : 0;
-  const uniqueDays = new Set(thisMonth.filter(r => r.in_unix).map(r => new Date(r.in_unix*1000).toDateString())).size;
-  const attendPct  = WORKING_DAYS_PER_MONTH > 0 ?
-    ((uniqueDays / WORKING_DAYS_PER_MONTH) * 100).toFixed(1) : 0;
+  // "Best day" is still meaningfully a DAY TOTAL (highest cumulative pieces
+  // in a single day), so this intentionally uses dayPieces, not segPieces.
+  const bestDay = sessions > 0 ? Math.max(...thisMonth.map(r => dayPieces(r))) : 0;
+  const attendPct = WORKING_DAYS_PER_MONTH > 0 ?
+    ((sessions / WORKING_DAYS_PER_MONTH) * 100).toFixed(1) : 0;
  
-  document.getElementById('mo-sessions').textContent   = uniqueDays;
+  document.getElementById('mo-sessions').textContent   = sessions;
   document.getElementById('mo-attend').textContent     = `${attendPct}%`;
   document.getElementById('mo-work').textContent       = fmtMin(totWorkMin);
   document.getElementById('mo-ot').textContent         = fmtMin(totOT);
@@ -1187,12 +1098,10 @@ function renderMonthly() {
     return;
   }
   skillTbody.innerHTML = [...thisMonth].reverse().map(r => {
-    const wS  = (r.out_unix - r.in_unix);
-    const pcs = segPiecesOf(r);
-    const ct  = r.segment_cycle_time_s != null ? Number(r.segment_cycle_time_s).toFixed(1)
-              : (pcs > 0 ? (wS / pcs).toFixed(1) : '—');
-    const se  = r.segment_sam_efficiency != null ? effBadge(r.segment_sam_efficiency)
-              : (r.sam_efficiency != null ? effBadge(r.sam_efficiency) : '—');
+    const wS  = segWorkS(r);
+    const pcs = segPieces(r);
+    const ct  = pcs > 0 ? (wS / pcs).toFixed(1) : '—';
+    const se  = (r.segment_sam_efficiency ?? r.sam_efficiency) != null ? effBadge(r.segment_sam_efficiency ?? r.sam_efficiency) : '—';
     return `<tr>
       <td>${fmtDate(r.in_unix)}</td>
       <td>${r.operator||'—'}</td>
@@ -1231,14 +1140,20 @@ function renderTarget() {
     return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
   });
  
-  // v10 FIX: pieces come from segment_pieces via groupSessionsByDay (this
-  // login only, correctly summed) — the daily target is a single value,
-  // not incremental per login, so it's taken once per (day, machine)
-  // instead of being summed across every login of that day too.
   function calcPeriod(list) {
-    const days = groupSessionsByDay(list);
     let pieces = 0, target = 0;
-    days.forEach(d => { pieces += d.pieces; target += d.target; });
+    list.forEach(r => {
+      // v10: sum SEGMENT pieces, not the day-total "pieces" field, to avoid
+      // double-counting same-day logins.
+      pieces += segPieces(r);
+      if (r.target_pcs != null) {
+        target += r.target_pcs;
+      } else {
+        const samS  = r.sam_s || currentSAM;
+        const workS = segWorkS(r);
+        target += workS > 0 ? Math.floor(workS / samS) : 0;
+      }
+    });
     return { pieces, target };
   }
  
@@ -1262,16 +1177,16 @@ function renderTarget() {
   }
   tbody.innerHTML = [...scoped].reverse().map(r => {
     const samS   = r.sam_s || currentSAM;
-    const workS  = (r.out_unix - r.in_unix) || 0;
+    const workS  = segWorkS(r);
     const target = r.target_pcs != null ? r.target_pcs : (workS > 0 ? Math.floor(workS / samS) : 0);
-    const actual = segPiecesOf(r);
+    const actual = segPieces(r);
     const balance= Math.max(0, target - actual);
     const pct    = target > 0 ? ((actual / target) * 100).toFixed(1) : 0;
     const cls    = pct >= 80 ? 'bg' : pct >= 60 ? 'ba' : 'br';
     return `<tr>
       <td>${fmtDate(r.in_unix)}</td>
       <td>${r.machine||'—'}</td>
-      <td>${segWorkMinOf(r)}</td>
+      <td>${r.segment_work_min ?? Math.round(workS/60)}</td>
       <td>${samS}</td>
       <td>${target}</td>
       <td>${actual}</td>
@@ -1308,20 +1223,11 @@ function renderFaultTable() {
 }
  
 function renderFaultTotals() {
-  // v10 FIX: each session's fault_types[] array is a DAY-CUMULATIVE
-  // snapshot (it carries over across same-day logins), so summing it
-  // across every session in sessionLog double-counts exactly like the
-  // pieces/needle/etc. fields did. There's no per-login "segment fault
-  // type breakdown" published, but the real-time fault EVENT log
-  // (faultLog — one entry per actual fault button press, via the
-  // /fault topic) doesn't have that problem, so cumulative totals are
-  // tallied from there instead.
   const totals = [0,0,0,0];
-  filterByMachine(faultLog).forEach(f => {
-    if (!f.fault_name) return; // resolve-only echoes carry no fault type
-    let idx = (typeof f.fault_idx === 'number') ? f.fault_idx
-            : FAULT_NAMES.findIndex(n => n.toLowerCase() === String(f.fault_name).toLowerCase());
-    if (idx >= 0 && idx < 4) totals[idx]++;
+  filterByMachine(sessionLog).forEach(r => {
+    if (Array.isArray(r.fault_types)) {
+      r.fault_types.forEach((v,i) => { totals[i] = (totals[i]||0) + (v||0); });
+    }
   });
   for (let i = 0; i < 4; i++) {
     const el = document.getElementById(`afc-${i}`);
@@ -1391,25 +1297,17 @@ function clearHistory() {
 function exportCSV() {
   const rows0 = filterByMachine(sessionLog);
   if (!rows0.length) { toast('No records.'); return; }
-  const h = ['date','machine','operator','in','out','work_min','ot_min','pieces','target_pcs','faults','bursts','needle_s','handling_s','cycle_s','needle_eff','sam_eff','earnings_pkr'];
+  const h = ['date','machine','operator','in','out','work_min_session','ot_min','pieces_session','pieces_day_total','target_pcs','faults_session','bursts_session','needle_s_session','handling_s_session','cycle_s_session','needle_eff_session','sam_eff_session','earnings_pkr_session'];
   const rows = rows0.map(r => {
-    const wS = (r.out_unix - r.in_unix);
+    const wS = segWorkS(r);
+    const pcs = segPieces(r);
     const ot = calcOT(r.in_unix, r.out_unix);
-    const pcs = segPiecesOf(r);
-    const needleS = segNeedleOf(r);
-    const handleS = segHandlingOf(r);
-    const faultsN = segFaultsOf(r);
-    const burstsN = segBurstsOf(r);
-    const effN    = r.segment_efficiency     != null ? Number(r.segment_efficiency)     : (Number(r.efficiency) || 0);
-    const samEffN = r.segment_sam_efficiency != null ? Number(r.segment_sam_efficiency) : (Number(r.sam_efficiency) || 0);
-    const earnN   = segEarningsOf(r);
-    const cycleN  = r.segment_cycle_time_s != null ? Number(r.segment_cycle_time_s) : (pcs > 0 ? (wS/pcs) : 0);
     return [fmtDate(r.in_unix), r.machine, r.operator, fmtUnix(r.in_unix), fmtUnix(r.out_unix),
-      segWorkMinOf(r), ot, pcs, r.target_pcs ?? '', faultsN, burstsN,
-      needleS.toFixed(1), handleS.toFixed(1),
-      pcs > 0 ? cycleN.toFixed(1) : '',
-      effN.toFixed(1), samEffN.toFixed(1),
-      earnN.toFixed(2)];
+      r.segment_work_min ?? Math.round(wS/60), ot, pcs, dayPieces(r), r.target_pcs ?? '', segFaults(r), segBursts(r),
+      Number(segNeedleS(r)).toFixed(1), Number(segHandleS(r)).toFixed(1),
+      pcs > 0 ? (wS/pcs).toFixed(1) : '',
+      Number(r.segment_efficiency ?? r.efficiency ?? 0).toFixed(1), Number(r.segment_sam_efficiency ?? r.sam_efficiency ?? 0).toFixed(1),
+      Number(segEarnings(r)).toFixed(2)];
   });
   const csv = [h, ...rows].map(r => r.join(',')).join('\n');
   const a = document.createElement('a');
@@ -1519,7 +1417,7 @@ function triggerRemoteCardReg(slotIdx) {
   const nameInput = document.getElementById(`card-name-${slotIdx}`);
   const name = nameInput ? nameInput.value.trim() : cardNames[slotIdx];
   publishCommand(`REGISTER_CARD:${slotIdx + 1}:${name}`);
-  toast(`Scan RFID Card on ${selectedMachine} to bind to Slot ${slotIdx + 1}...`);
+  toast(`Scan RFID Card on ${selectedMachine} within 20s to bind to Slot ${slotIdx + 1}...`);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1576,7 +1474,7 @@ function triggerRemoteBundleReg(slotIdx) {
   if (!design || !pieces) { toast('Set design & pieces first.'); return; }
   
   publishCommand(`REGISTER_BUNDLE:${slotIdx + 1}:${design}:${pieces}`);
-  toast(`Scan RFID Tag on ${selectedMachine} to bind as Bundle D${slotIdx + 1}...`);
+  toast(`Scan RFID Tag on ${selectedMachine} within 20s to bind as Bundle D${slotIdx + 1}...`);
 }
 
 function renderBundleScanTable() {
@@ -1622,10 +1520,7 @@ function saveMachineSettings() {
   
   if (!mqttClient || !mqttConnected) { toast('Not connected to MQTT broker.'); return; }
 
-  // Send individually via retain topics matching ESP32 firmware specs.
-  // NOTE: rate is NOT sent — the firmware has no MQTT topic for piece
-  // rate (PIECE_RATE_PKR is a compile-time constant per device), so it
-  // stays local to the dashboard for its own earnings/target estimates.
+  // Send individually via retain topics matching ESP32 firmware specs
   let msg1 = new Paho.MQTT.Message(op);
   msg1.destinationName = topicSetOp(selectedMachine);
   msg1.qos = 1; msg1.retained = true;
@@ -1641,7 +1536,7 @@ function saveMachineSettings() {
   msg3.qos = 1; msg3.retained = true;
   mqttClient.send(msg3);
 
-  toast(`Pushed operation/SAM/target to ${selectedMachine} (rate saved locally).`);
+  toast(`Pushed settings to ${selectedMachine} successfully!`);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1656,13 +1551,6 @@ function setConnected(ok) {
   dot.className     = ok ? 'dot pulse' : 'dot';
   label.textContent = ok ? 'Connected' : 'Disconnected';
 }
-
-function toast(msg, dur = 2800) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), dur);
-}
  
 /* ═══════════════════════════════════════════════════════════
    PER-MACHINE MESSAGE HANDLERS
@@ -1673,22 +1561,8 @@ function handleLive(machine, payloadStr) {
     data.machine = data.machine || machine;
     liveByMachine[machine] = data;
     statusByMachine[machine] = 'ONLINE';
-
-    // v10 FIX: keep the cached Settings-tab config in sync with what the
-    // machine is actually reporting live, so switching to Settings
-    // doesn't show stale values from before someone changed SAM/target
-    // via the Live tab's quick controls (which bypass machineSettings).
-    if (!machineSettings[machine]) machineSettings[machine] = { op: '', sam: 45, target: 100, rate: 2.5 };
-    if (data.operation)         machineSettings[machine].op     = data.operation;
-    if (data.sam_s != null)     machineSettings[machine].sam    = Number(data.sam_s);
-    if (data.target_pcs != null) machineSettings[machine].target = Number(data.target_pcs);
-
     renderMachineStrip();
-    if (machine === selectedMachine) {
-      updateLivePanel(data);
-      const settingsTab = document.getElementById('tab-settings');
-      if (settingsTab && settingsTab.classList.contains('active')) loadMachineSettingsUI();
-    }
+    if (machine === selectedMachine) updateLivePanel(data);
   } catch(e) { console.error('live parse', e); }
 }
 
@@ -1709,8 +1583,7 @@ function handleLogout(machine, payloadStr) {
     data.machine = data.machine || machine;
     sessionLog.push(data);
     saveLog();
-    const segPcs = segPiecesOf(data);
-    toast(`✅ [${machine}] ${data.operator} logged out · ${segPcs} pcs this login · Rs ${segEarningsOf(data).toFixed(0)}`);
+    toast(`✅ [${machine}] ${data.operator} logged out · ${segPieces(data)} pcs this session (day total ${dayPieces(data)}) · Rs ${Number(segEarnings(data)).toFixed(0)}`);
     statusByMachine[machine] = 'IDLE';
     delete liveByMachine[machine];
     renderMachineStrip();

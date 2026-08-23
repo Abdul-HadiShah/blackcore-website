@@ -389,11 +389,15 @@
         </div>
       </div>
  
-      <div class="mg-4">
-        <div class="mc"><div class="lbl">Work Time (Session)</div><div class="val" id="m-work">—</div><div class="sub">IN → now, this login</div></div>
+      <div class="mg-3">
+        <div class="mc"><div class="lbl">Work Time (Session)</div><div class="val" id="m-work">—</div><div class="sub">IN → now, excl. power-out</div></div>
         <div class="mc"><div class="lbl">Needle Time</div><div class="val" id="m-needle">—</div><div class="sub">vibration active</div></div>
         <div class="mc"><div class="lbl">Handling Time</div><div class="val" id="m-handling">—</div><div class="sub">work − needle</div></div>
+      </div>
+
+      <div class="mg-2">
         <div class="mc c-amber"><div class="lbl">Overtime</div><div class="val" id="m-ot">—</div><div class="sub">after 18:00</div></div>
+        <div class="mc c-red"><div class="lbl">Power Out Time</div><div class="val" id="m-power-out">—</div><div class="sub" id="m-power-out-sub">excluded from work time</div></div>
       </div>
  
       <div class="mg-4">
@@ -471,10 +475,11 @@
             <th>Needle Eff</th>
             <th>SAM Eff</th>
             <th>Earnings (PKR)</th>
+            <th>Power Out (s)</th>
           </tr>
         </thead>
         <tbody id="log-tbody">
-          <tr><td colspan="18" class="empty-state"><span>📋</span>Sessions appear here after each logout.</td></tr>
+          <tr><td colspan="19" class="empty-state"><span>📋</span>Sessions appear here after each logout.</td></tr>
         </tbody>
       </table>
     </div>
@@ -494,6 +499,7 @@
       <div class="month-card"><div class="m-lbl">Attendance %</div><div class="m-val" id="mo-attend">—</div><div class="m-sub">days present / working days</div></div>
       <div class="month-card"><div class="m-lbl">Total Work Time</div><div class="m-val" id="mo-work">—</div><div class="m-sub">sum of session segments</div></div>
       <div class="month-card"><div class="m-lbl">Total OT</div><div class="m-val" id="mo-ot">—</div><div class="m-sub">overtime minutes</div></div>
+      <div class="month-card"><div class="m-lbl">Total Power-Out</div><div class="m-val" id="mo-power-out">—</div><div class="m-sub">excluded from work time</div></div>
       <div class="month-card"><div class="m-lbl">Total Pieces</div><div class="m-val" id="mo-pieces">0</div><div class="m-sub">monthly output (segment sum)</div></div>
       <div class="month-card"><div class="m-lbl">Total Faults</div><div class="m-val" id="mo-faults">0</div><div class="m-sub">all fault types</div></div>
       <div class="month-card"><div class="m-lbl">Total Needle Time</div><div class="m-val" id="mo-needle">—</div><div class="m-sub">vibration time</div></div>
@@ -755,6 +761,11 @@ function segFaults(r)  { return (r.segment_faults  != null) ? r.segment_faults  
 function segBursts(r)  { return (r.segment_bursts  != null) ? r.segment_bursts  : (r.bursts || 0); }
 function segEarnings(r){ return (r.segment_earnings!= null) ? r.segment_earnings: (r.earnings || 0); }
 function dayPieces(r)  { return (r.day_pieces != null) ? r.day_pieces : (r.pieces || 0); }
+// v10.2: seconds excluded from this login's work time because the machine
+// was powered off (firmware detects this via a boot-time checkpoint gap).
+// Older records saved before this firmware update won't have the field —
+// fall back to 0 rather than showing "undefined".
+function powerOutS(r)  { return Number(r.power_out_s) || 0; }
  
 /* ═══════════════════════════════════════════════════════════
    TABS
@@ -944,6 +955,15 @@ function updateLivePanel(data) {
   document.getElementById('m-needle').textContent  = fmtTime(data.needle_s);
   document.getElementById('m-handling').textContent= fmtTime(data.handling_s);
   document.getElementById('m-ot').textContent      = `${otMin}m`;
+
+  // v10.2: firmware already excludes this from work_s/segment_work_s above —
+  // this tile just surfaces how much (and flags it) so it's visible that a
+  // power outage happened, not silently absorbed into the numbers.
+  const powerOutSecLive = powerOutS(data);
+  document.getElementById('m-power-out').textContent = fmtTime(powerOutSecLive);
+  document.getElementById('m-power-out-sub').textContent =
+    powerOutSecLive > 0 ? 'detected this login — excluded from work time' : 'none detected this login';
+
   document.getElementById('m-pieces').textContent  = pieces;
   document.getElementById('m-day-pieces').textContent = dayPcs;
   document.getElementById('m-faults').textContent  = data.faults ?? '—';
@@ -993,11 +1013,12 @@ function setIdlePanel() {
   document.getElementById('live-avatar').textContent = '👤';
   document.getElementById('live-name').textContent   = 'No operator logged in';
   document.getElementById('live-sub').textContent    = `Waiting for RFID card tap on ${selectedMachine}…`;
-  ['m-work','m-needle','m-handling','m-ot','m-pieces','m-day-pieces','m-faults','m-bursts',
+  ['m-work','m-needle','m-handling','m-ot','m-power-out','m-pieces','m-day-pieces','m-faults','m-bursts',
    'm-cycle','m-eff','m-sam-eff','m-earnings','m-target','m-balance'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = '—';
   });
+  document.getElementById('m-power-out-sub').textContent = 'excluded from work time';
   document.getElementById('m-target-source').textContent = 'source: manual';
   document.getElementById('bundle-info-row').style.display = 'none';
   document.getElementById('eff-bar').style.width = '0%';
@@ -1015,7 +1036,7 @@ function renderSessionTable() {
   const tbody = document.getElementById('log-tbody');
   const rows = filterByMachine(sessionLog);
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="18" class="empty-state"><span>📋</span>Sessions appear here after each logout.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="19" class="empty-state"><span>📋</span>Sessions appear here after each logout.</td></tr>`;
     return;
   }
   tbody.innerHTML = [...rows].reverse().map(r => {
@@ -1042,6 +1063,7 @@ function renderSessionTable() {
       <td>${effBadge(r.segment_efficiency ?? r.efficiency)}</td>
       <td>${effBadge(r.segment_sam_efficiency ?? r.sam_efficiency)}</td>
       <td>Rs ${Number(segEarnings(r)).toFixed(2)}</td>
+      <td>${powerOutS(r)}</td>
     </tr>`;
   }).join('');
 }
@@ -1073,6 +1095,7 @@ function renderMonthly() {
   const totWorkS   = thisMonth.reduce((s,r) => s + segWorkS(r), 0);
   const totWorkMin = Math.round(totWorkS / 60);
   const totOT      = thisMonth.reduce((s,r) => s + calcOT(r.in_unix, r.out_unix), 0);
+  const totPowerOut = thisMonth.reduce((s,r) => s + powerOutS(r), 0);
   const totEarn    = thisMonth.reduce((s,r) => s + (Number(segEarnings(r))||0), 0);
  
   const samS = currentSAM;
@@ -1092,6 +1115,7 @@ function renderMonthly() {
   document.getElementById('mo-attend').textContent     = `${attendPct}%`;
   document.getElementById('mo-work').textContent       = fmtMin(totWorkMin);
   document.getElementById('mo-ot').textContent         = fmtMin(totOT);
+  document.getElementById('mo-power-out').textContent  = fmtTime(totPowerOut);
   document.getElementById('mo-pieces').textContent     = totPieces;
   document.getElementById('mo-faults').textContent     = totFaults;
   document.getElementById('mo-needle').textContent     = fmtTime(totNeedle);
@@ -1306,7 +1330,7 @@ function clearHistory() {
 function exportCSV() {
   const rows0 = filterByMachine(sessionLog);
   if (!rows0.length) { toast('No records.'); return; }
-  const h = ['date','machine','operator','in','out','work_min_session','ot_min','pieces_session','pieces_day_total','target_pcs','faults_session','bursts_session','needle_s_session','handling_s_session','cycle_s_session','needle_eff_session','sam_eff_session','earnings_pkr_session'];
+  const h = ['date','machine','operator','in','out','work_min_session','ot_min','pieces_session','pieces_day_total','target_pcs','faults_session','bursts_session','needle_s_session','handling_s_session','cycle_s_session','needle_eff_session','sam_eff_session','earnings_pkr_session','power_out_s'];
   const rows = rows0.map(r => {
     const wS = segWorkS(r);
     const pcs = segPieces(r);
@@ -1316,7 +1340,8 @@ function exportCSV() {
       Number(segNeedleS(r)).toFixed(1), Number(segHandleS(r)).toFixed(1),
       pcs > 0 ? (wS/pcs).toFixed(1) : '',
       Number(r.segment_efficiency ?? r.efficiency ?? 0).toFixed(1), Number(r.segment_sam_efficiency ?? r.sam_efficiency ?? 0).toFixed(1),
-      Number(segEarnings(r)).toFixed(2)];
+      Number(segEarnings(r)).toFixed(2),
+      powerOutS(r)];
   });
   const csv = [h, ...rows].map(r => r.join(',')).join('\n');
   const a = document.createElement('a');

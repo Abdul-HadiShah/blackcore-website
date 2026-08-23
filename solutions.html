@@ -805,10 +805,16 @@ function effBadge(val) {
 }
 function calcOT(inUnix, outUnix) {
   if (!inUnix || !outUnix) return 0;
+  // v10.1 FIX: overtime is the overlap between [inUnix, outUnix] and
+  // [6pm, midnight] of the logout day — NOT "everything after 6pm" measured
+  // from a fixed 6pm start. Logging in at 7pm and out at 8pm is 1 hour of
+  // OT, not 2.
   const outDate = new Date(outUnix * 1000);
   const sixPM = new Date(outDate);
   sixPM.setHours(18, 0, 0, 0);
-  if (outDate > sixPM) return Math.round((outDate - sixPM) / 60000);
+  const sixPMUnix = Math.floor(sixPM.getTime() / 1000);
+  const otStart = Math.max(inUnix, sixPMUnix);
+  if (outUnix > otStart) return Math.round((outUnix - otStart) / 60);
   return 0;
 }
 function toast(msg, dur = 2800) {
@@ -926,7 +932,10 @@ function updateLivePanel(data) {
     const now = Math.floor(Date.now()/1000);
     const todaySixPM = new Date(); todaySixPM.setHours(18,0,0,0);
     const sixPMUnix = Math.floor(todaySixPM.getTime()/1000);
-    if (now > sixPMUnix) otMin = Math.round((now - sixPMUnix) / 60);
+    // v10.1 FIX: OT starts at whichever is LATER — 6pm, or the actual login
+    // time — not always at 6pm regardless of when the operator clocked in.
+    const otStart = Math.max(data.in_unix, sixPMUnix);
+    if (now > otStart) otMin = Math.round((now - otStart) / 60);
   }
  
   const cycleTime = pieces > 0 ? (workS / pieces).toFixed(1) : '—';

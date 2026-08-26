@@ -1097,7 +1097,7 @@ function updateLivePanel(data) {
  
   // v10: session work/pieces use the segment_* fields (this login only);
   // day totals are shown separately so nothing gets double-counted.
-  const workS    = (data.segment_work_s != null) ? Number(data.segment_work_s) : Number(data.work_s) || 0;
+  const workS    = (data.day_work_s != null) ? Number(data.day_work_s) : Number(data.work_s) || 0;
   const pieces   = segPieces(data);
   const dayPcs   = dayPieces(data);
  

@@ -694,7 +694,18 @@
  
 </div>
 <div id="toast"></div>
- 
+
+<!-- ═══════════════════════════════════════════════════════════
+     SUPABASE — client library + connection
+     ═══════════════════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "https://untfklgllgcdejbgljqw.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_XxV8EzCrooB8xjithm8tYw_r6TKW8lt"; // paste your anon/publishable key here — never the service_role key
+
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+
 <script>
 /* ═══════════════════════════════════════════════════════════
    CONFIG
@@ -839,8 +850,13 @@ function filterByMachine(list) {
 }
  
 /* ═══════════════════════════════════════════════════════════
-   PERSISTENCE
+   PERSISTENCE — Supabase (source of truth) + localStorage (cache/fallback)
    ═══════════════════════════════════════════════════════════ */
+
+// v11: sessionLog / faultLog / bundleScanLog are now backed by Supabase
+// tables ("sessions", "faults", "bundle_scans") instead of only
+// localStorage. localStorage is kept as a same-session cache and as an
+// offline fallback if Supabase can't be reached.
 function saveLog() {
   try { localStorage.setItem('stitch_log_v3', JSON.stringify(sessionLog)); } catch(e) {}
   try { localStorage.setItem('stitch_faults_v2', JSON.stringify(faultLog)); } catch(e) {}
@@ -849,6 +865,10 @@ function saveLog() {
   renderTarget();
   renderFaultTotals();
 }
+
+// Loads the local cache immediately (so the UI isn't empty while the
+// network request is in flight), then loadFromSupabase() below overwrites
+// it with the real historical data once it arrives.
 function loadLog() {
   try { sessionLog = JSON.parse(localStorage.getItem('stitch_log_v3') || '[]'); } catch { sessionLog = []; }
   try { faultLog   = JSON.parse(localStorage.getItem('stitch_faults_v2')  || '[]'); } catch { faultLog = []; }
@@ -859,6 +879,149 @@ function loadLog() {
   renderFaultTotals();
   renderFaultTable();
   renderBundleScanTable();
+}
+
+/* ── Supabase: pull historical data ────────────────────────── */
+async function loadFromSupabase() {
+  await Promise.all([
+    loadSessionsFromSupabase(),
+    loadFaultsFromSupabase(),
+    loadBundleScansFromSupabase()
+  ]);
+}
+
+/* ── Supabase: field-name mapping for the "sessions" table ──
+   The dashboard's in-memory session objects use `machine` / `operator` /
+   `sam_s` (that's what the firmware's MQTT logout payload sends and what
+   every render function below reads). The actual `sessions` table uses
+   `machine_id` / `operator_name` / `sam_seconds`, and Supabase's insert
+   will error on any key that isn't a real column — so every write is
+   translated to the table's shape, and every read is translated back. */
+const SESSIONS_TABLE_COLUMNS = new Set([
+  'machine_id','operator_name','card_slot','work_date','in_unix','out_unix','bundles',
+  'work_seconds','pieces','target_pcs','sam_seconds','fault_count','event_id','operation',
+  'power_out_s','day_work_min','segment_work_min','segment_work_s','needle_s','handling_s',
+  'day_pieces','segment_pieces','segment_needle_s','segment_handling_s','segment_bursts',
+  'segment_faults','segment_earnings','segment_cycle_time_s','segment_efficiency',
+  'segment_sam_efficiency','target_balance','bundle_count','bundle_slot','bundle_design',
+  'bundle_pieces','fault_types','bursts','efficiency','sam_efficiency','rate','earnings',
+  'cycle_time_s','faults'
+]);
+
+function mapSessionToRow(data) {
+  // start from a shallow copy, rename the three mismatched fields, then
+  // drop anything that isn't an actual column (e.g. `target_source`,
+  // `machine`, `operator`, `sam_s`, or anything else the firmware sends
+  // that the table doesn't have — Supabase rejects unknown columns).
+  const src = { ...data };
+  src.machine_id    = src.machine_id    ?? src.machine;
+  src.operator_name = src.operator_name ?? src.operator;
+  src.sam_seconds   = src.sam_seconds   ?? src.sam_s;
+  if (!src.work_date && src.in_unix) {
+    src.work_date = new Date(src.in_unix * 1000).toISOString().slice(0, 10);
+  }
+  const row = {};
+  for (const key of SESSIONS_TABLE_COLUMNS) {
+    if (src[key] !== undefined) row[key] = src[key];
+  }
+  return row;
+}
+
+function mapRowToSession(row) {
+  // add back the aliases the render functions expect, alongside the
+  // original column names (harmless to keep both).
+  row.machine  = row.machine_id;
+  row.operator = row.operator_name;
+  row.sam_s    = row.sam_seconds;
+  if (typeof row.fault_types === 'string') {
+    try { row.fault_types = JSON.parse(row.fault_types); } catch {}
+  }
+  return row;
+}
+
+async function loadSessionsFromSupabase() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('sessions')
+      .select('*')
+      .order('in_unix', { ascending: true });
+    if (error) throw error;
+    if (Array.isArray(data)) {
+      sessionLog = data.map(mapRowToSession);
+      saveLog();
+    }
+  } catch (e) {
+    console.error('[Supabase] sessions load failed, using local cache:', e);
+    toast('⚠ Could not reach Supabase — showing cached data.');
+  }
+}
+
+async function loadFaultsFromSupabase() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('faults')
+      .select('*')
+      .order('id', { ascending: true });
+    if (error) throw error;
+    if (Array.isArray(data)) {
+      faultLog = data;
+      try { localStorage.setItem('stitch_faults_v2', JSON.stringify(faultLog)); } catch(e) {}
+      renderFaultTable();
+      renderFaultTotals();
+    }
+  } catch (e) {
+    console.error('[Supabase] faults load failed, using local cache:', e);
+  }
+}
+
+async function loadBundleScansFromSupabase() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('bundle_scans')
+      .select('*')
+      .order('id', { ascending: true });
+    if (error) throw error;
+    if (Array.isArray(data)) {
+      bundleScanLog = data;
+      try { localStorage.setItem('stitch_bundle_scans', JSON.stringify(bundleScanLog)); } catch(e) {}
+      renderBundleScanTable();
+    }
+  } catch (e) {
+    console.error('[Supabase] bundle_scans load failed, using local cache:', e);
+  }
+}
+
+/* ── Supabase: push new rows as they arrive over MQTT ──────── */
+async function insertSessionToSupabase(data) {
+  if (!(data.machine_id || data.machine)) {
+    console.error('[Supabase] session insert skipped — no machine id on payload:', data);
+    return;
+  }
+  try {
+    const { error } = await supabaseClient.from('sessions').insert([mapSessionToRow(data)]);
+    if (error) throw error;
+  } catch (e) {
+    console.error('[Supabase] session insert failed (kept locally only):', e);
+    toast('⚠ Session saved locally but failed to sync to Supabase.');
+  }
+}
+
+async function insertFaultToSupabase(row) {
+  try {
+    const { error } = await supabaseClient.from('faults').insert([row]);
+    if (error) throw error;
+  } catch (e) {
+    console.error('[Supabase] fault insert failed (kept locally only):', e);
+  }
+}
+
+async function insertBundleScanToSupabase(row) {
+  try {
+    const { error } = await supabaseClient.from('bundle_scans').insert([row]);
+    if (error) throw error;
+  } catch (e) {
+    console.error('[Supabase] bundle_scan insert failed (kept locally only):', e);
+  }
 }
 
 function loadCardNames() {
@@ -1617,6 +1780,7 @@ function handleLogout(machine, payloadStr) {
     data.machine = data.machine || machine;
     sessionLog.push(data);
     saveLog();
+    insertSessionToSupabase(data);
     toast(`✅ [${machine}] ${data.operator} logged out · ${segPieces(data)} pcs this session (day total ${dayPieces(data)}) · Rs ${Number(segEarnings(data)).toFixed(0)}`);
     statusByMachine[machine] = 'IDLE';
     delete liveByMachine[machine];
@@ -1634,9 +1798,10 @@ function handleFault(machine, payloadStr) {
       faultLog.forEach(x => {
         if (!x.resolved && x.machine === f.machine) { x.resolved = true; closedAny = true; }
       });
-      if (!closedAny) faultLog.push(f);
+      if (!closedAny) { faultLog.push(f); insertFaultToSupabase(f); }
     } else {
       faultLog.push(f);
+      insertFaultToSupabase(f);
     }
     try { localStorage.setItem('stitch_faults_v2', JSON.stringify(faultLog)); } catch {}
     renderFaultTable();
@@ -1653,6 +1818,7 @@ function handleBundleScanMsg(machine, payloadStr) {
     bundleScanLog.push(b);
     try { localStorage.setItem('stitch_bundle_scans', JSON.stringify(bundleScanLog)); } catch {}
     renderBundleScanTable();
+    insertBundleScanToSupabase(b);
     toast(`📦 [${machine}] Bundle ${b.design} (${b.pieces} pcs) loaded`);
   } catch(e) { console.error('bundle scan parse', e); }
 }
@@ -1764,7 +1930,8 @@ renderFaultGridLabels();
 renderMachineFilterOptions();
 renderMachineStrip();
 selectMachine(selectedMachine);
-loadLog();
+loadLog();            // instant paint from localStorage cache
+loadFromSupabase();   // then replace with real historical data from Supabase
 tickClock();
 setInterval(tickClock, 1000);
 initMQTT();

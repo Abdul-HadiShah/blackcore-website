@@ -1271,9 +1271,15 @@ function renderMonthly() {
   // "Best day" is still meaningfully a DAY TOTAL (highest cumulative pieces
   // in a single day), so this intentionally uses dayPieces, not segPieces.
   const bestDay = sessions > 0 ? Math.max(...thisMonth.map(r => dayPieces(r))) : 0;
-  const attendPct = WORKING_DAYS_PER_MONTH > 0 ?
-    ((sessions / WORKING_DAYS_PER_MONTH) * 100).toFixed(1) : 0;
- 
+  const presentDays = new Set(
+    thisMonth
+      .filter(r => r.in_unix)
+      .map(r => new Date(r.in_unix * 1000).toDateString())
+  ).size;
+  const attendPct = WORKING_DAYS_PER_MONTH > 0
+    ? ((presentDays / WORKING_DAYS_PER_MONTH) * 100).toFixed(1)
+    : 0;
+
   document.getElementById('mo-sessions').textContent   = sessions;
   document.getElementById('mo-attend').textContent     = `${attendPct}%`;
   document.getElementById('mo-work').textContent       = fmtMin(totWorkMin);

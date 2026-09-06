@@ -1,101 +1,1234 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الحلول | كورسينك من بلاك كور</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Noto+Sans+Arabic', sans-serif; background-color: #0a0a0a; color: #ffffff; }
-        .logo-img { height: 96px; width: auto; filter: brightness(0) invert(1); object-fit: contain; }
-        .accent-line { width: 50px; height: 2px; background-color: #3b82f6; }
-        .image-container img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; transition: opacity 0.3s ease; }
-        .image-container:hover img { opacity: 1; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPEX Analysis Dashboard - Hoechst Pakistan</title>
+
+<!-- Tailwind (styling only, no data) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { colors: { hoechst: {
+    blue:'#0085CA', dark:'#1E293B', gray:'#64748B', light:'#F8FAFC'
+  }}}}}
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<!-- Supabase JS client (safe to load publicly - the anon key is a public, RLS-restricted key, not a secret) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Chart.js for the histograms / pie / trend charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
 </head>
-<body>
+<body class="bg-hoechst-light font-sans text-hoechst-dark min-h-screen flex flex-col">
 
-    <nav class="flex items-center justify-between px-10 py-2 border-b border-white/10">
-        <div class="flex-shrink-0">
-            <a href="index_ar.html">
-                <img src="finallogo1.png" alt="BlackCore Logo" class="logo-img">
-            </a>
+<!-- ============================================================
+     AUTH SCREEN - shown until Supabase confirms a logged-in user.
+     There is intentionally NO public sign-up form here. You create
+     accounts yourself in Supabase (Authentication -> Users -> Add
+     user) and only those people can ever sign in. Row Level
+     Security on the database (see supabase_setup.sql) is what
+     actually protects the data - this screen is just the UI gate.
+     ============================================================ -->
+<div id="authScreen" class="flex-1 flex items-center justify-center px-4">
+  <div class="w-full max-w-sm bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+    <div class="flex flex-col items-center mb-6">
+      <div class="h-12 w-12 bg-blue-50 text-hoechst-blue rounded-full flex items-center justify-center text-xl mb-3 border border-blue-100">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <h1 class="text-lg font-bold text-hoechst-dark">OPEX Analysis Dashboard</h1>
+      <p class="text-xs text-hoechst-gray uppercase tracking-wide mt-1">Sign in to continue</p>
+    </div>
+
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Email</label>
+        <input id="emailInput" type="email" required autocomplete="username"
+          class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-hoechst-blue">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Password</label>
+        <input id="passwordInput" type="password" required autocomplete="current-password"
+          class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-hoechst-blue">
+      </div>
+      <div id="authError" class="hidden text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2"></div>
+      <button id="loginBtn" type="submit"
+        class="w-full py-2.5 bg-hoechst-blue text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
+        Sign In
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     MAIN APP - hidden until authenticated
+     ============================================================ -->
+<div id="appScreen" class="hidden flex-1 flex flex-col">
+
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div class="flex items-center space-x-6">
+        <div class="border-l-0 lg:border-l lg:border-slate-300 lg:pl-0">
+          <h1 class="text-xl font-bold text-hoechst-dark">OPEX Analysis Dashboard</h1>
+          <p class="text-xs text-hoechst-gray tracking-wide uppercase">FY2024 vs FY2023 Comparison</p>
         </div>
-        
-        <div class="hidden md:flex items-center space-x-8 space-x-reverse text-sm font-medium tracking-wide uppercase opacity-70">
-            <a href="index_ar.html" class="hover:opacity-100 transition">الرئيسية</a>
-            <a href="#" class="text-blue-500 opacity-100 transition">الحلول</a>
-            <a href="#" class="hover:opacity-100 transition">من نحن</a>
-            <a href="#" class="hover:opacity-100 transition">اتصل بنا</a>
+      </div>
+      <div class="flex items-center space-x-4">
+        <span id="userEmailLabel" class="hidden md:inline text-xs text-slate-500"></span>
+        <button id="signOutBtn" class="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition">
+          <i class="fa-solid fa-right-from-bracket mr-1"></i> Sign Out
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <div id="globalError" class="hidden mb-6 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3"></div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div>
+        <h2 class="text-lg font-bold text-slate-800">Cost Hierarchy Selection</h2>
+        <p class="text-sm text-slate-500 mt-1">
+          Filter by Department and/or Cost Center. Cost Elements are pulled live from Supabase for whatever
+          Department / Cost Center you've selected - there's no need to hardcode them.
+        </p>
+      </div>
+      <div class="flex items-center space-x-3">
+        <button id="selectAllBtn" class="px-3 py-1.5 text-xs font-medium text-hoechst-blue bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition">Select All</button>
+        <button id="clearAllBtn" class="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition">Clear Selection</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+
+      <!-- Selection panel -->
+      <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col h-[650px]">
+
+        <div class="flex items-center bg-slate-100 rounded-lg p-1 mb-3">
+          <button id="tabDeptBtn" class="tier-tab flex-1 text-xs font-semibold py-1.5 rounded-md transition bg-white text-hoechst-blue shadow-sm">Departments</button>
+          <button id="tabCcBtn" class="tier-tab flex-1 text-xs font-semibold py-1.5 rounded-md transition text-slate-500">Cost Centers</button>
+          <button id="tabCeBtn" class="tier-tab flex-1 text-xs font-semibold py-1.5 rounded-md transition text-slate-500">Cost Elements</button>
         </div>
 
-        <div class="flex items-center space-x-6 space-x-reverse">
-            <button class="px-6 py-2 border border-blue-500 text-blue-500 text-xs font-bold uppercase tracking-widest hover:bg-blue-500 hover:text-white transition">
-                طلب عرض توضيحي
-            </button>
-            
-            <div class="h-6 w-[1px] bg-white/20"></div>
-
-            <a href="solutions.html" class="flex items-center space-x-2 space-x-reverse hover:text-blue-400 transition text-sm font-bold opacity-80 hover:opacity-100">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
-                <span>EN</span>
-            </a>
+        <div class="flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
+          <span id="panelLabel" class="text-xs font-bold uppercase text-slate-400 tracking-wider">Departments</span>
+          <span id="selectedCount" class="text-xs font-bold text-hoechst-blue bg-blue-50 px-2 py-0.5 rounded-full">0 Selected</span>
         </div>
-    </nav>
 
-    <section class="px-10 py-20 max-w-7xl mx-auto">
-        <div class="flex flex-col md:flex-row items-center gap-16">
-            
-            <div class="md:w-1/2 text-right">
-                <div class="accent-line mb-6 mr-0 ml-auto"></div>
-                <h2 class="text-blue-500 text-sm font-bold uppercase tracking-widest mb-2">حلولنا الرائدة</h2>
-                <h1 class="text-5xl md:text-6xl font-black tracking-tight leading-tight mb-6">
-                    كورسينك: <br>ذكاء صناعي، مترابط بإحكام.
-                </h1>
-                <p class="text-xl opacity-70 leading-relaxed mb-8">
-                    كورسينك هو حل بلاك كور لمواجهة عدم الكفاءة الصناعية. منصة واحدة لرقمنة السجلات، وأتمتة الصيانة، وقيادة عملياتك بالكامل من واجهة تحكم موحدة.
-                </p>
-                
-                <ul class="space-y-4 mb-10">
-                    <li class="flex items-start space-x-3 space-x-reverse">
-                        <span class="text-blue-500 font-bold">//</span>
-                        <span class="opacity-80">رقمنة شاملة لسجلات الصيانة</span>
-                    </li>
-                    <li class="flex items-start space-x-3 space-x-reverse">
-                        <span class="text-blue-500 font-bold">//</span>
-                        <span class="opacity-80">توزيع المهام اليومية آلياً</span>
-                    </li>
-                    <li class="flex items-start space-x-3 space-x-reverse">
-                        <span class="text-blue-500 font-bold">//</span>
-                        <span class="opacity-80">تشفير بيانات بمعايير دفاعية</span>
-                    </li>
-                </ul>
+        <div class="relative mb-3">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+            <i class="fa-solid fa-search text-xs"></i>
+          </span>
+          <input type="text" id="listSearch" placeholder="Search department..."
+            class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-hoechst-blue focus:bg-white transition">
+        </div>
 
-                <button class="px-10 py-4 bg-blue-600 text-white font-black uppercase text-sm tracking-widest hover:bg-blue-700 transition">
-                    تشغيل كورسينك
-                </button>
+        <div id="ceHint" class="hidden text-xs text-slate-400 italic px-1 pb-2">
+          Select a Department and/or Cost Center first, then Cost Elements will load automatically from Supabase.
+        </div>
+        <div id="ceLoading" class="hidden text-xs text-hoechst-blue px-1 pb-2">
+          <i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading cost elements from Supabase...
+        </div>
+        <button id="refreshCeBtn" class="hidden mb-2 text-xs font-medium text-hoechst-blue bg-blue-50 border border-blue-200 rounded-lg py-1.5 hover:bg-blue-100 transition">
+          <i class="fa-solid fa-rotate mr-1"></i> Refresh Cost Elements
+        </button>
+
+        <div id="listContainer" class="overflow-y-auto flex-1 space-y-1.5 pr-1 text-sm"></div>
+      </div>
+
+      <!-- Right side: active filters + run button + results -->
+      <div class="lg:col-span-3 flex flex-col space-y-6">
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold uppercase text-slate-400 tracking-wider">Active Hierarchy Filter</h3>
+          </div>
+          <div id="activeSelectionDisplay" class="flex flex-wrap gap-2 mb-4">
+            <span class="text-sm text-slate-400 italic">No filters selected - leaving all tiers empty compares the whole company.</span>
+          </div>
+          <button id="runBtn" class="w-full md:w-auto px-5 py-2.5 bg-hoechst-blue text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
+            <i id="runSpinner" class="hidden fa-solid fa-spinner fa-spin mr-2"></i>
+            <span id="runBtnText">Run Comparison: FY2024 vs FY2023</span>
+          </button>
+        </div>
+
+        <!-- Results -->
+        <div id="resultsSection" class="hidden space-y-6">
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+              <p class="text-xs font-semibold text-slate-400 uppercase">FY2023 Total</p>
+              <p id="kpi2023" class="text-2xl font-bold text-slate-700 mt-1">-</p>
             </div>
-
-            <div class="md:w-1/2 relative">
-                <div class="absolute -top-4 -right-4 w-20 h-20 border-t-2 border-r-2 border-blue-500/30 z-20"></div>
-                <div class="absolute -bottom-4 -left-4 w-20 h-20 border-b-2 border-l-2 border-blue-500/30 z-20"></div>
-                
-                <div class="image-container relative w-full h-96 bg-zinc-900 border border-white/10 overflow-hidden shadow-2xl">
-                    <img src="arm1.png" alt="CoreSync Industrial System Dashboard">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+              <p class="text-xs font-semibold text-slate-400 uppercase">FY2024 Total</p>
+              <p id="kpi2024" class="text-2xl font-bold text-slate-700 mt-1">-</p>
             </div>
-        </div>
-    </section>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+              <p class="text-xs font-semibold text-slate-400 uppercase">Variance</p>
+              <p id="kpiVariance" class="text-2xl font-bold mt-1">-</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+              <p class="text-xs font-semibold text-slate-400 uppercase">% Change</p>
+              <p id="kpiPct" class="text-2xl font-bold mt-1">-</p>
+            </div>
+          </div>
 
-    <footer class="py-12 px-10 border-t border-white/10">
-        <div class="flex flex-col md:flex-row justify-between items-center opacity-40">
-            <img src="finallogo1.png" alt="BlackCore Logo" style="height: 50px;" class="filter brightness-0 invert">
-            <div class="text-[10px] uppercase tracking-widest">بلاك كور الصناعية // قسم الأنظمة</div>
-            <div class="text-[10px] mt-4 md:mt-0">© 2026 جميع الحقوق محفوظة.</div>
-        </div>
-    </footer>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-[420px]">
+              <canvas id="barChart"></canvas>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-[420px]">
+              <canvas id="pieChart"></canvas>
+            </div>
+          </div>
 
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-[360px]">
+            <canvas id="lineChart"></canvas>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h3 class="text-sm font-bold uppercase text-slate-400 tracking-wider mb-4">Top Movers (by Statutory Mapping)</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-left text-xs font-semibold text-slate-400 uppercase border-b border-slate-100">
+                    <th class="py-2 pr-4">Statutory Mapping</th>
+                    <th class="py-2 pr-4 text-right">FY2023</th>
+                    <th class="py-2 pr-4 text-right">FY2024</th>
+                    <th class="py-2 pr-4 text-right">Variance</th>
+                    <th class="py-2 text-right">% Change</th>
+                  </tr>
+                </thead>
+                <tbody id="moversTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+    &copy; 2026 Hoechst Pakistan. All rights reserved. OPEX Analysis Dashboard v2.0
+  </footer>
+</div>
+
+<script>
+/* ==================================================================
+   CONFIG - fill these in with your own project's values.
+   The anon key is meant to be public (it ships in every Supabase
+   web app); real protection comes from Row Level Security on the
+   tables, set up in supabase_setup.sql. Do NOT put a service_role
+   key here - that one must never appear in client-side code.
+   ================================================================== */
+const SUPABASE_URL = "https://irxyvtlzeespvfgtpeli.supabase.co/";
+const SUPABASE_ANON_KEY = "sb_publishable_xdIgxM3EbVY21JwfmHlhuw_Xg3aJWZ1";
+
+// These are the two views created by supabase_setup.sql, NOT the raw
+// tables - the views expose clean, space-free column names that are
+// safe to use in PostgREST filters (the raw columns like "Cost Elem."
+// contain spaces/periods that break query syntax).
+const VIEW_2023 = "opex_2023";
+const VIEW_2024 = "opex_2024";
+
+const PAGE_SIZE = 1000; // Supabase's per-request row cap; we page through this automatically
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ==================================================================
+   AUTH
+   ================================================================== */
+const authScreen = document.getElementById('authScreen');
+const appScreen = document.getElementById('appScreen');
+const loginForm = document.getElementById('loginForm');
+const authError = document.getElementById('authError');
+const loginBtn = document.getElementById('loginBtn');
+const userEmailLabel = document.getElementById('userEmailLabel');
+const signOutBtn = document.getElementById('signOutBtn');
+
+let dashboardInitialized = false;
+
+loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  authError.classList.add('hidden');
+  const email = document.getElementById('emailInput').value.trim();
+  const password = document.getElementById('passwordInput').value;
+
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Signing in...';
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  loginBtn.disabled = false;
+  loginBtn.textContent = 'Sign In';
+
+  if (error) {
+    authError.textContent = error.message;
+    authError.classList.remove('hidden');
+  }
+});
+
+signOutBtn.addEventListener('click', async () => {
+  await sb.auth.signOut();
+});
+
+sb.auth.onAuthStateChange((_event, session) => {
+  if (session) {
+    authScreen.classList.add('hidden');
+    appScreen.classList.remove('hidden');
+    userEmailLabel.textContent = session.user.email;
+    userEmailLabel.classList.remove('hidden');
+    if (!dashboardInitialized) {
+      dashboardInitialized = true;
+      initDashboard();
+    }
+  } else {
+    appScreen.classList.add('hidden');
+    authScreen.classList.remove('hidden');
+  }
+});
+
+// Restore an existing session on page load (e.g. refresh) without
+// forcing the user to log in again.
+sb.auth.getSession();
+
+/* ==================================================================
+   STATIC MASTER DATA - Departments and Cost Centers (426 unique,
+   extracted from your Cost_Ctr.txt / description.txt exports).
+   These rarely change, so they're kept as a fast local list rather
+   than a database round trip. Cost Elements are NOT hardcoded -
+   see fetchCostElements() below, which queries Supabase live.
+   ================================================================== */
+const departments = [
+  "Anti-Counterfeit","BU - Antibiotics","BU-Antibiotics & Cardio Care","BU-Cardio",
+  "BU-CHC Pharma","BU-CHC Wellness","BU-Diabetes","BU-Hospicare","BU-International Business",
+  "BU-Vaccines, Speciality Care & RD","Business Development","Business Excellence",
+  "Business Excellence - Sales Training","Commercial HSE","Communications","Compliance",
+  "Country Quality","Digital","Factory","Finance","Finance Cost","Human Resource",
+  "Internal Audit","Legal","Management","Medical","Other Expenses","Other Income",
+  "Pharmacovigilance","Procurement","Regulatory","Security","Site Facility Management",
+  "Supply Chain","Tender Team","Trade Pharmacy & Tender Team","Trade Pharmacy Team","Treasury"
+];
+
+const costCenters = [
+    { code: "11201", name: "Haemaccel Production Management" },
+    { code: "11221", name: "Haemaccel Production" },
+    { code: "11222", name: "Haemaccel Packing" },
+    { code: "11231", name: "Haemaccel Building" },
+    { code: "11241", name: "Labour Wages Haemaccel Production" },
+    { code: "11242", name: "Labour Wages Haemaccel Filling/Packing" },
+    { code: "11251", name: "PRC - Haemaccel Raw/Aux" },
+    { code: "11252", name: "PRC - Haemaccel Filling/packing" },
+    { code: "11401", name: "Manufacturing Management" },
+    { code: "11404", name: "Claforan Management" },
+    { code: "11410", name: "Tablet Coating" },
+    { code: "11411", name: "Tablet Fette 3000" },
+    { code: "11412", name: "Tablet Fette 2000" },
+    { code: "11413", name: "Tablet Betapress" },
+    { code: "11414", name: "Tablet UPS3 Packing" },
+    { code: "11415", name: "Tablet UPS1 & 1.1" },
+    { code: "11416", name: "Tablets HSIV" },
+    { code: "11417", name: "Tablets Remle" },
+    { code: "11418", name: "BB3B Tablet compression Machine" },
+    { code: "11419", name: "Tein Tuan Blistering Machineine" },
+    { code: "11421", name: "Injections Prod/Fill/Packing" },
+    { code: "11422", name: "Injections Packing" },
+    { code: "11423", name: "Flagyl IV" },
+    { code: "11424", name: "Flagyl IV  Fill/Pack" },
+    { code: "11425", name: "Claforan Production" },
+    { code: "11426", name: "Claforan Fill/Pack" },
+    { code: "11427", name: "Rabs for Aseptic Products" },
+    { code: "11441", name: "Pharma Building" },
+    { code: "11442", name: "Claforan Building" },
+    { code: "11451", name: "Labour Wages Manufacturing" },
+    { code: "11452", name: "Labour Wages Manuf. Filling/Packing" },
+    { code: "11454", name: "Labour Wag Claforan Pack" },
+    { code: "11461", name: "PRC - Manufacturing Raw/Aux" },
+    { code: "11462", name: "PRC - Manuf. Filling/Packing Solution" },
+    { code: "11463", name: "PRC - Manuf. Filling/Packing Solids" },
+    { code: "11464", name: "PRC - Claforan Prod" },
+    { code: "11465", name: "PRC - Claforan Pack" },
+    { code: "11466", name: "Powder filling & packing" },
+    { code: "11467", name: "Capsule filling" },
+    { code: "11471", name: "Quality Operations" },
+    { code: "11472", name: "Industrial Regulatory Compliance" },
+    { code: "11501", name: "Liquid Management" },
+    { code: "11511", name: "Liquid Building" },
+    { code: "11521", name: "Liquid Production (Labor)" },
+    { code: "11522", name: "Liquid Production (Machine)" },
+    { code: "11531", name: "Liquid Filling / Packing (Labor)" },
+    { code: "11532", name: "Liquid Filling / Packing (Machine)" },
+    { code: "11541", name: "PRCÃ‚Â  Liquid Production" },
+    { code: "11542", name: "PRCÃ‚Â  liquid Filling / Packing" },
+    { code: "21000", name: "Medical Marketing" },
+    { code: "21001", name: "Medical Marketing CHC" },
+    { code: "21004", name: "Medical Marketing - PKV01" },
+    { code: "21005", name: "Medical Marketing - PKF04" },
+    { code: "21206", name: "Medical Mgr Vaccine" },
+    { code: "21207", name: "Medical Science Liaison - Vaccine" },
+    { code: "21208", name: "Medical Science Liaison-Gem" },
+    { code: "21400", name: "Drug Information System" },
+    { code: "21401", name: "Drug Information System - PKV01" },
+    { code: "21402", name: "Drug Information System - CHC" },
+    { code: "21403", name: "Drug Information System - PKF04" },
+    { code: "21997", name: "Medical Genzyme SPC" },
+    { code: "22100", name: "Drug Regulatory Affair" },
+    { code: "22101", name: "Center of Expertise" },
+    { code: "36001", name: "Finished Goods Warehouse - Karachi" },
+    { code: "41101", name: "Water" },
+    { code: "41102", name: "Steam" },
+    { code: "41103", name: "Gas" },
+    { code: "41104", name: "Compressed Air" },
+    { code: "41105", name: "Electricity" },
+    { code: "41106", name: "Air Conditioning plant" },
+    { code: "41107", name: "Solar System Shams Power" },
+    { code: "41301", name: "Technical Management" },
+    { code: "41303", name: "IO Controlling" },
+    { code: "41306", name: "IO Services" },
+    { code: "41308", name: "Lean" },
+    { code: "41309", name: "Recreation Club" },
+    { code: "41402", name: "Bio-Reactor" },
+    { code: "41501", name: "Engineering Management" },
+    { code: "41502", name: "Factory Common faclity" },
+    { code: "41504", name: "Safety" },
+    { code: "42101", name: "Pharma/Engineering Store" },
+    { code: "42102", name: "Procurement" },
+    { code: "42103", name: "Material Planning" },
+    { code: "42104", name: "Purchase to pay" },
+    { code: "42105", name: "Procurement COGS & CAPEX" },
+    { code: "50000", name: "National Sales Manager GLP" },
+    { code: "50001", name: "Marketing Manager GLP" },
+    { code: "50002", name: "Regional Sales Manager North GLP" },
+    { code: "50003", name: "Area Sales Executive North GLP" },
+    { code: "50004", name: "Regional Sales Manager South GLP" },
+    { code: "50005", name: "Area Sales Executive South GLP" },
+    { code: "50006", name: "Regional Sales Manager Central GLP" },
+    { code: "50007", name: "Area Sales Executive Central GLP" },
+    { code: "50008", name: "Diabetes Educator" },
+    { code: "50009", name: "Diabetes Educator North DM" },
+    { code: "50010", name: "Diabetes Educator North PA" },
+    { code: "50011", name: "Diabetes Educator South DM" },
+    { code: "50012", name: "Diabetes Educator South PA" },
+    { code: "50013", name: "Diabetes Educator East DM" },
+    { code: "50014", name: "Diabetes Educator East PA" },
+    { code: "50015", name: "Diabetes Educator West DM" },
+    { code: "50017", name: "Diabetes Oral & Insulin NSM" },
+    { code: "50018", name: "Diabetes Oral & Insulin North RSM" },
+    { code: "50019", name: "Diabetes Oral & Insulin North DM" },
+    { code: "50020", name: "Diabetes Oral & Insulin North PA" },
+    { code: "50021", name: "Diabetes Oral & Insulin South RSM" },
+    { code: "50022", name: "Diabetes Oral & Insulin South DM" },
+    { code: "50023", name: "Diabetes Oral & Insulin South PA" },
+    { code: "50025", name: "Diabetes Oral & Insulin Central DM" },
+    { code: "50026", name: "Diabetes Oral & Insulin Central PA" },
+    { code: "50027", name: "Diabetes Business Unit Head" },
+    { code: "50028", name: "Diabetes Oral & Insulin Business Manager" },
+    { code: "50029", name: "Diabetes Oral Brand Manager" },
+    { code: "50030", name: "Diabetes Insulin Brand Manager" },
+    { code: "50031", name: "Diabetes Insulin Assist. Brand Manager" },
+    { code: "50032", name: "Diabetes Insulin Asist Brand Manager FRC" },
+    { code: "50033", name: "Commercial Director" },
+    { code: "50034", name: "Antibiotics NSM" },
+    { code: "50035", name: "Antibiotics South DM" },
+    { code: "50036", name: "Antibiotics South PA" },
+    { code: "50037", name: "Antibiotics North RSM" },
+    { code: "50038", name: "Antibiotics North DM" },
+    { code: "50039", name: "Antibiotics North PA" },
+    { code: "50040", name: "Antibiotics Marketing Manager" },
+    { code: "50041", name: "Antibiotics Brand Manager Aventriax / Mu" },
+    { code: "50042", name: "Antibiotics Brand Manager Clafron / Flag" },
+    { code: "50044", name: "Cardio NSM" },
+    { code: "50045", name: "Cardio South RSM" },
+    { code: "50046", name: "Cardio South DM" },
+    { code: "50047", name: "Cardio South PA" },
+    { code: "50048", name: "Cardio North DM" },
+    { code: "50049", name: "Cardio North PA" },
+    { code: "50050", name: "Cardio Business Manager" },
+    { code: "50051", name: "Cardio Marketing Manager" },
+    { code: "50052", name: "Cardio Brand Manager Lasoride / Approvel" },
+    { code: "50053", name: "Cardio Brand Manager Plavix" },
+    { code: "50054", name: "Cardio Assist Brand Manager Clexane" },
+    { code: "50056", name: "CHC Pharma Business Unit Head" },
+    { code: "50057", name: "CHC Pharma Central RSM" },
+    { code: "50058", name: "CHC Pharma Central DM" },
+    { code: "50059", name: "CHC Pharma Central PA" },
+    { code: "50060", name: "CHC Pharma South SM" },
+    { code: "50061", name: "CHC Pharma South DM" },
+    { code: "50062", name: "CHC Pharma South PA" },
+    { code: "50063", name: "CHC Pharma North SM" },
+    { code: "50064", name: "CHC Pharma North DM" },
+    { code: "50065", name: "CHC Pharma North PA" },
+    { code: "50066", name: "CHC Pharma Marketing Manager" },
+    { code: "50067", name: "CHC Pharma Brand Manager Entero/Depura" },
+    { code: "50068", name: "CHC Pharma Brand Manager Telfast/Phenerg" },
+    { code: "50069", name: "CHC Pharma Brand Manager NoSpa/Selsun" },
+    { code: "50070", name: "CHC Wellness Business Unit Head" },
+    { code: "50071", name: "CHC Wellness Central DM" },
+    { code: "50072", name: "CHC Wellness Central PA" },
+    { code: "50073", name: "CHC Wellness North DM" },
+    { code: "50074", name: "CHC Wellness North PA" },
+    { code: "50075", name: "CHC Wellness South DM" },
+    { code: "50076", name: "CHC Wellness South PA" },
+    { code: "50077", name: "CHC Wellness A.B.M" },
+    { code: "50078", name: "CHC Wellness T.C.M" },
+    { code: "50079", name: "Hospicare Business Unit Head" },
+    { code: "50080", name: "Hospicare NSM" },
+    { code: "50081", name: "Hospicare South DM" },
+    { code: "50082", name: "Hospicare South PA" },
+    { code: "50083", name: "Hospicare Central DM" },
+    { code: "50084", name: "Hospicare Central PA" },
+    { code: "50085", name: "Hospicare M.M" },
+    { code: "50086", name: "Hospicare Brand Manager Clexane" },
+    { code: "50087", name: "Hospicare Brand Manager Haemaccel" },
+    { code: "50088", name: "Hospicare Assist. Brand Manager Flagyl" },
+    { code: "50089", name: "Trade Pharmacy & Tender Team BUH" },
+    { code: "50090", name: "Trade Pharmacy NSM" },
+    { code: "50091", name: "Trade Pharmacy Area Manager" },
+    { code: "50092", name: "Trade Pharmacy Reps" },
+    { code: "50093", name: "Trade Pharmacy M.M" },
+    { code: "50094", name: "Trade Pharmacy S.M Trade Excellence" },
+    { code: "50095", name: "Trade Pharmacy Analyst" },
+    { code: "50096", name: "Institution Business Lead" },
+    { code: "50097", name: "Key Account Manager" },
+    { code: "50098", name: "Tender Support" },
+    { code: "50099", name: "Claim Management / Order Management" },
+    { code: "50100", name: "International Market Business Unit Head" },
+    { code: "50105", name: "Export Manager Afghanistan" },
+    { code: "50107", name: "Int'l Mkt Marketing Manager" },
+    { code: "50109", name: "Business Manager Vaccines" },
+    { code: "50110", name: "Assit. Brand Manager" },
+    { code: "50111", name: "CHC Pharma South RSM" },
+    { code: "50112", name: "Trade Pharmacy RSM" },
+    { code: "50113", name: "Hospicare Central RSM" },
+    { code: "50115", name: "World Class Manufacturing" },
+    { code: "50118", name: "CHC Pharma External IPA" },
+    { code: "61201", name: "Civil/Central Workshop" },
+    { code: "61202", name: "Pharma Workshop" },
+    { code: "61203", name: "Haemaccel Workshop" },
+    { code: "61204", name: "Claforan Workshop" },
+    { code: "61205", name: "Liquid Workshop" },
+    { code: "70000", name: "Management" },
+    { code: "70008", name: "Management-CHC" },
+    { code: "70009", name: "Management - PKF04" },
+    { code: "70010", name: "Management - PKV01" },
+    { code: "73700", name: "BUH Hospicare" },
+    { code: "73701", name: "Sales Manager Hospicare" },
+    { code: "73702", name: "Reps/DM North Hospital Team" },
+    { code: "73703", name: "Reps/DM South Hospital Team" },
+    { code: "73704", name: "MSL Hospital Team" },
+    { code: "74000", name: "BU Director - Diabetes Care" },
+    { code: "74120", name: "Brand Category Manager" },
+    { code: "74341", name: "Brand Manager Plavix & Aproval" },
+    { code: "74342", name: "Brand Manager Claforan & Aventriax" },
+    { code: "74343", name: "Brand Manager Muscoril & Targocid" },
+    { code: "74344", name: "Marketing Manager CV & EP" },
+    { code: "74400", name: "PM Amaryl/Neodipar" },
+    { code: "74440", name: "Diabetes Communication" },
+    { code: "74450", name: "Assistant Brand Manager Toujeo" },
+    { code: "74461", name: "Marketing Manager Diabetes" },
+    { code: "74520", name: "Business Development" },
+    { code: "74521", name: "Business Development-CHC" },
+    { code: "74524", name: "Business Development - PKF04" },
+    { code: "74525", name: "Business Development - PKV01" },
+    { code: "75000", name: "Director Sales -Core Business" },
+    { code: "75011", name: "CHC Team South DM" },
+    { code: "75012", name: "CHC Team North DM" },
+    { code: "75020", name: "SM Gastro & Pain Resp & Allergy South" },
+    { code: "75021", name: "CHC team - South" },
+    { code: "75030", name: "SM Gastro & Pain Resp & Allergy North" },
+    { code: "75031", name: "CHC team - North" },
+    { code: "75061", name: "Tigers - South" },
+    { code: "75063", name: "Tigers Central PA" },
+    { code: "75069", name: "Tigers North DM" },
+    { code: "75076", name: "Jaguar - South" },
+    { code: "75080", name: "Sales Manager Hawks & Falcons North" },
+    { code: "75085", name: "Tigers South DM" },
+    { code: "75086", name: "Tigers Central DM" },
+    { code: "75087", name: "LeoDMrds North DM" },
+    { code: "75088", name: "LeoDMrds South DM" },
+    { code: "75096", name: "Diabetes Central SM" },
+    { code: "75097", name: "MCE PA" },
+    { code: "75098", name: "MCE DM" },
+    { code: "75100", name: "BU Head - Antibiotics & Speciality Care" },
+    { code: "75103", name: "Trade Team TRM PA" },
+    { code: "75104", name: "Trade Team TRM DM" },
+    { code: "75105", name: "Leopards North PA" },
+    { code: "75106", name: "Leopards South PA" },
+    { code: "75107", name: "CV & EP North SM" },
+    { code: "75108", name: "CV & EP South SM" },
+    { code: "75116", name: "Falcons - North" },
+    { code: "75135", name: "Diabetes South SM" },
+    { code: "75136", name: "MCE Content Manager" },
+    { code: "75137", name: "MCE Lead" },
+    { code: "75144", name: "Sales Manager Trade" },
+    { code: "75602", name: "Brand Manager CHC" },
+    { code: "75900", name: "Key Accounts Manager - South" },
+    { code: "75901", name: "Key Accounts Manager - North" },
+    { code: "75902", name: "Trade & Revenue" },
+    { code: "75903", name: "Key Account Managers-South-CHC" },
+    { code: "75904", name: "Key Account Managers -North-CHC" },
+    { code: "75906", name: "Trade & Revenue - AFO01" },
+    { code: "75907", name: "Trade & Revenue - AFF02" },
+    { code: "75908", name: "Trade & Revenue - PKV01" },
+    { code: "75911", name: "Trade & Revenue - CHC" },
+    { code: "75912", name: "Key Accounts Manager - South - PKV01" },
+    { code: "75913", name: "Key Accounts Manager - North - PKV01" },
+    { code: "76001", name: "Sales Office Karachi" },
+    { code: "76002", name: "Sales Office Hyderabad" },
+    { code: "76003", name: "Sales Office Sukkur" },
+    { code: "76005", name: "Sales Office Multan" },
+    { code: "76006", name: "Sales Office Lahore" },
+    { code: "76007", name: "Sales Office Gujranwala" },
+    { code: "76008", name: "Sales Office Sargodha" },
+    { code: "76009", name: "Sales Office Faisalabad" },
+    { code: "76010", name: "Sales Office Rawalpindi" },
+    { code: "76011", name: "Sales Office Peshawar" },
+    { code: "76012", name: "Sales Office Quetta" },
+    { code: "76014", name: "Sales Office Gujrat" },
+    { code: "76033", name: "Sales Office Bannu - CHC" },
+    { code: "77007", name: "BU Head CHC" },
+    { code: "77011", name: "PM Selsun,Collafles,Ecod,Seacod" },
+    { code: "77016", name: "Tigers North PA" },
+    { code: "77017", name: "Tigers South PA" },
+    { code: "77018", name: "Business Manger CHC" },
+    { code: "77019", name: "MCE Content Manager - CHC" },
+    { code: "77020", name: "Business Manager CHC Wellness" },
+    { code: "77297", name: "Ex Mngr Trade mrkt CHC" },
+    { code: "77777", name: "Commission - PKE01" },
+    { code: "77778", name: "Commission - PKO01" },
+    { code: "77780", name: "Commission - PKG01" },
+    { code: "77781", name: "Commission - PKE02" },
+    { code: "77782", name: "Commission - PKE06" },
+    { code: "77783", name: "Commission - PKE09" },
+    { code: "77784", name: "Commission - PKV01" },
+    { code: "77902", name: "SM North Respiratory & Family Care" },
+    { code: "77907", name: "SPM No Spa, Esomeprazole" },
+    { code: "77929", name: "CHC Trade Field Force" },
+    { code: "77931", name: "Management Trainee Officer Cardio" },
+    { code: "77932", name: "Scientific Product Manager" },
+    { code: "77933", name: "Falcons North PA" },
+    { code: "77934", name: "Falcons South PA" },
+    { code: "77935", name: "Falcons Central PA" },
+    { code: "77936", name: "Hawks North PA" },
+    { code: "77937", name: "Hawks South PA" },
+    { code: "77938", name: "Hawks Central PA" },
+    { code: "77940", name: "Falcons North DM" },
+    { code: "77941", name: "Falcons South DM" },
+    { code: "77942", name: "Falcons Central DM" },
+    { code: "77943", name: "Hawks North DM" },
+    { code: "77944", name: "Hawks South DM" },
+    { code: "77945", name: "Hawks Central DM" },
+    { code: "77946", name: "Soliqua team costs" },
+    { code: "78000", name: "Supply Chain Com. Operation" },
+    { code: "78001", name: "Supply Chain Vaccine" },
+    { code: "78002", name: "Supply Chain Afghanistan" },
+    { code: "78600", name: "Afghanistan Business Sales" },
+    { code: "78901", name: "BU Head & Controlling - Pasteur" },
+    { code: "78904", name: "Sls Team Vaccine Business" },
+    { code: "79000", name: "Marketing Effectiveness" },
+    { code: "79001", name: "Marketing Effectiveness-CHC" },
+    { code: "79002", name: "Marketing Effectiveness - PKF04" },
+    { code: "79003", name: "Marketing Effectiveness - PKV01" },
+    { code: "79300", name: "Sales Training" },
+    { code: "79301", name: "Sales Training-CHC" },
+    { code: "79302", name: "Sales Training-PKF04" },
+    { code: "79303", name: "Sales Training-PKV01" },
+    { code: "79400", name: "Market Research" },
+    { code: "79401", name: "Market Research-CHC" },
+    { code: "79402", name: "Market Research-PKF04" },
+    { code: "79403", name: "Market Research-PKV01" },
+    { code: "79500", name: "Mkt & Sales Services" },
+    { code: "79501", name: "Mkt & Sales Services-CHC" },
+    { code: "79502", name: "Mkt & Sales Services-PKF04" },
+    { code: "79503", name: "Mkt & Sales Services-PKV01" },
+    { code: "79600", name: "ETMS  Support" },
+    { code: "79601", name: "ETMS  Support-CHC" },
+    { code: "79602", name: "ETMS  Support-PKF04" },
+    { code: "79603", name: "ETMS  Support-PKV01" },
+    { code: "82000", name: "Advertising Enterogermina" },
+    { code: "82101", name: "Advertising Amaryl" },
+    { code: "82105", name: "Advertising Clexane 60 & 80" },
+    { code: "82106", name: "Advertising Essentiale" },
+    { code: "82109", name: "Advertising Haemaccel" },
+    { code: "82111", name: "Advertising Lasix/Lasoride" },
+    { code: "82116", name: "Advertising Phenergan" },
+    { code: "82118", name: "Advertising Stemetil" },
+    { code: "82119", name: "Advertising Tavanic" },
+    { code: "82122", name: "Advertising Claforan" },
+    { code: "82125", name: "Advertising Lantus Hoe 901" },
+    { code: "82126", name: "Advertising Nasacort" },
+    { code: "82130", name: "Advertising Secnidal" },
+    { code: "82132", name: "Advertising Tarivid" },
+    { code: "82133", name: "Advertising Telfast" },
+    { code: "82134", name: "Advertising Aprovel" },
+    { code: "82136", name: "Advertising CORDARONE" },
+    { code: "82138", name: "Advertising MUSCORIL" },
+    { code: "82139", name: "Advertising NoSpa" },
+    { code: "82140", name: "Advertising PLAVIX" },
+    { code: "82142", name: "Advertising Xatral SR" },
+    { code: "82143", name: "Advertising Apidra" },
+    { code: "82148", name: "Advertising Selsun" },
+    { code: "82156", name: "Advertising Toujeo" },
+    { code: "82162", name: "Advertising Muscoril" },
+    { code: "82169", name: "Advertising Flagyl IV" },
+    { code: "82179", name: "Advertising Depura" },
+    { code: "82180", name: "Advertising Empa" },
+    { code: "82181", name: "Advertising Semagrix" },
+    { code: "82190", name: "Advertising Aventriax" },
+    { code: "82210", name: "Advertising Flagyl PLUS" },
+    { code: "82406", name: "Advertising Renvela" },
+    { code: "82781", name: "Advertising Soliqua" },
+    { code: "83105", name: "Advertising Clexane 20 & 40" },
+    { code: "86008", name: "Advertisement Vaxigrip" },
+    { code: "86020", name: "Advertisement Hexaxim" },
+    { code: "86021", name: "Advertisement Typhim" },
+    { code: "90998", name: "Statutory Charges" },
+    { code: "90999", name: "Other Expenses" },
+    { code: "91100", name: "Country Management" },
+    { code: "92000", name: "Country Finance" },
+    { code: "92008", name: "Interest Income" },
+    { code: "92200", name: "Accounts" },
+    { code: "92400", name: "Information Solutions - Application Cost" },
+    { code: "92402", name: "ITD Infrastructure C" },
+    { code: "92500", name: "Legal" },
+    { code: "92501", name: "Canteen" },
+    { code: "92502", name: "Security" },
+    { code: "92503", name: "General Services" },
+    { code: "92504", name: "Admin Building" },
+    { code: "92505", name: "Transport" },
+    { code: "92511", name: "Anti-Counterfeit Department" },
+    { code: "92512", name: "Regional Legal" },
+    { code: "92513", name: "Commercial HSE" },
+    { code: "92514", name: "Pharmacovigilance" },
+    { code: "92515", name: "Facility Management -Rent (Branches)" },
+    { code: "92518", name: "Anti-Counterfeit Department - PKF04" },
+    { code: "92519", name: "Anti-Counterfeit Department - CHC" },
+    { code: "92520", name: "Site Facility Management" },
+    { code: "92521", name: "Anti-Counterfeit Department - PKV01" },
+    { code: "92522", name: "Bank Charges" },
+    { code: "92523", name: "Security GenMed" },
+    { code: "92531", name: "Office Building - 2" },
+    { code: "92533", name: "Production Building" },
+    { code: "92534", name: "Inflammable Store" },
+    { code: "92535", name: "Finished Goods Warehouse - 12" },
+    { code: "92536", name: "Finished Goods Warehouse - 11" },
+    { code: "92540", name: "Utility Costs (Buildings)" },
+    { code: "92542", name: "Rent Income - Real Estate" },
+    { code: "92700", name: "Internal Audit" },
+    { code: "92701", name: "Country Quality" },
+    { code: "92800", name: "Gen & Prd Lblty / CT Insurance Prgm" },
+    { code: "92901", name: "Pension Interest Cost" },
+    { code: "92902", name: "Tndr BG Chgs/Othr Tndr rltd bank chgs" },
+    { code: "92903", name: "Other Misc Bank Chgs/ FED" },
+    { code: "93000", name: "Human Resourse Division" },
+    { code: "93001", name: "Compensation & Benefits" },
+    { code: "93005", name: "Sanofi Business Services - EE" },
+    { code: "93100", name: "Industrial Relation I/O" },
+    { code: "93111", name: "Compliance" },
+    { code: "93200", name: "Medical Centre" },
+    { code: "93300", name: "HRS Captive Kuala Lumpur" },
+    { code: "94000", name: "Corporate Communication  Management" },
+    { code: "94002", name: "Corporate Communication  Managemnt PKF04" },
+    { code: "94003", name: "Corporate Communication  Management CHC" },
+    { code: "94004", name: "Corporate Communication  Managemnt PKV01" },
+    { code: "95000", name: "Public Affairs Officer" },
+    { code: "95002", name: "Public Affairs Officer - PKF04" },
+    { code: "95003", name: "Public Affairs Officer - PKV01" },
+    { code: "97000", name: "Day Care Center" },
+    { code: "999004", name: "Unrealised Fx Gain / Loss" },
+    { code: "999006", name: "Other Income" }
+];
+
+/* ==================================================================
+   SELECTION STATE
+   ================================================================== */
+let selectedDepts = new Set();
+let selectedCostCenters = new Set();   // stores cost center "code" strings, e.g. "82116"
+let selectedCostElements = new Set();  // stores cost element "code" strings, dynamic
+let costElements = [];                 // [{code, name}] loaded live from Supabase
+let ceStale = true;                    // true = cost element list needs refetching
+
+let activeTab = 'dept'; // 'dept' | 'cc' | 'ce'
+
+const listContainer = document.getElementById('listContainer');
+const selectedCountEl = document.getElementById('selectedCount');
+const panelLabel = document.getElementById('panelLabel');
+const activeSelectionDisplay = document.getElementById('activeSelectionDisplay');
+const listSearch = document.getElementById('listSearch');
+const selectAllBtn = document.getElementById('selectAllBtn');
+const clearAllBtn = document.getElementById('clearAllBtn');
+const tabDeptBtn = document.getElementById('tabDeptBtn');
+const tabCcBtn = document.getElementById('tabCcBtn');
+const tabCeBtn = document.getElementById('tabCeBtn');
+const ceHint = document.getElementById('ceHint');
+const ceLoading = document.getElementById('ceLoading');
+const refreshCeBtn = document.getElementById('refreshCeBtn');
+const globalError = document.getElementById('globalError');
+
+function ccLabel(item) { return `${item.code} - ${item.name}`; }
+function ceLabel(item) { return `${item.code} - ${item.name}`; }
+
+function currentDataset() {
+  if (activeTab === 'dept') {
+    return { items: departments, getKey: d => d, getLabel: d => d, selectedSet: selectedDepts, placeholder: 'Search department...' };
+  }
+  if (activeTab === 'cc') {
+    return { items: costCenters, getKey: c => c.code, getLabel: ccLabel, selectedSet: selectedCostCenters, placeholder: 'Search cost center (code or name)...' };
+  }
+  return { items: costElements, getKey: c => c.code, getLabel: ceLabel, selectedSet: selectedCostElements, placeholder: 'Search cost element (code or name)...' };
+}
+
+function renderList(filter = "") {
+  const { items, getKey, getLabel, selectedSet } = currentDataset();
+  listContainer.innerHTML = "";
+
+  if (activeTab === 'ce' && items.length === 0) {
+    return; // hint/loading text above the list already explains why
+  }
+
+  const f = filter.toLowerCase();
+  const filtered = items.filter(item => getLabel(item).toLowerCase().includes(f));
+
+  if (filtered.length === 0) {
+    listContainer.innerHTML = `<div class="text-xs text-slate-400 text-center py-4">No results found</div>`;
+    return;
+  }
+
+  filtered.forEach(item => {
+    const key = getKey(item);
+    const label = document.createElement('label');
+    label.className = "flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer transition select-none";
+
+    const checkbox = document.createElement('input');
+    checkbox.type = "checkbox";
+    checkbox.value = key;
+    checkbox.className = "w-4 h-4 text-hoechst-blue border-slate-300 rounded focus:ring-hoechst-blue";
+    if (selectedSet.has(key)) checkbox.checked = true;
+
+    checkbox.addEventListener('change', (e) => {
+      if (e.target.checked) selectedSet.add(key); else selectedSet.delete(key);
+      if (activeTab === 'dept' || activeTab === 'cc') ceStale = true;
+      updateUI();
+    });
+
+    const span = document.createElement('span');
+    span.className = "text-xs font-medium text-slate-700";
+    span.textContent = getLabel(item);
+
+    label.appendChild(checkbox);
+    label.appendChild(span);
+    listContainer.appendChild(label);
+  });
+}
+
+function updateUI() {
+  const { selectedSet } = currentDataset();
+  selectedCountEl.textContent = `${selectedSet.size} Selected`;
+
+  const total = selectedDepts.size + selectedCostCenters.size + selectedCostElements.size;
+  if (total === 0) {
+    activeSelectionDisplay.innerHTML = `<span class="text-sm text-slate-400 italic">No filters selected - leaving all tiers empty compares the whole company.</span>`;
+    return;
+  }
+
+  activeSelectionDisplay.innerHTML = "";
+
+  const addChip = (text, colorClasses, onRemove) => {
+    const tag = document.createElement('span');
+    tag.className = `inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${colorClasses}`;
+    const btn = document.createElement('button');
+    btn.className = "ml-2 hover:opacity-70 focus:outline-none";
+    btn.innerHTML = "&times;";
+    btn.addEventListener('click', onRemove);
+    tag.textContent = text;
+    tag.appendChild(btn);
+    activeSelectionDisplay.appendChild(tag);
+  };
+
+  selectedDepts.forEach(d => addChip(`Dept: ${d}`, "bg-blue-50 text-hoechst-blue border-blue-200", () => {
+    selectedDepts.delete(d); ceStale = true;
+    if (activeTab === 'dept') renderList(listSearch.value);
+    updateUI();
+  }));
+
+  selectedCostCenters.forEach(code => {
+    const item = costCenters.find(c => c.code === code);
+    addChip(`Cost Ctr: ${item ? ccLabel(item) : code}`, "bg-emerald-50 text-emerald-700 border-emerald-200", () => {
+      selectedCostCenters.delete(code); ceStale = true;
+      if (activeTab === 'cc') renderList(listSearch.value);
+      updateUI();
+    });
+  });
+
+  selectedCostElements.forEach(code => {
+    const item = costElements.find(c => c.code === code);
+    addChip(`Cost Elem: ${item ? ceLabel(item) : code}`, "bg-amber-50 text-amber-700 border-amber-200", () => {
+      selectedCostElements.delete(code);
+      if (activeTab === 'ce') renderList(listSearch.value);
+      updateUI();
+    });
+  });
+}
+
+function setActiveTab(tab) {
+  activeTab = tab;
+  const map = { dept: tabDeptBtn, cc: tabCcBtn, ce: tabCeBtn };
+  Object.entries(map).forEach(([key, btn]) => {
+    btn.className = `tier-tab flex-1 text-xs font-semibold py-1.5 rounded-md transition ${key === tab ? 'bg-white text-hoechst-blue shadow-sm' : 'text-slate-500'}`;
+  });
+
+  panelLabel.textContent = tab === 'dept' ? 'Departments' : tab === 'cc' ? 'Cost Centers' : 'Cost Elements';
+  listSearch.value = "";
+  listSearch.placeholder = currentDataset().placeholder;
+
+  refreshCeBtn.classList.toggle('hidden', tab !== 'ce');
+
+  if (tab === 'ce') {
+    if (selectedDepts.size === 0 && selectedCostCenters.size === 0) {
+      ceHint.classList.remove('hidden');
+      ceLoading.classList.add('hidden');
+      costElements = [];
+      renderList();
+    } else if (ceStale) {
+      fetchCostElements();
+    } else {
+      ceHint.classList.add('hidden');
+      renderList();
+    }
+  } else {
+    ceHint.classList.add('hidden');
+    ceLoading.classList.add('hidden');
+    renderList();
+  }
+  updateUI();
+}
+
+tabDeptBtn.addEventListener('click', () => setActiveTab('dept'));
+tabCcBtn.addEventListener('click', () => setActiveTab('cc'));
+tabCeBtn.addEventListener('click', () => setActiveTab('ce'));
+refreshCeBtn.addEventListener('click', () => fetchCostElements());
+
+listSearch.addEventListener('input', (e) => renderList(e.target.value));
+
+selectAllBtn.addEventListener('click', () => {
+  const { items, getKey, selectedSet } = currentDataset();
+  items.forEach(item => selectedSet.add(getKey(item)));
+  if (activeTab === 'dept' || activeTab === 'cc') ceStale = true;
+  renderList(listSearch.value);
+  updateUI();
+});
+
+clearAllBtn.addEventListener('click', () => {
+  const { selectedSet } = currentDataset();
+  selectedSet.clear();
+  if (activeTab === 'dept' || activeTab === 'cc') ceStale = true;
+  renderList(listSearch.value);
+  updateUI();
+});
+
+/* ==================================================================
+   DYNAMIC COST ELEMENTS - queried live from Supabase based on the
+   currently selected Departments and/or Cost Centers, so we never
+   need to hardcode the full cost-element list in the frontend.
+   ================================================================== */
+async function fetchCostElements() {
+  ceStale = false;
+
+  if (selectedDepts.size === 0 && selectedCostCenters.size === 0) {
+    costElements = [];
+    ceHint.classList.remove('hidden');
+    ceLoading.classList.add('hidden');
+    if (activeTab === 'ce') renderList();
+    return;
+  }
+
+  ceHint.classList.add('hidden');
+  ceLoading.classList.remove('hidden');
+
+  try {
+    const map = new Map();
+    for (const view of [VIEW_2023, VIEW_2024]) {
+      let query = sb.from(view).select('cost_elem, cost_element_name');
+      if (selectedDepts.size) query = query.in('department', [...selectedDepts]);
+      if (selectedCostCenters.size) query = query.in('cost_ctr', [...selectedCostCenters].map(Number));
+      const { data, error } = await query.limit(5000);
+      if (error) throw error;
+      (data || []).forEach(r => {
+        if (r.cost_elem !== null && r.cost_elem !== undefined) {
+          map.set(String(r.cost_elem), r.cost_element_name || '(unnamed)');
+        }
+      });
+    }
+    costElements = [...map.entries()]
+      .map(([code, name]) => ({ code, name }))
+      .sort((a, b) => Number(a.code) - Number(b.code));
+  } catch (err) {
+    showError('Failed to load cost elements: ' + err.message);
+    costElements = [];
+  } finally {
+    ceLoading.classList.add('hidden');
+    if (activeTab === 'ce') { renderList(listSearch.value); updateUI(); }
+  }
+}
+
+/* ==================================================================
+   MAIN COMPARISON QUERY
+   ================================================================== */
+const runBtn = document.getElementById('runBtn');
+const runBtnText = document.getElementById('runBtnText');
+const runSpinner = document.getElementById('runSpinner');
+const resultsSection = document.getElementById('resultsSection');
+
+runBtn.addEventListener('click', runComparison);
+
+async function fetchAllRows(view, filters) {
+  let all = [];
+  let from = 0;
+  const cols = 'cost_ctr, description, cost_elem, cost_element_name, actual_amount, month, category, statutory_mapping, management_mapping, department';
+
+  while (true) {
+    let query = sb.from(view).select(cols);
+    if (filters.departments.length) query = query.in('department', filters.departments);
+    if (filters.costCenters.length) query = query.in('cost_ctr', filters.costCenters);
+    if (filters.costElements.length) query = query.in('cost_elem', filters.costElements);
+    query = query.range(from, from + PAGE_SIZE - 1);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    all = all.concat(data || []);
+    if (!data || data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return all;
+}
+
+async function runComparison() {
+  hideError();
+  runBtn.disabled = true;
+  runSpinner.classList.remove('hidden');
+  runBtnText.textContent = 'Fetching data from Supabase...';
+  resultsSection.classList.add('hidden');
+
+  try {
+    const filters = {
+      departments: [...selectedDepts],
+      costCenters: [...selectedCostCenters].map(Number),
+      costElements: [...selectedCostElements].map(Number)
+    };
+
+    const [rows2023, rows2024] = await Promise.all([
+      fetchAllRows(VIEW_2023, filters),
+      fetchAllRows(VIEW_2024, filters)
+    ]);
+
+    if (rows2023.length === 0 && rows2024.length === 0) {
+      showError('No records matched your filters in either year. Try widening your selection.');
+      return;
+    }
+
+    renderResults(rows2023, rows2024);
+    resultsSection.classList.remove('hidden');
+  } catch (err) {
+    showError('Comparison failed: ' + err.message);
+  } finally {
+    runBtn.disabled = false;
+    runSpinner.classList.add('hidden');
+    runBtnText.textContent = 'Run Comparison: FY2024 vs FY2023';
+  }
+}
+
+/* ==================================================================
+   AGGREGATION + RENDERING
+   ================================================================== */
+function sumBy(rows, keyFn) {
+  const map = new Map();
+  rows.forEach(r => {
+    const k = keyFn(r) ?? 'Unspecified';
+    const amt = Number(r.actual_amount) || 0;
+    map.set(k, (map.get(k) || 0) + amt);
+  });
+  return map;
+}
+
+function totalOf(rows) {
+  return rows.reduce((s, r) => s + (Number(r.actual_amount) || 0), 0);
+}
+
+function fmtCurrency(n) {
+  const sign = n < 0 ? '-' : '';
+  return sign + 'PKR ' + Math.abs(Math.round(n)).toLocaleString('en-PK');
+}
+
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function monthName(m) {
+  const idx = Number(m) - 1;
+  return MONTH_NAMES[idx] ?? `M${m}`;
+}
+
+let barChart, pieChart, lineChart;
+
+function renderResults(rows2023, rows2024) {
+  const t2023 = totalOf(rows2023);
+  const t2024 = totalOf(rows2024);
+  const variance = t2024 - t2023;
+  const pct = t2023 !== 0 ? (variance / Math.abs(t2023)) * 100 : (t2024 !== 0 ? 100 : 0);
+
+  document.getElementById('kpi2023').textContent = fmtCurrency(t2023);
+  document.getElementById('kpi2024').textContent = fmtCurrency(t2024);
+
+  const varEl = document.getElementById('kpiVariance');
+  varEl.textContent = (variance >= 0 ? '+' : '') + fmtCurrency(variance);
+  varEl.className = 'text-2xl font-bold mt-1 ' + (variance >= 0 ? 'text-rose-600' : 'text-emerald-600');
+
+  const pctEl = document.getElementById('kpiPct');
+  pctEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
+  pctEl.className = 'text-2xl font-bold mt-1 ' + (pct >= 0 ? 'text-rose-600' : 'text-emerald-600');
+
+  // Adaptive breakdown: drill deeper as the user narrows their filter
+  let breakdownKeyFn, breakdownLabel;
+  if (selectedCostCenters.size > 0 || selectedCostElements.size > 0) {
+    breakdownKeyFn = r => `${r.cost_elem ?? '—'} ${r.cost_element_name ?? ''}`.trim();
+    breakdownLabel = 'By Cost Element';
+  } else if (selectedDepts.size > 0) {
+    breakdownKeyFn = r => `${r.cost_ctr ?? '—'} ${r.description ?? ''}`.trim();
+    breakdownLabel = 'By Cost Center';
+  } else {
+    breakdownKeyFn = r => r.department || 'Unspecified';
+    breakdownLabel = 'By Department';
+  }
+
+  const map2023 = sumBy(rows2023, breakdownKeyFn);
+  const map2024 = sumBy(rows2024, breakdownKeyFn);
+  const allKeys = [...new Set([...map2023.keys(), ...map2024.keys()])];
+  allKeys.sort((a, b) =>
+    (Math.abs(map2024.get(b) || 0) + Math.abs(map2023.get(b) || 0)) -
+    (Math.abs(map2024.get(a) || 0) + Math.abs(map2023.get(a) || 0))
+  );
+  const topKeys = allKeys.slice(0, 12);
+  renderBarChart(breakdownLabel, topKeys, topKeys.map(k => map2023.get(k) || 0), topKeys.map(k => map2024.get(k) || 0));
+
+  const statMap2024 = sumBy(rows2024, r => r.statutory_mapping || 'Unmapped');
+  const statEntries = [...statMap2024.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+  renderPieChart(statEntries);
+
+  const monthMap2023 = sumBy(rows2023, r => r.month);
+  const monthMap2024 = sumBy(rows2024, r => r.month);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  renderLineChart(months, months.map(m => monthMap2023.get(m) || 0), months.map(m => monthMap2024.get(m) || 0));
+
+  const statMap2023 = sumBy(rows2023, r => r.statutory_mapping || 'Unmapped');
+  const allStatKeys = [...new Set([...statMap2023.keys(), ...statMap2024.keys()])];
+  const movers = allStatKeys.map(k => {
+    const v23 = statMap2023.get(k) || 0;
+    const v24 = statMap2024.get(k) || 0;
+    const v = v24 - v23;
+    return { key: k, v23, v24, variance: v, pct: v23 !== 0 ? (v / Math.abs(v23)) * 100 : (v24 !== 0 ? 100 : 0) };
+  }).sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance)).slice(0, 10);
+
+  renderMoversTable(movers);
+}
+
+function palette(n) {
+  const base = ['#0085CA','#F97316','#10B981','#EF4444','#8B5CF6','#F59E0B','#14B8A6','#EC4899','#64748B','#22D3EE'];
+  return Array.from({ length: n }, (_, i) => base[i % base.length]);
+}
+
+function renderBarChart(label, keys, vals23, vals24) {
+  if (barChart) barChart.destroy();
+  const ctx = document.getElementById('barChart').getContext('2d');
+  barChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: keys,
+      datasets: [
+        { label: 'FY2023', data: vals23, backgroundColor: '#94a3b8' },
+        { label: 'FY2024', data: vals24, backgroundColor: '#0085CA' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { title: { display: true, text: label, font: { size: 14 } } },
+      scales: { x: { beginAtZero: true } }
+    }
+  });
+}
+
+function renderPieChart(entries) {
+  if (pieChart) pieChart.destroy();
+  const ctx = document.getElementById('pieChart').getContext('2d');
+  pieChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: entries.map(e => e[0]),
+      datasets: [{ data: entries.map(e => e[1]), backgroundColor: palette(entries.length) }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: 'FY2024 Share by Statutory Mapping', font: { size: 14 } },
+        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function renderLineChart(months, vals23, vals24) {
+  if (lineChart) lineChart.destroy();
+  const ctx = document.getElementById('lineChart').getContext('2d');
+  lineChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: months.map(monthName),
+      datasets: [
+        { label: 'FY2023', data: vals23, borderColor: '#94a3b8', backgroundColor: '#94a3b8', tension: 0.3 },
+        { label: 'FY2024', data: vals24, borderColor: '#0085CA', backgroundColor: '#0085CA', tension: 0.3 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { title: { display: true, text: 'Monthly Trend', font: { size: 14 } } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+function renderMoversTable(movers) {
+  const body = document.getElementById('moversTableBody');
+  body.innerHTML = "";
+  movers.forEach(m => {
+    const tr = document.createElement('tr');
+    tr.className = "border-b border-slate-50 last:border-0";
+    const varColor = m.variance >= 0 ? 'text-rose-600' : 'text-emerald-600';
+    tr.innerHTML = `
+      <td class="py-2 pr-4 text-slate-700">${m.key}</td>
+      <td class="py-2 pr-4 text-right text-slate-500">${fmtCurrency(m.v23)}</td>
+      <td class="py-2 pr-4 text-right text-slate-500">${fmtCurrency(m.v24)}</td>
+      <td class="py-2 pr-4 text-right font-semibold ${varColor}">${m.variance >= 0 ? '+' : ''}${fmtCurrency(m.variance)}</td>
+      <td class="py-2 text-right font-semibold ${varColor}">${m.pct >= 0 ? '+' : ''}${m.pct.toFixed(1)}%</td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
+/* ==================================================================
+   ERROR BANNER + INIT
+   ================================================================== */
+function showError(msg) {
+  globalError.textContent = msg;
+  globalError.classList.remove('hidden');
+}
+function hideError() {
+  globalError.classList.add('hidden');
+}
+
+function initDashboard() {
+  renderList();
+  updateUI();
+}
+</script>
 </body>
 </html>

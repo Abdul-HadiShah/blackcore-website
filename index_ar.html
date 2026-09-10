@@ -19,6 +19,10 @@
     --hairline:#E1E6E9;
     --danger:#C0392B;
     --radius:4px;
+    --em-red:#E2231B;
+    --em-text:#C1272D;
+    --em-row-bg:#EAF4F6;
+    --em-border:#AFDCE3;
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}
@@ -227,6 +231,36 @@
   }
   .link-btn.danger{color:var(--danger);}
 
+  /* ---------- Emergency-style layout ---------- */
+  table.emergency{
+    width:100%;
+    max-width:640px;
+    border-collapse:collapse;
+    font-size:14px;
+    border:1px solid var(--em-border);
+  }
+  table.emergency .category-row td{
+    background:var(--em-red);
+    color:#fff;
+    font-weight:700;
+    padding:8px 14px;
+    border:1px solid var(--em-border);
+  }
+  table.emergency .entry-row td{
+    background:var(--em-row-bg);
+    color:var(--em-text);
+    font-weight:600;
+    padding:9px 14px;
+    border:1px solid var(--em-border);
+  }
+  table.emergency .entry-row td.num-cell{
+    text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  table.emergency .entry-row .row-actions{opacity:0;transition:opacity .1s ease;}
+  table.emergency .entry-row:hover .row-actions{opacity:1;}
+  table.emergency .entry-row:hover td{background:#DCEDEF;}
+
   .empty-state{
     text-align:center;
     padding:60px 20px;
@@ -365,12 +399,25 @@
       <label>Department</label>
       <select id="f-department"></select>
     </div>
+    <div class="field" id="field-category" style="display:none;">
+      <label>Category</label>
+      <input id="f-category" type="text" placeholder="e.g. Fire Brigades">
+    </div>
     <div class="field"><label>Name</label><input id="f-name" type="text"></div>
-    <div class="field"><label>Ext #</label><input id="f-ext" type="text"></div>
-    <div class="field"><label>Direct #</label><input id="f-direct" type="text"></div>
-    <div class="field"><label>Cell</label><input id="f-cell" type="text"></div>
-    <div class="field"><label>Email</label><input id="f-email" type="email"></div>
-    <div class="field"><label>Location</label><input id="f-location" type="text"></div>
+    <div class="field" id="field-direct">
+      <label id="label-direct">Direct #</label>
+      <input id="f-direct" type="text" placeholder="e.g. 35015888 / 35014396">
+    </div>
+    <div id="std-fields">
+      <div class="field"><label>Ext #</label><input id="f-ext" type="text"></div>
+      <div class="field"><label>Cell</label><input id="f-cell" type="text"></div>
+      <div class="field"><label>Email</label><input id="f-email" type="email"></div>
+      <div class="field"><label>Location</label><input id="f-location" type="text"></div>
+    </div>
+    <div class="field" id="field-sortorder" style="display:none;">
+      <label>Position (lower shows first)</label>
+      <input id="f-sortorder" type="number" step="10">
+    </div>
     <div class="login-error" id="modal-error"></div>
     <div class="modal-actions">
       <button class="btn-cancel" id="modal-cancel">Cancel</button>
@@ -416,6 +463,9 @@ function showToast(msg, isErr){
 }
 
 function canWrite(){ return profile && profile.role === "admin"; }
+
+function getDept(id){ return departments.find(d=>d.id===id); }
+function isEmergencyDept(id){ return getDept(id)?.layout === "emergency"; }
 
 /* ---------------- auth flow ---------------- */
 async function init(){
@@ -481,7 +531,7 @@ $("signout-btn").addEventListener("click", async ()=>{
 async function loadData(){
   const [{ data: depts, error: dErr }, { data: cts, error: cErr }] = await Promise.all([
     sb.from("departments").select("*").order("sort_order", { ascending: true }),
-    sb.from("contacts").select("*").order("name", { ascending: true })
+    sb.from("contacts").select("*").order("sort_order", { ascending: true }).order("name", { ascending: true })
   ]);
   if (dErr || cErr) { showToast("Couldn't load the directory.", true); return; }
   departments = depts || [];
@@ -550,6 +600,11 @@ function renderTable(){
     return;
   }
 
+  if (activeDeptId !== "all" && isEmergencyDept(activeDeptId)) {
+    renderEmergencyTable(rows);
+    return;
+  }
+
   const showDeptCol = activeDeptId === "all";
   let html = `<table class="contacts"><thead><tr>
       <th>Name</th><th>Ext #</th><th>Direct #</th><th>Cell</th><th>Email</th><th>Location</th>
@@ -584,6 +639,36 @@ function renderTable(){
   }
 }
 
+function renderEmergencyTable(rows){
+  let html = `<table class="emergency"><tbody>`;
+  let lastCategory = undefined;
+  rows.forEach(c=>{
+    const cat = c.category || "Other";
+    if (cat !== lastCategory) {
+      html += `<tr class="category-row"><td colspan="2">${escapeHtml(cat)}</td></tr>`;
+      lastCategory = cat;
+    }
+    html += `<tr class="entry-row">
+      <td>${escapeHtml(c.name)}
+        ${canWrite() ? `<span class="row-actions">
+          <button class="link-btn" data-edit="${c.id}">Edit</button>
+          <button class="link-btn danger" data-del="${c.id}">Delete</button>
+        </span>` : ""}
+      </td>
+      <td class="num-cell">${escapeHtml(c.direct_number || "—")}</td>
+    </tr>`;
+  });
+  html += "</tbody></table>";
+  $("table-wrap").innerHTML = html;
+
+  if (canWrite()) {
+    $("table-wrap").querySelectorAll("[data-edit]").forEach(b=>
+      b.addEventListener("click", ()=>openModal(Number(b.dataset.edit))));
+    $("table-wrap").querySelectorAll("[data-del]").forEach(b=>
+      b.addEventListener("click", ()=>deleteContact(Number(b.dataset.del))));
+  }
+}
+
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, m=>({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
@@ -594,6 +679,22 @@ function escapeHtml(s){
 $("add-contact-btn").addEventListener("click", ()=>openModal(null));
 $("modal-cancel").addEventListener("click", closeModal);
 $("modal-backdrop").addEventListener("click", (e)=>{ if(e.target.id==="modal-backdrop") closeModal(); });
+
+function applyModalLayout(){
+  const deptId = Number($("f-department").value);
+  const emergency = isEmergencyDept(deptId);
+  $("field-category").style.display = emergency ? "block" : "none";
+  $("field-sortorder").style.display = emergency ? "block" : "none";
+  $("std-fields").style.display = emergency ? "none" : "block";
+  $("label-direct").textContent = emergency ? "Number" : "Direct #";
+}
+$("f-department").addEventListener("change", applyModalLayout);
+
+function nextSortOrder(deptId){
+  const inDept = contacts.filter(c=>c.department_id===deptId);
+  if (!inDept.length) return 10;
+  return Math.max(...inDept.map(c=>c.sort_order||0)) + 10;
+}
 
 function openModal(id){
   $("modal-error").textContent = "";
@@ -608,12 +709,16 @@ function openModal(id){
     $("f-cell").value = c.cell_number || "";
     $("f-email").value = c.email || "";
     $("f-location").value = c.location || "";
+    $("f-category").value = c.category || "";
+    $("f-sortorder").value = c.sort_order || 0;
   } else {
     $("modal-title").textContent = "Add contact";
     $("contact-id").value = "";
     if (activeDeptId !== "all") $("f-department").value = activeDeptId;
-    ["f-name","f-ext","f-direct","f-cell","f-email","f-location"].forEach(id=> $(id).value = "");
+    ["f-name","f-ext","f-direct","f-cell","f-email","f-location","f-category"].forEach(id=> $(id).value = "");
+    $("f-sortorder").value = nextSortOrder(Number($("f-department").value));
   }
+  applyModalLayout();
   $("modal-backdrop").style.display = "flex";
 }
 
@@ -621,14 +726,18 @@ function closeModal(){ $("modal-backdrop").style.display = "none"; }
 
 $("modal-save").addEventListener("click", async ()=>{
   const id = $("contact-id").value;
+  const deptId = Number($("f-department").value);
+  const emergency = isEmergencyDept(deptId);
   const payload = {
-    department_id: Number($("f-department").value),
+    department_id: deptId,
     name: $("f-name").value.trim(),
-    ext: $("f-ext").value.trim() || null,
     direct_number: $("f-direct").value.trim() || null,
-    cell_number: $("f-cell").value.trim() || null,
-    email: $("f-email").value.trim() || null,
-    location: $("f-location").value.trim() || null,
+    ext: emergency ? null : ($("f-ext").value.trim() || null),
+    cell_number: emergency ? null : ($("f-cell").value.trim() || null),
+    email: emergency ? null : ($("f-email").value.trim() || null),
+    location: emergency ? null : ($("f-location").value.trim() || null),
+    category: emergency ? ($("f-category").value.trim() || "Other") : null,
+    sort_order: emergency ? (Number($("f-sortorder").value) || 0) : 0,
     updated_at: new Date().toISOString()
   };
   if (!payload.name) { $("modal-error").textContent = "Name is required."; return; }

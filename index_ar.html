@@ -576,22 +576,23 @@ $("search-input").addEventListener("input", (e)=>{
 
 /* ---------------- table ---------------- */
 function visibleContacts(){
-  let rows = contacts;
-  if (activeDeptId !== "all") rows = rows.filter(c=>c.department_id===activeDeptId);
   if (searchTerm) {
-    rows = rows.filter(c=>{
-      return [c.name, c.ext, c.direct_number, c.cell_number, c.email, c.location]
+    return contacts.filter(c=>{
+      return [c.name, c.ext, c.direct_number, c.cell_number, c.email, c.location, c.category]
         .filter(Boolean).some(v=>String(v).toLowerCase().includes(searchTerm));
     });
   }
-  return rows;
+  if (activeDeptId !== "all") return contacts.filter(c=>c.department_id===activeDeptId);
+  return contacts;
 }
 
 function renderTable(){
   const rows = visibleContacts();
-  const title = activeDeptId === "all"
-    ? "All contacts"
-    : (departments.find(d=>d.id===activeDeptId)?.name || "");
+  const title = searchTerm
+    ? "Search results"
+    : (activeDeptId === "all"
+        ? "All contacts"
+        : (departments.find(d=>d.id===activeDeptId)?.name || ""));
   $("content-title").textContent = title;
   $("content-count").textContent = `${rows.length} contact${rows.length===1?"":"s"}`;
 
@@ -600,12 +601,12 @@ function renderTable(){
     return;
   }
 
-  if (activeDeptId !== "all" && isEmergencyDept(activeDeptId)) {
+  if (!searchTerm && activeDeptId !== "all" && isEmergencyDept(activeDeptId)) {
     renderEmergencyTable(rows);
     return;
   }
 
-  const showDeptCol = activeDeptId === "all";
+  const showDeptCol = searchTerm || activeDeptId === "all";
   let html = `<table class="contacts"><thead><tr>
       <th>Name</th><th>Ext #</th><th>Direct #</th><th>Cell</th><th>Email</th><th>Location</th>
       ${showDeptCol ? "<th>Department</th>" : ""}

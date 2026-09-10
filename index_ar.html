@@ -1,117 +1,663 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بلاك كور | مستقبل الصناعة</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Noto+Sans+Arabic', sans-serif; background-color: #0a0a0a; color: #ffffff; overflow-x: hidden; }
-        
-        /* Fixed Video Sizing */
-        .video-docker video {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            min-width: 100%; 
-            min-height: 100%;
-            width: auto;
-            height: auto;
-            object-fit: cover;
-            z-index: -1;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoechst Phone Directory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --bg-subtle:#F6F8F9;
+    --ink:#12212B;
+    --slate:#5B6B76;
+    --blue:#018ED5;
+    --blue-dark:#016FA6;
+    --hairline:#E1E6E9;
+    --danger:#C0392B;
+    --radius:4px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    color:var(--ink);
+    background:var(--bg);
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;}
+  input, select{font-family:inherit;}
 
-        .video-overlay {
-            background: rgba(0, 0, 0, 0.7); /* Adjust darkness here */
-            z-index: 1;
-        }
+  /* ---------- Login ---------- */
+  #login-screen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--bg-subtle);
+    padding:24px;
+  }
+  .login-card{
+    width:100%;
+    max-width:360px;
+    background:var(--bg);
+    border:1px solid var(--hairline);
+    border-radius:6px;
+    padding:36px 32px 32px;
+  }
+  .login-mark{
+    font-size:22px;
+    font-weight:700;
+    color:var(--blue);
+    letter-spacing:-0.01em;
+  }
+  .login-sub{
+    color:var(--slate);
+    font-size:14px;
+    margin:2px 0 28px;
+  }
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block;
+    font-size:12.5px;
+    color:var(--slate);
+    margin-bottom:6px;
+  }
+  .field input{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--hairline);
+    border-radius:var(--radius);
+    font-size:14px;
+    color:var(--ink);
+    outline:none;
+    transition:border-color .12s ease;
+  }
+  .field input:focus{border-color:var(--blue);}
+  .btn-primary{
+    width:100%;
+    padding:11px 12px;
+    background:var(--blue);
+    color:#fff;
+    border:none;
+    border-radius:var(--radius);
+    font-size:14.5px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .12s ease;
+  }
+  .btn-primary:hover{background:var(--blue-dark);}
+  .btn-primary:disabled{background:#9CC9E0;cursor:not-allowed;}
+  .login-error{
+    color:var(--danger);
+    font-size:13px;
+    margin:-6px 0 14px;
+    min-height:16px;
+  }
+  .login-foot{
+    text-align:center;
+    color:var(--slate);
+    font-size:12px;
+    margin-top:20px;
+  }
 
-        .logo-img { height: 80px; width: auto; filter: brightness(0) invert(1); object-fit: contain; }
-        
-        .hero-glow {
-            text-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
-        }
+  /* ---------- App shell ---------- */
+  #app{display:none; height:100vh; flex-direction:column;}
+  header.topbar{
+    height:60px;
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    gap:24px;
+    padding:0 20px;
+    border-bottom:1px solid var(--hairline);
+  }
+  .brand{display:flex;align-items:baseline;gap:8px;white-space:nowrap;}
+  .brand .mark{font-size:18px;font-weight:700;color:var(--blue);}
+  .brand .tag{font-size:13px;color:var(--slate);}
+  .search-wrap{flex:1;max-width:420px;}
+  .search-wrap input{
+    width:100%;
+    padding:9px 14px;
+    border:1px solid var(--hairline);
+    border-radius:18px;
+    font-size:13.5px;
+    outline:none;
+  }
+  .search-wrap input:focus{border-color:var(--blue);}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:14px;}
+  .role-badge{
+    font-size:11.5px;
+    color:var(--blue-dark);
+    background:#E7F4FB;
+    padding:3px 9px;
+    border-radius:12px;
+    font-weight:600;
+  }
+  .who{font-size:13px;color:var(--slate);}
+  .btn-ghost{
+    background:none;
+    border:1px solid var(--hairline);
+    color:var(--slate);
+    padding:7px 13px;
+    border-radius:var(--radius);
+    font-size:13px;
+    cursor:pointer;
+  }
+  .btn-ghost:hover{border-color:var(--slate);color:var(--ink);}
 
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {transform: translateY(0) translateX(-50%);}
-            40% {transform: translateY(-10px) translateX(-50%);}
-            60% {transform: translateY(-5px) translateX(-50%);}
-        }
-        .animate-scroll { animation: bounce 2s infinite; }
-    </style>
+  .body-row{flex:1 1 auto; display:flex; min-height:0;}
+  aside.deptlist{
+    width:250px;
+    flex:0 0 auto;
+    border-right:1px solid var(--hairline);
+    overflow-y:auto;
+    padding:14px 0;
+  }
+  .deptlist .section-label{
+    font-size:11px;
+    letter-spacing:.03em;
+    color:var(--slate);
+    padding:0 18px 8px;
+  }
+  .dept-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:9px 18px;
+    font-size:13.5px;
+    color:var(--ink);
+    cursor:pointer;
+    border-left:3px solid transparent;
+  }
+  .dept-item:hover{background:var(--bg-subtle);}
+  .dept-item.active{
+    background:#E7F4FB;
+    border-left-color:var(--blue);
+    color:var(--blue-dark);
+    font-weight:600;
+  }
+  .dept-item .count{color:var(--slate);font-size:12px;font-weight:400;}
+  .dept-item.active .count{color:var(--blue-dark);}
+
+  main.content{
+    flex:1 1 auto;
+    overflow-y:auto;
+    padding:26px 30px 40px;
+  }
+  .content-head{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .content-head h1{font-size:22px;margin:0 0 4px;}
+  .content-head .count-line{color:var(--slate);font-size:13.5px;}
+
+  table.contacts{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13.5px;
+  }
+  table.contacts thead th{
+    text-align:left;
+    font-weight:500;
+    color:var(--slate);
+    font-size:12px;
+    padding:0 14px 10px;
+    border-bottom:1px solid var(--hairline);
+  }
+  table.contacts tbody td{
+    padding:12px 14px;
+    border-bottom:1px solid var(--hairline);
+    vertical-align:middle;
+  }
+  table.contacts tbody tr:hover{background:var(--bg-subtle);}
+  .num{font-variant-numeric:tabular-nums;color:var(--ink);}
+  .muted{color:var(--slate);}
+  .row-actions{display:flex;gap:12px;opacity:0;transition:opacity .1s ease;}
+  table.contacts tbody tr:hover .row-actions{opacity:1;}
+  .link-btn{
+    background:none;border:none;padding:0;
+    font-size:12.5px;color:var(--blue);cursor:pointer;
+  }
+  .link-btn.danger{color:var(--danger);}
+
+  .empty-state{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--slate);
+    font-size:14px;
+  }
+
+  .add-btn{
+    background:var(--blue);
+    color:#fff;
+    border:none;
+    padding:9px 16px;
+    border-radius:var(--radius);
+    font-size:13.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .add-btn:hover{background:var(--blue-dark);}
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(18,33,43,0.35);
+    align-items:center;justify-content:center;
+    z-index:50;
+  }
+  .modal{
+    width:100%;max-width:440px;
+    background:#fff;
+    border-radius:8px;
+    padding:26px 26px 22px;
+  }
+  .modal h2{font-size:17px;margin:0 0 18px;}
+  .modal .field input, .modal .field select{
+    width:100%;padding:9px 11px;
+    border:1px solid var(--hairline);border-radius:var(--radius);
+    font-size:13.5px;outline:none;
+  }
+  .modal .field input:focus, .modal .field select:focus{border-color:var(--blue);}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+  .btn-cancel{
+    background:none;border:1px solid var(--hairline);color:var(--slate);
+    padding:9px 15px;border-radius:var(--radius);font-size:13.5px;cursor:pointer;
+  }
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:#fff;padding:10px 18px;border-radius:6px;
+    font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s ease;
+    z-index:60;
+  }
+  .toast.show{opacity:1;}
+  .toast.err{background:var(--danger);}
+
+  @media (max-width: 720px){
+    aside.deptlist{
+      width:100%;
+      border-right:none;
+      border-bottom:1px solid var(--hairline);
+      display:flex;
+      overflow-x:auto;
+      padding:10px 10px;
+    }
+    .deptlist .section-label{display:none;}
+    .dept-item{border-left:none;border-bottom:3px solid transparent;white-space:nowrap;}
+    .dept-item.active{border-left:none;border-bottom-color:var(--blue);}
+    .body-row{flex-direction:column;}
+    header.topbar{gap:12px;padding:0 12px;}
+    .search-wrap{max-width:none;}
+    .who{display:none;}
+    main.content{padding:18px;}
+  }
+</style>
 </head>
 <body>
 
-    <nav class="fixed top-0 w-full z-50 flex items-center justify-between px-10 py-4 border-b border-white/10 backdrop-blur-md bg-black/20">
-        <div class="flex-shrink-0">
-            <a href="index_ar.html">
-                <img src="finallogo1.png" alt="BlackCore Logo" class="logo-img">
-            </a>
-        </div>
-        
-        <div class="hidden md:flex items-center space-x-8 space-x-reverse text-sm font-medium tracking-wide uppercase opacity-80">
-            <a href="index_ar.html" class="text-blue-400">الرئيسية</a>
-            <a href="solutions_ar.html" class="hover:text-blue-400 transition">الحلول</a>
-            <a href="#" class="hover:text-blue-400 transition">عن الشركة</a>
-        </div>
+<!-- ============ LOGIN ============ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-mark">Hoechst</div>
+    <div class="login-sub">Phone directory login</div>
+    <div class="field">
+      <label for="login-username">Username</label>
+      <input id="login-username" type="text" autocomplete="username" placeholder="a.raza">
+    </div>
+    <div class="field">
+      <label for="login-password">Password</label>
+      <input id="login-password" type="password" autocomplete="current-password">
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <button class="btn-primary" id="login-btn">Sign in</button>
+    <div class="login-foot">Contact IT if you can't access your account</div>
+  </div>
+</div>
 
-        <div class="flex items-center space-x-6 space-x-reverse">
-            <button class="px-6 py-2 bg-blue-600 text-white text-xs font-bold uppercase tracking-widest hover:bg-blue-500 transition shadow-lg shadow-blue-500/20">
-                طلب عرض توضيحي
-            </button>
-            <div class="h-6 w-[1px] bg-white/20"></div>
-            <a href="index.html" class="flex items-center space-x-2 space-x-reverse hover:text-blue-400 transition text-sm font-bold opacity-90">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-                <span>EN</span>
-            </a>
+<!-- ============ APP ============ -->
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><span class="mark">Hoechst</span><span class="tag">Phone directory</span></div>
+    <div class="search-wrap">
+      <input id="search-input" type="text" placeholder="Search name, ext, or number">
+    </div>
+    <div class="topbar-right">
+      <span class="role-badge" id="role-badge"></span>
+      <span class="who" id="who-label"></span>
+      <button class="btn-ghost" id="signout-btn">Sign out</button>
+    </div>
+  </header>
+
+  <div class="body-row">
+    <aside class="deptlist">
+      <div class="section-label">DEPARTMENTS</div>
+      <div id="dept-list"></div>
+    </aside>
+
+    <main class="content">
+      <div class="content-head">
+        <div>
+          <h1 id="content-title">All contacts</h1>
+          <div class="count-line" id="content-count"></div>
         </div>
-    </nav>
+        <button class="add-btn" id="add-contact-btn" style="display:none;">+ Add contact</button>
+      </div>
 
-    <section class="relative h-screen flex flex-col items-center justify-center text-center px-6 overflow-hidden">
-        
-        <div class="video-docker absolute top-0 left-0 w-full h-full overflow-hidden">
-            <video 
-                autoplay 
-                muted 
-                loop 
-                playsinline 
-                preload="auto"
-                poster="fallback-image.jpg"
-                class="min-w-full min-h-full object-cover">
-                <source src="video.mp4" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-        </div>
+      <div id="table-wrap"></div>
+    </main>
+  </div>
+</div>
 
-        <div class="video-overlay absolute top-0 left-0 w-full h-full"></div>
+<!-- ============ MODAL ============ -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <h2 id="modal-title">Add contact</h2>
+    <input type="hidden" id="contact-id">
+    <div class="field">
+      <label>Department</label>
+      <select id="f-department"></select>
+    </div>
+    <div class="field"><label>Name</label><input id="f-name" type="text"></div>
+    <div class="field"><label>Ext #</label><input id="f-ext" type="text"></div>
+    <div class="field"><label>Direct #</label><input id="f-direct" type="text"></div>
+    <div class="field"><label>Cell</label><input id="f-cell" type="text"></div>
+    <div class="field"><label>Email</label><input id="f-email" type="email"></div>
+    <div class="field"><label>Location</label><input id="f-location" type="text"></div>
+    <div class="login-error" id="modal-error"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modal-cancel">Cancel</button>
+      <button class="btn-primary" style="width:auto;padding:9px 18px;" id="modal-save">Save</button>
+    </div>
+  </div>
+</div>
 
-        <div class="relative z-10 max-w-5xl">
-            <div class="inline-block px-4 py-1 border border-blue-500/50 text-blue-400 text-[10px] uppercase tracking-[0.3em] mb-8 bg-blue-500/10">
-                الجيل القادم من الأنظمة الصناعية
-            </div>
-            <h1 class="text-6xl md:text-8xl font-black tracking-tight leading-none mb-8 hero-glow">
-                الذكاء الصناعي <br> <span class="text-blue-500">ماتريكس</span>
-            </h1>
-            <p class="text-xl md:text-2xl opacity-80 max-w-3xl mx-auto mb-12 leading-relaxed">
-                نقوم برقمنة المصانع وتحويل الصيانة التقليدية إلى عمليات ذكية مدعومة بالذكاء الاصطناعي.
-            </p>
-            <div class="flex flex-col md:flex-row gap-4 justify-center">
-                <a href="solutions_ar.html" class="px-12 py-5 bg-white text-black font-black uppercase text-sm tracking-widest hover:bg-blue-500 hover:text-white transition">
-                    اكتشف ماتريكس
-                </a>
-                <a href="#" class="px-12 py-5 border border-white/20 text-white font-black uppercase text-sm tracking-widest hover:bg-white/10 transition">
-                    مشاهدة الفيديو التعريفي
-                </a>
-            </div>
-        </div>
+<div class="toast" id="toast"></div>
 
-        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center opacity-40 animate-scroll">
-            <span class="text-[10px] uppercase tracking-widest mb-2">اسحب للأسفل</span>
-            <div class="w-[1px] h-12 bg-blue-500"></div>
-        </div>
-    </section>
+<script>
+/* =========================================================
+   CONFIG — replace with your own Supabase project values.
+   The anon key is safe to expose publicly; it only grants
+   what your Row Level Security policies allow. Never put
+   a service_role key in client-side code.
+   ========================================================= */
+const SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co";
+const SUPABASE_ANON_KEY = "YOUR-ANON-PUBLIC-KEY";
 
+// If staff log in with a short username (e.g. "a.raza") rather than a
+// full email, this suffix is appended automatically when the typed
+// value doesn't already contain "@". Set to "" to require full emails.
+const USERNAME_EMAIL_SUFFIX = "@hoechst.com";
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ---------------- state ---------------- */
+let profile = null;         // { id, username, role }
+let departments = [];       // [{id, name, code, sort_order}]
+let contacts = [];          // all contacts, joined with department name
+let activeDeptId = "all";   // "all" or a department id
+let searchTerm = "";
+
+/* ---------------- helpers ---------------- */
+const $ = (id) => document.getElementById(id);
+
+function showToast(msg, isErr){
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (isErr ? " err" : "");
+  setTimeout(()=> t.className = "toast", 2200);
+}
+
+function canWrite(){ return profile && profile.role === "admin"; }
+
+/* ---------------- auth flow ---------------- */
+async function init(){
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    await onAuthed(session);
+  } else {
+    $("login-screen").style.display = "flex";
+    $("app").style.display = "none";
+  }
+}
+
+$("login-btn").addEventListener("click", doLogin);
+$("login-password").addEventListener("keydown", (e)=>{ if(e.key==="Enter") doLogin(); });
+
+async function doLogin(){
+  const raw = $("login-username").value.trim();
+  const pw = $("login-password").value;
+  $("login-error").textContent = "";
+  if(!raw || !pw){ $("login-error").textContent = "Enter your username and password."; return; }
+  const email = raw.includes("@") ? raw : (raw + USERNAME_EMAIL_SUFFIX);
+
+  $("login-btn").disabled = true;
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+  $("login-btn").disabled = false;
+
+  if (error) {
+    $("login-error").textContent = "Incorrect username or password.";
+    return;
+  }
+  await onAuthed(data.session);
+}
+
+async function onAuthed(session){
+  const { data: prof, error } = await sb
+    .from("profiles")
+    .select("id, username, role")
+    .eq("id", session.user.id)
+    .single();
+
+  if (error || !prof) {
+    showToast("No directory profile is set up for this account. Contact an admin.", true);
+    await sb.auth.signOut();
+    return;
+  }
+  profile = prof;
+  $("login-screen").style.display = "none";
+  $("app").style.display = "flex";
+  $("who-label").textContent = profile.username;
+  $("role-badge").textContent = profile.role;
+  $("add-contact-btn").style.display = canWrite() ? "inline-block" : "none";
+
+  await loadData();
+}
+
+$("signout-btn").addEventListener("click", async ()=>{
+  await sb.auth.signOut();
+  profile = null;
+  location.reload();
+});
+
+/* ---------------- data loading ---------------- */
+async function loadData(){
+  const [{ data: depts, error: dErr }, { data: cts, error: cErr }] = await Promise.all([
+    sb.from("departments").select("*").order("sort_order", { ascending: true }),
+    sb.from("contacts").select("*").order("name", { ascending: true })
+  ]);
+  if (dErr || cErr) { showToast("Couldn't load the directory.", true); return; }
+  departments = depts || [];
+  contacts = cts || [];
+  populateDeptSelect();
+  renderDeptList();
+  renderTable();
+}
+
+/* ---------------- sidebar ---------------- */
+function renderDeptList(){
+  const wrap = $("dept-list");
+  const countAll = contacts.length;
+  let html = `<div class="dept-item ${activeDeptId==='all'?'active':''}" data-id="all">
+      <span>All departments</span><span class="count">${countAll}</span></div>`;
+  departments.forEach(d=>{
+    const n = contacts.filter(c=>c.department_id===d.id).length;
+    html += `<div class="dept-item ${activeDeptId===d.id?'active':''}" data-id="${d.id}">
+      <span>${escapeHtml(d.name)}</span><span class="count">${n}</span></div>`;
+  });
+  wrap.innerHTML = html;
+  wrap.querySelectorAll(".dept-item").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const id = el.dataset.id;
+      activeDeptId = id === "all" ? "all" : Number(id);
+      renderDeptList();
+      renderTable();
+    });
+  });
+}
+
+function populateDeptSelect(){
+  $("f-department").innerHTML = departments
+    .map(d=>`<option value="${d.id}">${escapeHtml(d.name)}</option>`).join("");
+}
+
+/* ---------------- search ---------------- */
+$("search-input").addEventListener("input", (e)=>{
+  searchTerm = e.target.value.trim().toLowerCase();
+  renderTable();
+});
+
+/* ---------------- table ---------------- */
+function visibleContacts(){
+  let rows = contacts;
+  if (activeDeptId !== "all") rows = rows.filter(c=>c.department_id===activeDeptId);
+  if (searchTerm) {
+    rows = rows.filter(c=>{
+      return [c.name, c.ext, c.direct_number, c.cell_number, c.email, c.location]
+        .filter(Boolean).some(v=>String(v).toLowerCase().includes(searchTerm));
+    });
+  }
+  return rows;
+}
+
+function renderTable(){
+  const rows = visibleContacts();
+  const title = activeDeptId === "all"
+    ? "All contacts"
+    : (departments.find(d=>d.id===activeDeptId)?.name || "");
+  $("content-title").textContent = title;
+  $("content-count").textContent = `${rows.length} contact${rows.length===1?"":"s"}`;
+
+  if (rows.length === 0) {
+    $("table-wrap").innerHTML = `<div class="empty-state">No contacts match here yet.</div>`;
+    return;
+  }
+
+  const showDeptCol = activeDeptId === "all";
+  let html = `<table class="contacts"><thead><tr>
+      <th>Name</th><th>Ext #</th><th>Direct #</th><th>Cell</th><th>Email</th><th>Location</th>
+      ${showDeptCol ? "<th>Department</th>" : ""}
+      ${canWrite() ? "<th></th>" : ""}
+    </tr></thead><tbody>`;
+
+  rows.forEach(c=>{
+    const deptName = departments.find(d=>d.id===c.department_id)?.name || "";
+    html += `<tr>
+      <td>${escapeHtml(c.name)}</td>
+      <td class="num">${escapeHtml(c.ext||"—")}</td>
+      <td class="num">${escapeHtml(c.direct_number||"—")}</td>
+      <td class="num">${escapeHtml(c.cell_number||"—")}</td>
+      <td class="muted">${escapeHtml(c.email||"—")}</td>
+      <td class="muted">${escapeHtml(c.location||"—")}</td>
+      ${showDeptCol ? `<td class="muted">${escapeHtml(deptName)}</td>` : ""}
+      ${canWrite() ? `<td><div class="row-actions">
+          <button class="link-btn" data-edit="${c.id}">Edit</button>
+          <button class="link-btn danger" data-del="${c.id}">Delete</button>
+        </div></td>` : ""}
+    </tr>`;
+  });
+  html += "</tbody></table>";
+  $("table-wrap").innerHTML = html;
+
+  if (canWrite()) {
+    $("table-wrap").querySelectorAll("[data-edit]").forEach(b=>
+      b.addEventListener("click", ()=>openModal(Number(b.dataset.edit))));
+    $("table-wrap").querySelectorAll("[data-del]").forEach(b=>
+      b.addEventListener("click", ()=>deleteContact(Number(b.dataset.del))));
+  }
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[m]));
+}
+
+/* ---------------- add / edit modal ---------------- */
+$("add-contact-btn").addEventListener("click", ()=>openModal(null));
+$("modal-cancel").addEventListener("click", closeModal);
+$("modal-backdrop").addEventListener("click", (e)=>{ if(e.target.id==="modal-backdrop") closeModal(); });
+
+function openModal(id){
+  $("modal-error").textContent = "";
+  if (id) {
+    const c = contacts.find(x=>x.id===id);
+    $("modal-title").textContent = "Edit contact";
+    $("contact-id").value = c.id;
+    $("f-department").value = c.department_id;
+    $("f-name").value = c.name || "";
+    $("f-ext").value = c.ext || "";
+    $("f-direct").value = c.direct_number || "";
+    $("f-cell").value = c.cell_number || "";
+    $("f-email").value = c.email || "";
+    $("f-location").value = c.location || "";
+  } else {
+    $("modal-title").textContent = "Add contact";
+    $("contact-id").value = "";
+    if (activeDeptId !== "all") $("f-department").value = activeDeptId;
+    ["f-name","f-ext","f-direct","f-cell","f-email","f-location"].forEach(id=> $(id).value = "");
+  }
+  $("modal-backdrop").style.display = "flex";
+}
+
+function closeModal(){ $("modal-backdrop").style.display = "none"; }
+
+$("modal-save").addEventListener("click", async ()=>{
+  const id = $("contact-id").value;
+  const payload = {
+    department_id: Number($("f-department").value),
+    name: $("f-name").value.trim(),
+    ext: $("f-ext").value.trim() || null,
+    direct_number: $("f-direct").value.trim() || null,
+    cell_number: $("f-cell").value.trim() || null,
+    email: $("f-email").value.trim() || null,
+    location: $("f-location").value.trim() || null,
+    updated_at: new Date().toISOString()
+  };
+  if (!payload.name) { $("modal-error").textContent = "Name is required."; return; }
+
+  let error;
+  if (id) {
+    ({ error } = await sb.from("contacts").update(payload).eq("id", Number(id)));
+  } else {
+    ({ error } = await sb.from("contacts").insert(payload));
+  }
+  if (error) {
+    $("modal-error").textContent = "Couldn't save. You may not have permission.";
+    return;
+  }
+  closeModal();
+  showToast(id ? "Contact updated" : "Contact added");
+  await loadData();
+});
+
+async function deleteContact(id){
+  const c = contacts.find(x=>x.id===id);
+  if (!confirm(`Remove ${c?.name || "this contact"} from the directory?`)) return;
+  const { error } = await sb.from("contacts").delete().eq("id", id);
+  if (error) { showToast("Couldn't delete. You may not have permission.", true); return; }
+  showToast("Contact removed");
+  await loadData();
+}
+
+init();
+</script>
 </body>
 </html>

@@ -905,24 +905,67 @@ function coerceValue(raw, type) {
   return Number.isFinite(n) ? n : null;
 }
 
+// Maps one spreadsheet row of header text to { columnIndex: dbColumn }.
+function mapHeaderRow(line) {
+  const idxToCol = {};
+  const unmatched = [];
+  (line || []).forEach((h, idx) => {
+    const norm = normalizeHeader(h);
+    const col = HEADER_ALIASES[norm] || (COLUMNS[norm] ? norm : null);
+    // Don't let two spreadsheet columns claim the same DB column.
+    if (col && COLUMNS[col] && !Object.values(idxToCol).includes(col)) idxToCol[idx] = col;
+    else if (h !== null && String(h).trim() !== '') unmatched.push(h);
+  });
+  return { idxToCol, unmatched };
+}
+
+// SAP and Excel exports often carry blank rows, report titles, or
+// Subtotal/Sum lines above the real header row, so we don't assume the
+// headers are in row 1. We scan the first HEADER_SCAN_ROWS rows and take
+// whichever one matches the most known columns. Preamble rows like
+// "Subtotal: 108,323,975" match nothing, so they lose to the real header.
+const HEADER_SCAN_ROWS = 25;
+const MIN_HEADER_MATCHES = 3;
+
+function findHeaderRow(raw) {
+  let best = { rowIndex: -1, idxToCol: {}, unmatched: [], score: 0 };
+  const limit = Math.min(raw.length, HEADER_SCAN_ROWS);
+  for (let r = 0; r < limit; r++) {
+    const line = raw[r];
+    if (!line || line.every(v => v === null || v === '')) continue;
+    const { idxToCol, unmatched } = mapHeaderRow(line);
+    const score = Object.keys(idxToCol).length;
+    if (score > best.score) best = { rowIndex: r, idxToCol, unmatched, score };
+  }
+  return best;
+}
+
 function parseWorkbook(workbook, fiscalYear) {
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null, raw: true });
-  if (raw.length === 0) return { rows: [], unmatchedHeaders: [], matchedCount: 0 };
+  if (raw.length === 0) return { rows: [], unmatchedHeaders: [], matchedCount: 0, headerRowNumber: null, skippedPreambleRows: 0 };
 
-  const unmatchedHeaders = [];
-  const idxToCol = {};
-  (raw[0] || []).forEach((h, idx) => {
-    const norm = normalizeHeader(h);
-    const col = HEADER_ALIASES[norm] || (COLUMNS[norm] ? norm : null);
-    if (col && COLUMNS[col]) idxToCol[idx] = col;
-    else if (h !== null && String(h).trim() !== '') unmatchedHeaders.push(h);
-  });
+  const header = findHeaderRow(raw);
 
+  // Require a few real matches so a stray preamble row that happens to
+  // contain one recognizable word isn't mistaken for the header.
+  if (header.rowIndex === -1 || header.score < MIN_HEADER_MATCHES) {
+    return { rows: [], unmatchedHeaders: [], matchedCount: header.score, headerRowNumber: null, skippedPreambleRows: 0 };
+  }
+
+  const idxToCol = header.idxToCol;
   const rows = [];
-  for (let r = 1; r < raw.length; r++) {
+  let skippedNonData = 0;
+
+  for (let r = header.rowIndex + 1; r < raw.length; r++) {
     const line = raw[r];
     if (!line || line.every(v => v === null || v === '')) continue;
+
+    // Trailing "Subtotal:" / "Sum:" / "Total" lines below the data have
+    // text where a real record has none of its key identifying fields.
+    const joined = line.filter(v => v !== null && v !== '').map(v => String(v).toLowerCase()).join(' ');
+    const looksLikeTotalLine = /(^|\s)(sub\s*total|subtotal|sum|grand\s*total|total)\s*:?\s*$|^(sub\s*total|subtotal|sum|grand\s*total|total)\b/.test(joined.trim());
+
     const obj = { fiscal_year: fiscalYear };
     let hasValue = false;
     Object.entries(idxToCol).forEach(([idx, col]) => {
@@ -932,9 +975,27 @@ function parseWorkbook(workbook, fiscalYear) {
       obj[col] = val;
       if (val !== null) hasValue = true;
     });
-    if (hasValue) rows.push(obj);
+
+    // A real record has at least one of these; a summary line has none.
+    const hasAnchor = obj.cost_ctr !== null && obj.cost_ctr !== undefined
+                   || obj.cost_elem !== null && obj.cost_elem !== undefined
+                   || (obj.department !== null && obj.department !== undefined)
+                   || (obj.document_no !== null && obj.document_no !== undefined);
+
+    if (!hasValue) continue;
+    if (looksLikeTotalLine && !hasAnchor) { skippedNonData++; continue; }
+    if (!hasAnchor) { skippedNonData++; continue; }
+
+    rows.push(obj);
   }
-  return { rows, unmatchedHeaders: [...new Set(unmatchedHeaders)], matchedCount: Object.keys(idxToCol).length };
+
+  return {
+    rows,
+    unmatchedHeaders: [...new Set(header.unmatched)],
+    matchedCount: Object.keys(idxToCol).length,
+    headerRowNumber: header.rowIndex + 1,   // 1-based, as Excel shows it
+    skippedPreambleRows: header.rowIndex + skippedNonData
+  };
 }
 
 async function insertInChunks(rows, onProgress) {
@@ -1004,14 +1065,14 @@ startUploadBtn.addEventListener('click', async () => {
 
   try {
     const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-    const { rows, unmatchedHeaders, matchedCount } = parseWorkbook(workbook, fiscalYear);
+    const { rows, unmatchedHeaders, matchedCount, headerRowNumber, skippedPreambleRows } = parseWorkbook(workbook, fiscalYear);
 
-    if (matchedCount === 0) {
-      setUploadStatus('None of the column headers could be matched. Check the file has a header row with names like "Cost Ctr", "Department", "ActualAmount".', 'error');
+    if (headerRowNumber === null) {
+      setUploadStatus(`Could not find a header row in the first ${HEADER_SCAN_ROWS} rows. Check the file has a row with names like "Cost Ctr", "Department", "Actual Amount".`, 'error');
       startUploadBtn.disabled = false; return;
     }
     if (rows.length === 0) {
-      setUploadStatus('No usable data rows found - the file appears to have headers but no content.', 'error');
+      setUploadStatus(`Found headers on row ${headerRowNumber}, but no data rows below them.`, 'error');
       startUploadBtn.disabled = false; return;
     }
 
@@ -1024,8 +1085,11 @@ startUploadBtn.addEventListener('click', async () => {
       }
     }
 
-    const warn = unmatchedHeaders.length
-      ? `<br><span class="text-amber-600">Skipped unrecognized column(s): ${unmatchedHeaders.join(', ')}</span>` : '';
+    const warn = (unmatchedHeaders.length
+        ? `<br><span class="text-amber-600">Skipped unrecognized column(s): ${unmatchedHeaders.join(', ')}</span>` : '')
+      + `<br><span class="text-slate-400">Headers found on row ${headerRowNumber} (${matchedCount} columns matched)`
+      + (skippedPreambleRows ? `; skipped ${skippedPreambleRows} non-data row(s) such as blanks or Subtotal/Sum lines` : '')
+      + `.</span>`;
 
     setUploadStatus(`Uploading ${rows.length.toLocaleString()} row(s) to FY${fiscalYear}...${warn}`, 'info');
     uploadProgressWrap.classList.remove('hidden');

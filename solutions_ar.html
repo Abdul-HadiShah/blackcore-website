@@ -14,7 +14,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<!-- SheetJS: parses .xlsx / .xls / .csv entirely in the browser -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-hoechst-light font-sans text-hoechst-dark min-h-screen flex flex-col">
@@ -56,7 +55,7 @@
         <img src="logo.png" alt="Company Logo" class="h-10 w-auto object-contain" onerror="this.style.display='none'">
         <div class="border-l border-slate-300 pl-6">
           <h1 class="text-xl font-bold text-hoechst-dark">OPEX Analysis Dashboard</h1>
-          <p id="headerSubtitle" class="text-xs text-hoechst-gray tracking-wide uppercase">Multi-Year Cost Analysis</p>
+          <p id="headerSubtitle" class="text-xs text-hoechst-gray tracking-wide uppercase">Multi-Year Cost Analysis &middot; AI-Assisted Flagging</p>
         </div>
       </div>
       <div class="flex items-center space-x-4">
@@ -79,13 +78,29 @@
           <h2 class="text-lg font-bold text-slate-800">Years to Compare</h2>
           <p class="text-sm text-slate-500 mt-1">Pick any number of years. Upload a file to add a new one.</p>
         </div>
-        <button id="openUploadBtn" class="px-4 py-2 text-sm font-semibold text-white bg-hoechst-blue rounded-lg hover:bg-blue-700 transition whitespace-nowrap">
-          <i class="fa-solid fa-file-arrow-up mr-2"></i>Upload Excel Data
-        </button>
+        <div class="flex gap-2">
+          <button id="openBudgetBtn" class="px-4 py-2 text-sm font-semibold text-hoechst-blue bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition whitespace-nowrap">
+            <i class="fa-solid fa-scale-balanced mr-2"></i>Upload Budget
+          </button>
+          <button id="openUploadBtn" class="px-4 py-2 text-sm font-semibold text-white bg-hoechst-blue rounded-lg hover:bg-blue-700 transition whitespace-nowrap">
+            <i class="fa-solid fa-file-arrow-up mr-2"></i>Upload Excel Data
+          </button>
+        </div>
       </div>
       <div id="yearChips" class="flex flex-wrap gap-2">
         <span class="text-sm text-slate-400 italic">Loading years...</span>
       </div>
+    </div>
+
+    <!-- NATURAL-LANGUAGE QUESTION -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+      <h3 class="text-sm font-bold uppercase text-slate-400 tracking-wider mb-3"><i class="fa-solid fa-wand-magic-sparkles text-hoechst-blue mr-1"></i> Ask a Question</h3>
+      <div class="flex gap-2">
+        <input id="nlInput" placeholder='e.g. "Which departments overspent on travel in 2025?"'
+          class="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-hoechst-blue">
+        <button id="nlBtn" class="px-4 py-2 text-sm font-semibold text-white bg-hoechst-blue rounded-lg hover:bg-blue-700 transition disabled:opacity-50">Ask</button>
+      </div>
+      <p class="text-xs text-slate-400 mt-2">Only your question text is sent to the AI, to pick filters. Results are computed locally in your browser. Don't type confidential figures.</p>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -147,6 +162,29 @@
 
           <div id="kpiGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
 
+          <!-- FLAGGED DEPARTMENTS -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div class="flex items-center justify-between mb-4 gap-3">
+              <div>
+                <h3 class="text-sm font-bold uppercase text-slate-400 tracking-wider">Flagged Departments</h3>
+                <p id="flagsSubtitle" class="text-xs text-slate-400 mt-1"></p>
+              </div>
+              <button id="explainBtn" class="px-3 py-1.5 text-xs font-semibold text-white bg-hoechst-blue rounded-lg hover:bg-blue-700 transition disabled:opacity-50 whitespace-nowrap">
+                <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI Commentary
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead><tr class="text-left text-xs font-semibold text-slate-400 uppercase border-b border-slate-100">
+                  <th class="py-2 pr-3">Department</th><th class="py-2 pr-3 text-right">Actual</th><th class="py-2 pr-3 text-right">Budget</th>
+                  <th class="py-2 pr-3 text-right">Variance</th><th class="py-2 pr-3 text-right">Projected FY</th>
+                  <th class="py-2 pr-3">Severity</th><th class="py-2 pr-3">Why flagged</th><th class="py-2 pr-3">Review</th><th class="py-2">Action</th>
+                </tr></thead>
+                <tbody id="flagsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-[420px]">
               <canvas id="barChart"></canvas>
@@ -176,7 +214,7 @@
   </main>
 
   <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
-    &copy; 2026 Hoechst Pakistan. All rights reserved. OPEX Analysis Dashboard v3.0
+    &copy; 2026 Hoechst Pakistan. All rights reserved. OPEX Analysis Dashboard v4.0 &middot; AI recommends, a human decides.
   </footer>
 </div>
 
@@ -226,6 +264,23 @@
   </div>
 </div>
 
+<!-- ================= BUDGET MODAL ================= -->
+<div id="budgetModal" class="hidden fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 px-4">
+  <div class="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-bold text-slate-800">Upload Approved Budget</h3>
+      <button id="closeBudgetBtn" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <label class="block text-xs font-semibold text-slate-500 mb-1">Fiscal year</label>
+    <input id="budgetYearInput" type="number" placeholder="e.g. 2025" class="w-full mb-4 px-3 py-2 text-sm border border-slate-200 rounded-lg">
+    <label class="block text-xs font-semibold text-slate-500 mb-1">Excel or CSV file</label>
+    <input id="budgetFileInput" type="file" accept=".xlsx,.xls,.csv" class="w-full mb-4 text-sm border border-slate-200 rounded-lg px-3 py-2">
+    <div id="budgetStatus" class="hidden text-xs rounded-lg px-3 py-2 mb-4 border"></div>
+    <button id="startBudgetBtn" class="w-full py-2.5 bg-hoechst-blue text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50">Upload Budget</button>
+    <p class="text-xs text-slate-400 mt-3">Two columns: <b>Department</b> and <b>Budget</b>. Re-uploading a year overwrites it. Departments with an approved budget increase are not flagged for the increase itself.</p>
+  </div>
+</div>
+
 <script>
 /* ==================================================================
    CONFIG
@@ -233,7 +288,6 @@
 const SUPABASE_URL = "https://irxyvtlzeespvfgtpeli.supabase.co/";
 const SUPABASE_ANON_KEY = "sb_publishable_xdIgxM3EbVY21JwfmHlhuw_Xg3aJWZ1";
 
-// One table now holds every year (see opex_multiyear_migration.sql).
 const TABLE = "opex_data";
 const PAGE_SIZE = 1000;
 
@@ -281,19 +335,14 @@ sb.auth.getSession();
 
 /* ==================================================================
    STATE
-
-   Nothing is hardcoded any more. Departments, cost centers, cost
-   elements and statutory mappings all come from the database, so a
-   newly uploaded year's values appear in the filters automatically
-   and the lists can't drift out of sync with the stored data.
    ================================================================== */
-let availableYears = [];                       // [{fiscal_year, row_count}]
-let selectedYears = new Set();                 // numbers
+let availableYears = [];
+let selectedYears = new Set();
 
-let departments = [];                          // [string]
-let costCenters = [];                          // [{code, name}]
-let costElements = [];                         // [{code, name}]
-let statutoryMappings = [];                    // [string]
+let departments = [];
+let costCenters = [];
+let costElements = [];
+let statutoryMappings = [];
 
 let selectedDepts = new Set();
 let selectedCostCenters = new Set();
@@ -302,6 +351,11 @@ let selectedStatutoryMappings = new Set();
 
 let deptsLoaded = false, ccLoaded = false, statLoaded = false, ceStale = true;
 let activeTab = 'dept';
+
+// Budget / flag / review state
+let budgetsByYear = new Map();   // year -> Map(dept -> amount)
+let reviewsMap = new Map();      // "year|dept" -> latest review
+let lastFlags = [], currentFlagYear = null, aiCommentary = new Map();
 
 const listContainer = document.getElementById('listContainer');
 const selectedCountEl = document.getElementById('selectedCount');
@@ -315,6 +369,7 @@ const refreshListBtn = document.getElementById('refreshListBtn');
 const yearChips = document.getElementById('yearChips');
 const globalError = document.getElementById('globalError');
 
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function ccLabel(item) { return `${item.code} - ${item.name}`; }
 function ceLabel(item) { return `${item.code} - ${item.name}`; }
 
@@ -334,7 +389,6 @@ async function loadYears(preserveSelection = true) {
     if (error) throw error;
     availableYears = data || [];
     if (!preserveSelection || selectedYears.size === 0) {
-      // Default: the two most recent years, so the first run is useful.
       selectedYears = new Set(availableYears.slice(0, 2).map(y => y.fiscal_year));
     }
     renderYearChips();
@@ -618,6 +672,12 @@ async function runComparison() {
       showError('No records matched your filters in any selected year. Try widening your selection.');
       return;
     }
+
+    // Budgets + reviewer decisions for the latest selected year
+    const lastYear = years[years.length - 1];
+    try { await Promise.all([loadBudgets(lastYear), loadReviews(lastYear)]); }
+    catch (e) { showError('Budget/review tables not available: ' + e.message); }
+
     renderResults(years, byYear);
     resultsSection.classList.remove('hidden');
   } catch (err) {
@@ -647,7 +707,6 @@ function fmtCurrency(n) {
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function monthName(m) { return MONTH_NAMES[Number(m) - 1] ?? `M${m}`; }
 
-// Distinct colour per year, oldest greyest through to brand blue.
 function yearColor(i, total) {
   const base = ['#94a3b8','#0085CA','#F97316','#10B981','#8B5CF6','#EF4444','#14B8A6','#EC4899','#F59E0B','#22D3EE'];
   if (total <= 2) return i === total - 1 ? '#0085CA' : '#94a3b8';
@@ -663,9 +722,12 @@ let barChart, pieChart, lineChart;
 function renderResults(years, byYear) {
   renderKpis(years, byYear);
 
-  // Adaptive breakdown: drill deeper as the filter narrows. A statutory
-  // mapping filter alone breaks down by department, so "Travel" shows
-  // travel cost across the whole company.
+  // Flags: budget-adjusted rules + anomaly scoring + projection (all local)
+  aiCommentary = new Map();
+  lastFlags = computeFlags(years, byYear);
+  currentFlagYear = years[years.length - 1];
+  renderFlags();
+
   let keyFn, breakdownLabel;
   if (selectedCostCenters.size > 0 || selectedCostElements.size > 0) {
     keyFn = r => `${r.cost_elem ?? '-'} ${r.cost_element_name ?? ''}`.trim();
@@ -687,7 +749,6 @@ function renderResults(years, byYear) {
 
   renderBarChart(breakdownLabel, topKeys, years, maps);
 
-  // Pie: most recent selected year's share by statutory mapping.
   const latest = years[years.length - 1];
   const statLatest = sumBy(byYear.get(latest), r => r.statutory_mapping || 'Unmapped');
   renderPieChart([...statLatest.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8), latest);
@@ -709,7 +770,6 @@ function renderKpis(years, byYear) {
     grid.appendChild(card);
   });
 
-  // With 2+ years, add variance between the earliest and latest selected.
   if (years.length >= 2) {
     const first = years[0], last = years[years.length - 1];
     const v = totals.get(last) - totals.get(first);
@@ -815,7 +875,7 @@ function renderMoversTable(years, byYear) {
     const tr = document.createElement('tr');
     tr.className = "border-b border-slate-50 last:border-0";
     const varColor = r.v >= 0 ? 'text-rose-600' : 'text-emerald-600';
-    tr.innerHTML = `<td class="py-2 pr-4 text-slate-700">${r.k}</td>` +
+    tr.innerHTML = `<td class="py-2 pr-4 text-slate-700">${esc(r.k)}</td>` +
       r.vals.map(v => `<td class="py-2 pr-4 text-right text-slate-500">${fmtCurrency(v)}</td>`).join('') +
       (multi
         ? `<td class="py-2 pr-4 text-right font-semibold ${varColor}">${r.v >= 0 ? '+' : ''}${fmtCurrency(r.v)}</td>
@@ -824,6 +884,222 @@ function renderMoversTable(years, byYear) {
     body.appendChild(tr);
   });
 }
+
+/* ==================================================================
+   BUDGETS + REVIEWS (database)
+   ================================================================== */
+async function loadBudgets(year) {
+  const { data, error } = await sb.from('opex_budgets').select('department,budget_amount').eq('fiscal_year', year);
+  if (error) throw error;
+  budgetsByYear.set(year, new Map((data || []).map(r => [r.department, Number(r.budget_amount)])));
+}
+async function loadReviews(year) {
+  const { data, error } = await sb.from('opex_flag_reviews')
+    .select('department,status,comment,reviewer,reviewed_at')
+    .eq('fiscal_year', year).order('reviewed_at', { ascending: true });
+  if (error) throw error;
+  reviewsMap = new Map();
+  (data || []).forEach(r => reviewsMap.set(`${year}|${r.department}`, r));   // latest decision wins
+}
+
+/* ==================================================================
+   FLAG ENGINE - runs entirely in the browser, no data leaves
+   ================================================================== */
+const FLAG_CFG = { overMed: 0.10, overHigh: 0.25, noBudgetYoy: 0.20, zMed: 2, zHigh: 3, projTol: 0.05 };
+const SEV_RANK = { Low: 1, Medium: 2, High: 3 };
+const mean = a => a.reduce((s, x) => s + x, 0) / a.length;
+const stdev = a => { const m = mean(a); return Math.sqrt(mean(a.map(x => (x - m) ** 2))); };
+
+function groupByDept(rows) {
+  const g = new Map();
+  rows.forEach(r => { const k = r.department || 'Unspecified'; if (!g.has(k)) g.set(k, []); g.get(k).push(r); });
+  return g;
+}
+
+function computeFlags(years, byYear) {
+  const last = years[years.length - 1];
+  const prevYears = years.slice(0, -1);
+  const prev = prevYears.length ? prevYears[prevYears.length - 1] : null;
+  const budgets = budgetsByYear.get(last) || new Map();
+  const gLast = groupByDept(byYear.get(last));
+  const gBy = new Map(prevYears.map(y => [y, groupByDept(byYear.get(y))]));
+  const flags = [];
+
+  gLast.forEach((rows, dept) => {
+    const actual = totalOf(rows);
+    const prevRows = prev ? (gBy.get(prev).get(dept) || []) : [];
+    const prevActual = prev ? totalOf(prevRows) : null;
+    const yoy = prevActual ? (actual - prevActual) / Math.abs(prevActual) : null;
+    const b = budgets.has(dept) ? budgets.get(dept) : null;
+    const hasBudget = b !== null && b > 0;
+    const overPct = hasBudget ? (actual - b) / b : null;
+
+    // Year-end projection from the last 3 months' run-rate
+    const m = sumBy(rows, r => r.month);
+    const months = [...m.keys()].map(Number).filter(x => x >= 1 && x <= 12).sort((a, b) => a - b);
+    const elapsed = months.length ? months[months.length - 1] : 12;
+    const tail = [elapsed - 2, elapsed - 1, elapsed].filter(x => x >= 1).map(x => m.get(x) || 0);
+    const proj = elapsed >= 12 ? actual : actual + mean(tail) * (12 - elapsed);
+
+    // Anomaly score: each month vs this department's own prior-year monthly history
+    const hist = [];
+    prevYears.forEach(y => {
+      sumBy(gBy.get(y).get(dept) || [], r => r.month).forEach((v, k) => { if (Number(k) >= 1 && Number(k) <= 12) hist.push(v); });
+    });
+    let maxZ = null, zMonth = null;
+    if (hist.length >= 6) {
+      const mu = mean(hist), sd = stdev(hist);
+      if (sd > 0) m.forEach((v, k) => { const z = (v - mu) / sd; if (maxZ === null || z > maxZ) { maxZ = z; zMonth = k; } });
+    }
+
+    const reasons = []; let sev = 0;
+    const bump = (s, t) => { reasons.push(t); sev = Math.max(sev, SEV_RANK[s]); };
+    if (hasBudget) {
+      if (overPct >= FLAG_CFG.overHigh) bump('High', `Over approved budget by ${(overPct * 100).toFixed(0)}%`);
+      else if (overPct >= FLAG_CFG.overMed) bump('Medium', `Over approved budget by ${(overPct * 100).toFixed(0)}%`);
+      else if (proj > b * (1 + FLAG_CFG.projTol)) bump('Medium', `Projected to exceed budget by ${((proj - b) / b * 100).toFixed(0)}%`);
+    } else if (yoy !== null && yoy >= FLAG_CFG.noBudgetYoy) {
+      bump(yoy >= 0.5 ? 'Medium' : 'Low', `No budget on file; spend up ${(yoy * 100).toFixed(0)}% YoY`);
+    }
+    if (maxZ !== null && maxZ >= FLAG_CFG.zMed) bump(maxZ >= FLAG_CFG.zHigh ? 'High' : 'Medium', `Unusual spike in ${monthName(zMonth)} (z=${maxZ.toFixed(1)})`);
+    if (!reasons.length) return;
+
+    // Top categories driving the increase (shares only - used for AI commentary)
+    const sl = sumBy(rows, r => r.statutory_mapping || 'Unmapped');
+    const sp = sumBy(prevRows, r => r.statutory_mapping || 'Unmapped');
+    const deltas = [...sl.keys()].map(k => ({ category: k, delta: (sl.get(k) || 0) - (sp.get(k) || 0) }))
+      .filter(x => x.delta > 0).sort((a, b) => b.delta - a.delta);
+    const totalPos = deltas.reduce((s, x) => s + x.delta, 0);
+    const drivers = deltas.slice(0, 3).map(x => ({ category: x.category, share_of_increase_pct: Math.round(x.delta / totalPos * 100) }));
+
+    flags.push({ dept, actual, budget: hasBudget ? b : null, overPct, yoy, proj, maxZ, zMonth, drivers,
+      severity: Object.keys(SEV_RANK).find(k => SEV_RANK[k] === sev), reasons });
+  });
+
+  return flags.sort((a, b) => SEV_RANK[b.severity] - SEV_RANK[a.severity] || (b.overPct ?? b.yoy ?? 0) - (a.overPct ?? a.yoy ?? 0));
+}
+
+/* ==================================================================
+   FLAGS TABLE + HUMAN REVIEW
+   ================================================================== */
+function renderFlags() {
+  const body = document.getElementById('flagsBody');
+  const hasB = (budgetsByYear.get(currentFlagYear) || new Map()).size > 0;
+  document.getElementById('flagsSubtitle').textContent = lastFlags.length
+    ? `${lastFlags.length} flagged for FY${currentFlagYear}. Budget: ${hasB ? 'loaded' : 'none uploaded'}. AI recommends, a human decides.`
+    : `No departments flagged for FY${currentFlagYear}.`;
+  document.getElementById('explainBtn').disabled = lastFlags.length === 0;
+  body.innerHTML = '';
+  const sevCls = { High: 'bg-rose-50 text-rose-700 border-rose-200', Medium: 'bg-amber-50 text-amber-700 border-amber-200', Low: 'bg-slate-50 text-slate-600 border-slate-200' };
+  const revCls = { justified: 'bg-emerald-50 text-emerald-700', investigate: 'bg-amber-50 text-amber-700', escalate: 'bg-rose-50 text-rose-700' };
+  const btn = (s, label, c) => `<button data-status="${s}" class="px-2 py-1 text-[11px] font-semibold rounded border ${c} mr-1">${label}</button>`;
+
+  lastFlags.forEach(f => {
+    const rev = reviewsMap.get(`${currentFlagYear}|${f.dept}`);
+    const variance = f.overPct !== null ? `${(f.overPct * 100).toFixed(0)}% vs budget`
+                   : f.yoy !== null ? `${(f.yoy * 100).toFixed(0)}% YoY` : '-';
+    const tr = document.createElement('tr');
+    tr.dataset.dept = f.dept;
+    tr.className = 'border-b border-slate-50' + (rev && rev.status === 'justified' ? ' opacity-60' : '');
+    tr.innerHTML = `
+      <td class="py-2 pr-3 font-medium text-slate-700">${esc(f.dept)}</td>
+      <td class="py-2 pr-3 text-right text-slate-500">${fmtCurrency(f.actual)}</td>
+      <td class="py-2 pr-3 text-right text-slate-500">${f.budget !== null ? fmtCurrency(f.budget) : '-'}</td>
+      <td class="py-2 pr-3 text-right font-semibold text-slate-700">${variance}</td>
+      <td class="py-2 pr-3 text-right text-slate-500">${fmtCurrency(f.proj)}</td>
+      <td class="py-2 pr-3"><span class="px-2 py-0.5 text-xs font-semibold rounded-full border ${sevCls[f.severity]}">${f.severity}</span></td>
+      <td class="py-2 pr-3 text-xs text-slate-500">${f.reasons.map(esc).join('<br>')}</td>
+      <td class="py-2 pr-3 text-xs">${rev
+        ? `<span class="px-2 py-0.5 rounded-full font-semibold ${revCls[rev.status]}" title="${esc(rev.comment || '')}">${rev.status}</span><div class="text-slate-400 mt-0.5">${esc(rev.reviewer || '')}</div>`
+        : '<span class="text-slate-400">Pending</span>'}</td>
+      <td class="py-2 whitespace-nowrap">
+        ${btn('justified', 'Justified', 'text-emerald-700 border-emerald-200 hover:bg-emerald-50')}
+        ${btn('investigate', 'Investigate', 'text-amber-700 border-amber-200 hover:bg-amber-50')}
+        ${btn('escalate', 'Escalate', 'text-rose-700 border-rose-200 hover:bg-rose-50')}
+      </td>`;
+    body.appendChild(tr);
+
+    const ai = aiCommentary.get(f.dept);
+    if (ai) {
+      const tr2 = document.createElement('tr');
+      tr2.innerHTML = `<td colspan="9" class="py-2 px-3 text-xs text-slate-600 bg-blue-50/50"><i class="fa-solid fa-wand-magic-sparkles text-hoechst-blue mr-1"></i>${esc(ai)}</td>`;
+      body.appendChild(tr2);
+    }
+  });
+}
+
+async function submitReview(dept, status) {
+  const comment = prompt(`Comment for ${dept} (optional):`);
+  if (comment === null) return;
+  const { error } = await sb.from('opex_flag_reviews')
+    .insert({ fiscal_year: currentFlagYear, department: dept, status, comment: comment || null });
+  if (error) { showError('Could not save review: ' + error.message); return; }
+  await loadReviews(currentFlagYear);
+  renderFlags();
+}
+
+document.getElementById('flagsBody').addEventListener('click', e => {
+  const b = e.target.closest('button[data-status]');
+  if (b) submitReview(b.closest('tr').dataset.dept, b.dataset.status);
+});
+
+/* ==================================================================
+   AI (via Supabase Edge Function "opex-explain")
+   Only percentages and generic codes ("Dept 1") are ever sent.
+   ================================================================== */
+const parseJson = t => JSON.parse(String(t).replace(/```json|```/g, '').trim());
+
+document.getElementById('explainBtn').addEventListener('click', async () => {
+  if (!lastFlags.length) return;
+  const btn = document.getElementById('explainBtn');
+  btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Thinking...';
+  try {
+    const codeToDept = new Map();
+    const items = lastFlags.slice(0, 10).map((f, i) => {
+      const code = `Dept ${i + 1}`; codeToDept.set(code, f.dept);
+      return {
+        code, severity: f.severity, has_budget: f.budget !== null,
+        over_budget_pct: f.overPct === null ? null : +(f.overPct * 100).toFixed(1),
+        yoy_growth_pct: f.yoy === null ? null : +(f.yoy * 100).toFixed(1),
+        projected_vs_budget_pct: f.budget ? +((f.proj - f.budget) / f.budget * 100).toFixed(1) : null,
+        peak_month: f.zMonth ? monthName(f.zMonth) : null,
+        peak_month_zscore: f.maxZ === null ? null : +f.maxZ.toFixed(1),
+        top_drivers: f.drivers
+      };
+    });
+    const { data, error } = await sb.functions.invoke('opex-explain', { body: { mode: 'explain', payload: { flags: items } } });
+    if (error) throw error;
+    const out = parseJson(data.text);
+    aiCommentary = new Map(Object.entries(out).map(([code, txt]) => [codeToDept.get(code), txt]).filter(([d]) => d));
+    renderFlags();
+  } catch (e) { showError('AI commentary failed: ' + (e.message || e)); }
+  finally { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI Commentary'; }
+});
+
+document.getElementById('nlBtn').addEventListener('click', async () => {
+  const q = document.getElementById('nlInput').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('nlBtn'); btn.disabled = true;
+  try {
+    const { data, error } = await sb.functions.invoke('opex-explain', { body: { mode: 'intent', payload: { question: q } } });
+    if (error) throw error;
+    const intent = parseJson(data.text);
+
+    await Promise.all([loadDepartments(), loadStatutoryMappings()]);
+    selectedDepts.clear(); selectedCostCenters.clear(); selectedCostElements.clear(); selectedStatutoryMappings.clear();
+    ceStale = true;
+    const match = (list, kws) => list.filter(x => (kws || []).some(k => x.toLowerCase().includes(String(k).toLowerCase())));
+    match(departments, intent.department_keywords).forEach(d => selectedDepts.add(d));
+    match(statutoryMappings, intent.statutory_keywords).forEach(s => selectedStatutoryMappings.add(s));
+
+    const valid = (intent.years || []).filter(y => availableYears.some(a => a.fiscal_year === y));
+    if (valid.length) { selectedYears = new Set(valid); renderYearChips(); }
+
+    renderList(listSearch.value); updateUI();
+    await runComparison();
+  } catch (e) { showError('Could not interpret the question: ' + (e.message || e)); }
+  finally { btn.disabled = false; }
+});
 
 /* ==================================================================
    ERRORS + INIT
@@ -838,13 +1114,7 @@ async function initDashboard() {
 }
 
 /* ==================================================================
-   EXCEL / CSV UPLOAD
-
-   Parses in the browser (SheetJS), matches headers regardless of
-   spacing/case/punctuation, coerces types, normalizes department
-   names the same way the migration does, then inserts in chunks
-   tagged with whatever fiscal year you typed. Any year works -
-   nothing here is limited to a fixed set.
+   EXCEL / CSV UPLOAD (OPEX data)
    ================================================================== */
 const COLUMNS = {
   document_no:        'text',
@@ -868,7 +1138,6 @@ const COLUMNS = {
   department:         'text'
 };
 
-// Every plausible spelling, normalized to letters+digits only.
 const HEADER_ALIASES = {
   documentno:'document_no', documentnumber:'document_no', docno:'document_no', doc:'document_no',
   docdate:'doc_date', documentdate:'doc_date', date:'doc_date',
@@ -892,9 +1161,6 @@ const HEADER_ALIASES = {
 };
 
 const normalizeHeader = h => String(h ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-// Same rule the migration applies, so uploads stay consistent with
-// existing rows and the department filter keeps matching.
 const normalizeDepartment = v => String(v).trim().replace(/\s*-\s*/g, '-');
 
 function coerceValue(raw, type) {
@@ -905,25 +1171,18 @@ function coerceValue(raw, type) {
   return Number.isFinite(n) ? n : null;
 }
 
-// Maps one spreadsheet row of header text to { columnIndex: dbColumn }.
 function mapHeaderRow(line) {
   const idxToCol = {};
   const unmatched = [];
   (line || []).forEach((h, idx) => {
     const norm = normalizeHeader(h);
     const col = HEADER_ALIASES[norm] || (COLUMNS[norm] ? norm : null);
-    // Don't let two spreadsheet columns claim the same DB column.
     if (col && COLUMNS[col] && !Object.values(idxToCol).includes(col)) idxToCol[idx] = col;
     else if (h !== null && String(h).trim() !== '') unmatched.push(h);
   });
   return { idxToCol, unmatched };
 }
 
-// SAP and Excel exports often carry blank rows, report titles, or
-// Subtotal/Sum lines above the real header row, so we don't assume the
-// headers are in row 1. We scan the first HEADER_SCAN_ROWS rows and take
-// whichever one matches the most known columns. Preamble rows like
-// "Subtotal: 108,323,975" match nothing, so they lose to the real header.
 const HEADER_SCAN_ROWS = 25;
 const MIN_HEADER_MATCHES = 3;
 
@@ -946,9 +1205,6 @@ function parseWorkbook(workbook, fiscalYear) {
   if (raw.length === 0) return { rows: [], unmatchedHeaders: [], matchedCount: 0, headerRowNumber: null, skippedPreambleRows: 0 };
 
   const header = findHeaderRow(raw);
-
-  // Require a few real matches so a stray preamble row that happens to
-  // contain one recognizable word isn't mistaken for the header.
   if (header.rowIndex === -1 || header.score < MIN_HEADER_MATCHES) {
     return { rows: [], unmatchedHeaders: [], matchedCount: header.score, headerRowNumber: null, skippedPreambleRows: 0 };
   }
@@ -961,8 +1217,6 @@ function parseWorkbook(workbook, fiscalYear) {
     const line = raw[r];
     if (!line || line.every(v => v === null || v === '')) continue;
 
-    // Trailing "Subtotal:" / "Sum:" / "Total" lines below the data have
-    // text where a real record has none of its key identifying fields.
     const joined = line.filter(v => v !== null && v !== '').map(v => String(v).toLowerCase()).join(' ');
     const looksLikeTotalLine = /(^|\s)(sub\s*total|subtotal|sum|grand\s*total|total)\s*:?\s*$|^(sub\s*total|subtotal|sum|grand\s*total|total)\b/.test(joined.trim());
 
@@ -976,7 +1230,6 @@ function parseWorkbook(workbook, fiscalYear) {
       if (val !== null) hasValue = true;
     });
 
-    // A real record has at least one of these; a summary line has none.
     const hasAnchor = obj.cost_ctr !== null && obj.cost_ctr !== undefined
                    || obj.cost_elem !== null && obj.cost_elem !== undefined
                    || (obj.department !== null && obj.department !== undefined)
@@ -993,7 +1246,7 @@ function parseWorkbook(workbook, fiscalYear) {
     rows,
     unmatchedHeaders: [...new Set(header.unmatched)],
     matchedCount: Object.keys(idxToCol).length,
-    headerRowNumber: header.rowIndex + 1,   // 1-based, as Excel shows it
+    headerRowNumber: header.rowIndex + 1,
     skippedPreambleRows: header.rowIndex + skippedNonData
   };
 }
@@ -1022,9 +1275,7 @@ const uploadProgressBar = document.getElementById('uploadProgressBar');
 const uploadProgressText = document.getElementById('uploadProgressText');
 const yearExistsNote = document.getElementById('yearExistsNote');
 
-document.getElementById('openUploadBtn').addEventListener('click', () => {
-  uploadModal.classList.remove('hidden');
-});
+document.getElementById('openUploadBtn').addEventListener('click', () => uploadModal.classList.remove('hidden'));
 document.getElementById('closeUploadBtn').addEventListener('click', () => uploadModal.classList.add('hidden'));
 
 uploadYearInput.addEventListener('input', () => {
@@ -1086,7 +1337,7 @@ startUploadBtn.addEventListener('click', async () => {
     }
 
     const warn = (unmatchedHeaders.length
-        ? `<br><span class="text-amber-600">Skipped unrecognized column(s): ${unmatchedHeaders.join(', ')}</span>` : '')
+        ? `<br><span class="text-amber-600">Skipped unrecognized column(s): ${unmatchedHeaders.map(esc).join(', ')}</span>` : '')
       + `<br><span class="text-slate-400">Headers found on row ${headerRowNumber} (${matchedCount} columns matched)`
       + (skippedPreambleRows ? `; skipped ${skippedPreambleRows} non-data row(s) such as blanks or Subtotal/Sum lines` : '')
       + `.</span>`;
@@ -1102,10 +1353,9 @@ startUploadBtn.addEventListener('click', async () => {
     if (failed === 0) {
       setUploadStatus(`Done - ${inserted.toLocaleString()} row(s) imported into FY${fiscalYear}.${warn}`, 'success');
     } else {
-      setUploadStatus(`Imported ${inserted.toLocaleString()}, but ${failed.toLocaleString()} failed. First error: ${firstError}${warn}`, 'error');
+      setUploadStatus(`Imported ${inserted.toLocaleString()}, but ${failed.toLocaleString()} failed. First error: ${esc(firstError)}${warn}`, 'error');
     }
 
-    // New data may introduce new years, departments, cost centres etc.
     deptsLoaded = ccLoaded = statLoaded = false;
     ceStale = true;
     await loadYears(true);
@@ -1117,6 +1367,56 @@ startUploadBtn.addEventListener('click', async () => {
   } finally {
     startUploadBtn.disabled = false;
   }
+});
+
+/* ==================================================================
+   BUDGET UPLOAD
+   ================================================================== */
+const budgetModal = document.getElementById('budgetModal');
+document.getElementById('openBudgetBtn').addEventListener('click', () => budgetModal.classList.remove('hidden'));
+document.getElementById('closeBudgetBtn').addEventListener('click', () => budgetModal.classList.add('hidden'));
+
+function setBudgetStatus(msg, kind) {
+  const el = document.getElementById('budgetStatus');
+  el.className = 'text-xs rounded-lg px-3 py-2 mb-4 border ' + (kind === 'error'
+    ? 'text-rose-700 bg-rose-50 border-rose-200'
+    : kind === 'success' ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+    : 'text-slate-600 bg-slate-50 border-slate-200');
+  el.innerHTML = msg;
+}
+
+document.getElementById('startBudgetBtn').addEventListener('click', async () => {
+  const fy = parseInt(document.getElementById('budgetYearInput').value, 10);
+  const file = document.getElementById('budgetFileInput').files[0];
+  if (!Number.isFinite(fy) || !file) { setBudgetStatus('Enter a fiscal year and choose a file.', 'error'); return; }
+  try {
+    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
+    const totals = new Map();
+    raw.forEach(r => {
+      let dept = null, amt = null;
+      Object.entries(r).forEach(([k, v]) => {
+        const n = normalizeHeader(k);
+        if (n.includes('department') || n.includes('dept')) dept = v;
+        else if (n.includes('budget') || n.includes('amount')) amt = v;
+      });
+      const a = coerceValue(amt, 'number');
+      if (dept && a !== null) {
+        const d = normalizeDepartment(dept);
+        totals.set(d, (totals.get(d) || 0) + a);
+      }
+    });
+    const rows = [...totals].map(([department, budget_amount]) => ({ fiscal_year: fy, department, budget_amount }));
+    if (!rows.length) { setBudgetStatus('No rows found. Check the headers are "Department" and "Budget".', 'error'); return; }
+
+    const { error } = await sb.from('opex_budgets').upsert(rows, { onConflict: 'fiscal_year,department' });
+    if (error) throw error;
+
+    await loadDepartments();
+    const unknown = rows.filter(r => !departments.includes(r.department)).map(r => r.department);
+    setBudgetStatus(`Saved ${rows.length} department budget(s) for FY${fy}.` +
+      (unknown.length ? `<br><span class="text-amber-600">Not matching any department in your data: ${unknown.map(esc).join(', ')}</span>` : ''), 'success');
+  } catch (e) { setBudgetStatus('Upload failed: ' + esc(e.message), 'error'); }
 });
 </script>
 </body>

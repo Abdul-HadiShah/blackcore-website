@@ -1,1423 +1,409 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OPEX Analysis Dashboard - Hoechst Pakistan</title>
+<!DOCTYPE html> <html lang="en"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>OPEX Analysis Dashboard - Hoechst Pakistan</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = { theme: { extend: { colors: { hoechst: {
-    blue:'#0085CA', dark:'#1E293B', gray:'#64748B', light:'#F8FAFC'
-  }}}}}
-</script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-</head>
-<body class="bg-hoechst-light font-sans text-hoechst-dark min-h-screen flex flex-col">
+<script src="https://cdn.tailwindcss.com"></script> <script> tailwind.config = { theme: { extend: { colors: { hoechst: { blue:'#0085CA', dark:'#1E293B', gray:'#64748B', light:'#F8FAFC' }}}}} </script> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script> <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script> </head> <body class="bg-hoechst-light font-sans text-hoechst-dark min-h-screen flex flex-col">
 
-<!-- ================= AUTH SCREEN ================= -->
-<div id="authScreen" class="flex-1 flex items-center justify-center px-4">
-  <div class="w-full max-w-sm bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-    <div class="flex flex-col items-center mb-6">
-      <img src="logo.png" alt="Company Logo" class="h-12 w-auto object-contain mb-3" onerror="this.style.display='none'">
-      <h1 class="text-lg font-bold text-hoechst-dark">OPEX Analysis Dashboard</h1>
-      <p class="text-xs text-hoechst-gray uppercase tracking-wide mt-1">Sign in to continue</p>
-    </div>
-    <form id="loginForm" class="space-y-4">
-      <div>
-        <label class="block text-xs font-semibold text-slate-500 mb-1">Email</label>
-        <input id="emailInput" type="email" required autocomplete="username"
-          class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-hoechst-blue">
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-slate-500 mb-1">Password</label>
-        <input id="passwordInput" type="password" required autocomplete="current-password"
-          class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-hoechst-blue">
-      </div>
-      <div id="authError" class="hidden text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2"></div>
-      <button id="loginBtn" type="submit"
-        class="w-full py-2.5 bg-hoechst-blue text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
-        Sign In
-      </button>
-    </form>
-  </div>
-</div>
+<!-- ================= AUTH SCREEN ================= --> <div id="authScreen" class="flex-1 flex items-center justify-center px-4"> <div class="w-full max-w-sm bg-white rounded-xl shadow-sm border border-slate-200 p-8"> <div class="flex flex-col items-center mb-6"> <img src="logo.png" alt="Company Logo" class="h-12 w-auto object-contain mb-3" onerror="this.style.display='none'"> <h1 class="text-lg font-bold text-hoechst-dark">OPEX Analysis Dashboard</h1> <p class="text-xs text-hoechst-gray uppercase tracking-wide mt-1">Sign in to continue</p> </div> <form id="loginForm" class="space-y-4"> <div> <label class="block text-xs font-semibold text-slate-500 mb-1">Email</label> <input id="emailInput" type="email" required autocomplete="username" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-hoechst-blue"> </div> <div> <label class="block text-xs font-semibold text-slate-500 mb-1">Password</label> <input id="passwordInput" type="password" required autocomplete="current-password" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-hoechst-blue"> </div> <div id="authError" class="hidden text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2"></div> <button id="loginBtn" type="submit" class="w-full py-2.5 bg-hoechst-blue text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition"> Sign In </button> </form> </div> </div>
 
-<!-- ================= MAIN APP ================= -->
-<div id="appScreen" class="hidden flex-1 flex flex-col">
+<!-- ================= MAIN APP ================= --> <div id="appScreen" class="hidden flex-1 flex flex-col">
 
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-      <div class="flex items-center space-x-6">
-        <img src="logo.png" alt="Company Logo" class="h-10 w-auto object-contain" onerror="this.style.display='none'">
-        <div class="border-l border-slate-300 pl-6">
-          <h1 class="text-xl font-bold text-hoechst-dark">OPEX Analysis Dashboard</h1>
-          <p id="headerSubtitle" class="text-xs text-hoechst-gray tracking-wide uppercase">Multi-Year Cost Analysis &middot; AI-Assisted Flagging</p>
-        </div>
-      </div>
-      <div class="flex items-center space-x-4">
-        <span id="userEmailLabel" class="hidden md:inline text-xs text-slate-500"></span>
-        <button id="signOutBtn" class="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition">
-          <i class="fa-solid fa-right-from-bracket mr-1"></i> Sign Out
-        </button>
-      </div>
-    </div>
-  </header>
+<header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm"> <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between"> <div class="flex items-center space-x-6"> <img src="logo.png" alt="Company Logo" class="h-10 w-auto object-contain" onerror="this.style.display='none'"> <div class="border-l border-slate-300 pl-6"> <h1 class="text-xl font-bold text-hoechst-dark">OPEX Analysis Dashboard</h1> <p id="headerSubtitle" class="text-xs text-hoechst-gray tracking-wide uppercase">Multi-Year Cost Analysis &middot; AI-Assisted Flagging</p> </div> </div> <div class="flex items-center space-x-4"> <span id="userEmailLabel" class="hidden md:inline text-xs text-slate-500"></span> <button id="signOutBtn" class="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition"> <i class="fa-solid fa-right-from-bracket mr-1"></i> Sign Out </button> </div> </div> </header>
 
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <div id="globalError" class="hidden mb-6 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3"></div>
+<div id="globalError" class="hidden mb-6 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3"></div>
 
-    <!-- YEARS + IMPORT -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
-      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
-        <div>
-          <h2 class="text-lg font-bold text-slate-800">Years to Compare</h2>
-          <p class="text-sm text-slate-500 mt-1">Pick any number of years. Upload a file to add a new one.</p>
-        </div>
-        <div class="flex gap-2">
-          <button id="openBudgetBtn" class="px-4 py-2 text-sm font-semibold text-hoechst-blue bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition whitespace-nowrap">
-            <i class="fa-solid fa-scale-balanced mr-2"></i>Upload Budget
-          </button>
-          <button id="openUploadBtn" class="px-4 py-2 text-sm font-semibold text-white bg-hoechst-blue rounded-lg hover:bg-blue-700 transition whitespace-nowrap">
-            <i class="fa-solid fa-file-arrow-up mr-2"></i>Upload Excel Data
-          </button>
-        </div>
-      </div>
-      <div id="yearChips" class="flex flex-wrap gap-2">
-        <span class="text-sm text-slate-400 italic">Loading years...</span>
-      </div>
-    </div>
+<!-- YEARS + IMPORT --> <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8"> <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4"> <div> <h2 class="text-lg font-bold text-slate-800">Years to Compare</h2> <p class="text-sm text-slate-500 mt-1">Pick any number of years. Upload a file to add a new one.</p> </div> <div class="flex gap-2"> <button id="openBudgetBtn" class="px-4 py-2 text-sm font-semibold text-hoechst-blue bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition whitespace-nowrap"> <i class="fa-solid fa-scale-balanced mr-2"></i>Upload Budget </button> <button id="openUploadBtn" class="px-4 py-2 text-sm font-semibold text-white bg-hoechst-blue rounded-lg hover:bg-blue-700 transition whitespace-nowrap"> <i class="fa-solid fa-file-arrow-up mr-2"></i>Upload Excel Data </button> </div> </div> <div id="yearChips" class="flex flex-wrap gap-2"> <span class="text-sm text-slate-400 italic">Loading years...</span> </div> </div>
 
-    <!-- NATURAL-LANGUAGE QUESTION -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
-      <h3 class="text-sm font-bold uppercase text-slate-400 tracking-wider mb-3"><i class="fa-solid fa-wand-magic-sparkles text-hoechst-blue mr-1"></i> Ask a Question</h3>
-      <div class="flex gap-2">
-        <input id="nlInput" placeholder='e.g. "Which departments overspent on travel in 2025?"'
-          class="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-hoechst-blue">
-        <button id="nlBtn" class="px-4 py-2 text-sm font-semibold text-white bg-hoechst-blue rounded-lg hover:bg-blue-700 transition disabled:opacity-50">Ask</button>
-      </div>
-      <p class="text-xs text-slate-400 mt-2">Only your question text is sent to the AI, to pick filters. Results are computed locally in your browser. Don't type confidential figures.</p>
-    </div>
+<!-- NATURAL-LANGUAGE QUESTION --> <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8"> <h3 class="text-sm font-bold uppercase text-slate-400 tracking-wider mb-3"><i class="fa-solid fa-wand-magic-sparkles text-hoechst-blue mr-1"></i> Ask a Question</h3> <div class="flex gap-2"> <input id="nlInput" placeholder='e.g. "Which departments overspent on travel in 2025?"' class="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-hoechst-blue"> <button id="nlBtn" class="px-4 py-2 text-sm font-semibold text-white bg-hoechst-blue rounded-lg hover:bg-blue-700 transition disabled:opacity-50">Ask</button> </div> <p class="text-xs text-slate-400 mt-2">Only your question text is sent to the AI, to pick filters. Results are computed locally in your browser. Don't type confidential figures.</p> </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-      <div>
-        <h2 class="text-lg font-bold text-slate-800">Cost Hierarchy Selection</h2>
-        <p class="text-sm text-slate-500 mt-1">Filter by Department, Cost Center, Cost Element, and/or Statutory Mapping.</p>
-      </div>
-      <div class="flex items-center space-x-3">
-        <button id="selectAllBtn" class="px-3 py-1.5 text-xs font-medium text-hoechst-blue bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition">Select All</button>
-        <button id="clearAllBtn" class="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition">Clear Selection</button>
-      </div>
-    </div>
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"> <div> <h2 class="text-lg font-bold text-slate-800">Cost Hierarchy Selection</h2> <p class="text-sm text-slate-500 mt-1">Filter by Department, Cost Center, Cost Element, and/or Statutory Mapping.</p> </div> <div class="flex items-center space-x-3"> <button id="selectAllBtn" class="px-3 py-1.5 text-xs font-medium text-hoechst-blue bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition">Select All</button> <button id="clearAllBtn" class="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition">Clear Selection</button> </div> </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
-      <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col h-[650px]">
-        <div class="flex items-center bg-slate-100 rounded-lg p-1 mb-3">
-          <button id="tabDeptBtn"  class="tier-tab flex-1 text-xs font-semibold py-1.5 rounded-md transition bg-white text-hoechst-blue shadow-sm">Depts</button>
-          <button id="tabCcBtn"    class="tier-tab flex-1 text-xs font-semibold py-1.5 rounded-md transition text-slate-500">Cost Ctr</button>
-          <button id="tabCeBtn"    class="tier-tab flex-1 text-xs font-semibold py-1.5 rounded-md transition text-slate-500">Cost Elem</button>
-          <button id="tabStatBtn"  class="tier-tab flex-1 text-xs font-semibold py-1.5 rounded-md transition text-slate-500">Statutory</button>
-        </div>
+<div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col h-[650px]"> <div class="flex items-center bg-slate-100 rounded-lg p-1 mb-3"> <button id="tabDeptBtn" class="tier-tab flex-1 text-xs font-semibold py-1.5 rounded-md transition bg-white text-hoechst-blue shadow-sm">Depts</button> <button id="tabCcBtn" class="tier-tab flex-1 text-xs font-semibold py-1.5 rounded-md transition text-slate-500">Cost Ctr</button> <button id="tabCeBtn" class="tier-tab flex-1 text-xs font-semibold py-1.5 rounded-md transition text-slate-500">Cost Elem</button> <button id="tabStatBtn" class="tier-tab flex-1 text-xs font-semibold py-1.5 rounded-md transition text-slate-500">Statutory</button> </div>
 
-        <div class="flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
-          <span id="panelLabel" class="text-xs font-bold uppercase text-slate-400 tracking-wider">Departments</span>
-          <span id="selectedCount" class="text-xs font-bold text-hoechst-blue bg-blue-50 px-2 py-0.5 rounded-full">0 Selected</span>
-        </div>
+<div class="flex items-center justify-between mb-3 pb-3 border-b border-slate-100"> <span id="panelLabel" class="text-xs font-bold uppercase text-slate-400 tracking-wider">Departments</span> <span id="selectedCount" class="text-xs font-bold text-hoechst-blue bg-blue-50 px-2 py-0.5 rounded-full">0 Selected</span> </div>
 
-        <div class="relative mb-3">
-          <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
-            <i class="fa-solid fa-search text-xs"></i>
-          </span>
-          <input type="text" id="listSearch" placeholder="Search department..."
-            class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-hoechst-blue focus:bg-white transition">
-        </div>
+<div class="relative mb-3"> <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400"> <i class="fa-solid fa-search text-xs"></i> </span> <input type="text" id="listSearch" placeholder="Search department..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-hoechst-blue focus:bg-white transition"> </div>
 
-        <div id="panelHint" class="hidden text-xs text-slate-400 italic px-1 pb-2"></div>
-        <button id="refreshListBtn" class="mb-2 text-xs font-medium text-hoechst-blue bg-blue-50 border border-blue-200 rounded-lg py-1.5 hover:bg-blue-100 transition">
-          <i class="fa-solid fa-rotate mr-1"></i> Refresh List
-        </button>
+<div id="panelHint" class="hidden text-xs text-slate-400 italic px-1 pb-2"></div> <button id="refreshListBtn" class="mb-2 text-xs font-medium text-hoechst-blue bg-blue-50 border border-blue-200 rounded-lg py-1.5 hover:bg-blue-100 transition"> <i class="fa-solid fa-rotate mr-1"></i> Refresh List </button>
 
-        <div id="listContainer" class="overflow-y-auto flex-1 space-y-1.5 pr-1 text-sm"></div>
-      </div>
+<div id="listContainer" class="overflow-y-auto flex-1 space-y-1.5 pr-1 text-sm"></div> </div>
 
-      <div class="lg:col-span-3 flex flex-col space-y-6">
+<div class="lg:col-span-3 flex flex-col space-y-6">
 
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 class="text-sm font-bold uppercase text-slate-400 tracking-wider mb-3">Active Hierarchy Filter</h3>
-          <div id="activeSelectionDisplay" class="flex flex-wrap gap-2 mb-4">
-            <span class="text-sm text-slate-400 italic">No filters selected - leaving all tiers empty compares the whole company.</span>
-          </div>
-          <button id="runBtn" class="w-full md:w-auto px-5 py-2.5 bg-hoechst-blue text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
-            <i id="runSpinner" class="hidden fa-solid fa-spinner fa-spin mr-2"></i>
-            <span id="runBtnText">Run Comparison</span>
-          </button>
-        </div>
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6"> <h3 class="text-sm font-bold uppercase text-slate-400 tracking-wider mb-3">Active Hierarchy Filter</h3> <div id="activeSelectionDisplay" class="flex flex-wrap gap-2 mb-4"> <span class="text-sm text-slate-400 italic">No filters selected - leaving all tiers empty compares the whole company.</span> </div> <button id="runBtn" class="w-full md:w-auto px-5 py-2.5 bg-hoechst-blue text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50"> <i id="runSpinner" class="hidden fa-solid fa-spinner fa-spin mr-2"></i> <span id="runBtnText">Run Comparison</span> </button> </div>
 
-        <div id="resultsSection" class="hidden space-y-6">
+<div id="resultsSection" class="hidden space-y-6">
 
-          <div id="kpiGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+<div id="kpiGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
 
-          <!-- FLAGGED DEPARTMENTS -->
-          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div class="flex items-center justify-between mb-4 gap-3">
-              <div>
-                <h3 class="text-sm font-bold uppercase text-slate-400 tracking-wider">Flagged Departments</h3>
-                <p id="flagsSubtitle" class="text-xs text-slate-400 mt-1"></p>
-              </div>
-              <button id="explainBtn" class="px-3 py-1.5 text-xs font-semibold text-white bg-hoechst-blue rounded-lg hover:bg-blue-700 transition disabled:opacity-50 whitespace-nowrap">
-                <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI Commentary
-              </button>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead><tr class="text-left text-xs font-semibold text-slate-400 uppercase border-b border-slate-100">
-                  <th class="py-2 pr-3">Department</th><th class="py-2 pr-3 text-right">Actual</th><th class="py-2 pr-3 text-right">Budget</th>
-                  <th class="py-2 pr-3 text-right">Variance</th><th class="py-2 pr-3 text-right">Projected FY</th>
-                  <th class="py-2 pr-3">Severity</th><th class="py-2 pr-3">Why flagged</th><th class="py-2 pr-3">Review</th><th class="py-2">Action</th>
-                </tr></thead>
-                <tbody id="flagsBody"></tbody>
-              </table>
-            </div>
-          </div>
+<!-- FLAGGED DEPARTMENTS --> <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6"> <div class="flex items-center justify-between mb-4 gap-3"> <div> <h3 class="text-sm font-bold uppercase text-slate-400 tracking-wider">Flagged Departments</h3> <p id="flagsSubtitle" class="text-xs text-slate-400 mt-1"></p> </div> <button id="explainBtn" class="px-3 py-1.5 text-xs font-semibold text-white bg-hoechst-blue rounded-lg hover:bg-blue-700 transition disabled:opacity-50 whitespace-nowrap"> <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI Commentary </button> </div> <div class="overflow-x-auto"> <table class="w-full text-sm"> <thead><tr class="text-left text-xs font-semibold text-slate-400 uppercase border-b border-slate-100"> <th class="py-2 pr-3">Department</th><th class="py-2 pr-3 text-right">Actual</th><th class="py-2 pr-3 text-right">Budget</th> <th class="py-2 pr-3 text-right">Variance</th><th class="py-2 pr-3 text-right">Projected FY</th> <th class="py-2 pr-3">Severity</th><th class="py-2 pr-3">Why flagged</th><th class="py-2 pr-3">Review</th><th class="py-2">Action</th> </tr></thead> <tbody id="flagsBody"></tbody> </table> </div> </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-[420px]">
-              <canvas id="barChart"></canvas>
-            </div>
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-[420px]">
-              <canvas id="pieChart"></canvas>
-            </div>
-          </div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6"> <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-[420px]"> <canvas id="barChart"></canvas> </div> <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-[420px]"> <canvas id="pieChart"></canvas> </div> </div>
 
-          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-[360px]">
-            <canvas id="lineChart"></canvas>
-          </div>
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-[360px]"> <canvas id="lineChart"></canvas> </div>
 
-          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 class="text-sm font-bold uppercase text-slate-400 tracking-wider mb-4">By Statutory Mapping</h3>
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead><tr id="moversHeadRow" class="text-left text-xs font-semibold text-slate-400 uppercase border-b border-slate-100"></tr></thead>
-                <tbody id="moversTableBody"></tbody>
-              </table>
-            </div>
-          </div>
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6"> <h3 class="text-sm font-bold uppercase text-slate-400 tracking-wider mb-4">By Statutory Mapping</h3> <div class="overflow-x-auto"> <table class="w-full text-sm"> <thead><tr id="moversHeadRow" class="text-left text-xs font-semibold text-slate-400 uppercase border-b border-slate-100"></tr></thead> <tbody id="moversTableBody"></tbody> </table> </div> </div>
 
-        </div>
-      </div>
-    </div>
-  </main>
+</div> </div> </div> </main>
 
-  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
-    &copy; 2026 Hoechst Pakistan. All rights reserved. OPEX Analysis Dashboard v4.0 &middot; AI recommends, a human decides.
-  </footer>
-</div>
+<footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500"> &copy; 2026 Hoechst Pakistan. All rights reserved. OPEX Analysis Dashboard v4.0 &middot; AI recommends, a human decides. </footer> </div>
 
-<!-- ================= UPLOAD MODAL ================= -->
-<div id="uploadModal" class="hidden fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 px-4">
-  <div class="bg-white rounded-xl shadow-lg max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-bold text-slate-800">Upload Excel Data</h3>
-      <button id="closeUploadBtn" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
-    </div>
+<!-- ================= UPLOAD MODAL ================= --> <div id="uploadModal" class="hidden fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 px-4"> <div class="bg-white rounded-xl shadow-lg max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto"> <div class="flex items-center justify-between mb-4"> <h3 class="text-lg font-bold text-slate-800">Upload Excel Data</h3> <button id="closeUploadBtn" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button> </div>
 
-    <label class="block text-xs font-semibold text-slate-500 mb-1">Fiscal year</label>
-    <input id="uploadYearInput" type="number" min="1990" max="2100" step="1" placeholder="e.g. 2025"
-      class="w-full mb-1 px-3 py-2 text-sm border border-slate-200 rounded-lg">
-    <p id="yearExistsNote" class="hidden text-xs mb-3"></p>
-    <div class="mb-4"></div>
+<label class="block text-xs font-semibold text-slate-500 mb-1">Fiscal year</label> <input id="uploadYearInput" type="number" min="1990" max="2100" step="1" placeholder="e.g. 2025" class="w-full mb-1 px-3 py-2 text-sm border border-slate-200 rounded-lg"> <p id="yearExistsNote" class="hidden text-xs mb-3"></p> <div class="mb-4"></div>
 
-    <label class="block text-xs font-semibold text-slate-500 mb-1">Excel or CSV file</label>
-    <input id="uploadFileInput" type="file" accept=".xlsx,.xls,.csv"
-      class="w-full mb-4 text-sm border border-slate-200 rounded-lg px-3 py-2">
+<label class="block text-xs font-semibold text-slate-500 mb-1">Excel or CSV file</label> <input id="uploadFileInput" type="file" accept=".xlsx,.xls,.csv" class="w-full mb-4 text-sm border border-slate-200 rounded-lg px-3 py-2">
 
-    <label class="flex items-start space-x-2 mb-4 cursor-pointer">
-      <input id="replaceYearCheckbox" type="checkbox" class="mt-0.5 w-4 h-4 text-hoechst-blue border-slate-300 rounded">
-      <span class="text-xs text-slate-600">
-        Replace existing data for this year
-        <span class="block text-slate-400">Deletes all rows already stored for that year before importing. Leave unchecked to append.</span>
-      </span>
-    </label>
+<label class="flex items-start space-x-2 mb-4 cursor-pointer"> <input id="replaceYearCheckbox" type="checkbox" class="mt-0.5 w-4 h-4 text-hoechst-blue border-slate-300 rounded"> <span class="text-xs text-slate-600"> Replace existing data for this year <span class="block text-slate-400">Deletes all rows already stored for that year before importing. Leave unchecked to append.</span> </span> </label>
 
-    <div id="uploadStatus" class="hidden text-xs rounded-lg px-3 py-2 mb-4"></div>
-    <div id="uploadProgressWrap" class="hidden mb-4">
-      <div class="w-full bg-slate-100 rounded-full h-2">
-        <div id="uploadProgressBar" class="bg-hoechst-blue h-2 rounded-full transition-all" style="width:0%"></div>
-      </div>
-      <p id="uploadProgressText" class="text-xs text-slate-400 mt-1"></p>
-    </div>
+<div id="uploadStatus" class="hidden text-xs rounded-lg px-3 py-2 mb-4"></div> <div id="uploadProgressWrap" class="hidden mb-4"> <div class="w-full bg-slate-100 rounded-full h-2"> <div id="uploadProgressBar" class="bg-hoechst-blue h-2 rounded-full transition-all" style="width:0%"></div> </div> <p id="uploadProgressText" class="text-xs text-slate-400 mt-1"></p> </div>
 
-    <button id="startUploadBtn" class="w-full py-2.5 bg-hoechst-blue text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
-      Upload and Import
-    </button>
-    <p class="text-xs text-slate-400 mt-3">
-      Column headers are matched automatically regardless of spacing, capitalization,
-      underscores or punctuation ("Cost  Ctr", "cost_ctr" and "Cost Center" all map to
-      the same column). Unrecognized columns are skipped and listed after import.
-      Department names are normalized on the way in, so filters keep matching.
-    </p>
-  </div>
-</div>
+<button id="startUploadBtn" class="w-full py-2.5 bg-hoechst-blue text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50"> Upload and Import </button> <p class="text-xs text-slate-400 mt-3"> Column headers are matched automatically regardless of spacing, capitalization, underscores or punctuation ("Cost Ctr", "cost_ctr" and "Cost Center" all map to the same column). Unrecognized columns are skipped and listed after import. Department names are normalized on the way in, so filters keep matching. </p> </div> </div>
 
-<!-- ================= BUDGET MODAL ================= -->
-<div id="budgetModal" class="hidden fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 px-4">
-  <div class="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-bold text-slate-800">Upload Approved Budget</h3>
-      <button id="closeBudgetBtn" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <label class="block text-xs font-semibold text-slate-500 mb-1">Fiscal year</label>
-    <input id="budgetYearInput" type="number" placeholder="e.g. 2025" class="w-full mb-4 px-3 py-2 text-sm border border-slate-200 rounded-lg">
-    <label class="block text-xs font-semibold text-slate-500 mb-1">Excel or CSV file</label>
-    <input id="budgetFileInput" type="file" accept=".xlsx,.xls,.csv" class="w-full mb-4 text-sm border border-slate-200 rounded-lg px-3 py-2">
-    <div id="budgetStatus" class="hidden text-xs rounded-lg px-3 py-2 mb-4 border"></div>
-    <button id="startBudgetBtn" class="w-full py-2.5 bg-hoechst-blue text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50">Upload Budget</button>
-    <p class="text-xs text-slate-400 mt-3">Two columns: <b>Department</b> and <b>Budget</b>. Re-uploading a year overwrites it. Departments with an approved budget increase are not flagged for the increase itself.</p>
-  </div>
-</div>
+<!-- ================= BUDGET MODAL ================= --> <div id="budgetModal" class="hidden fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 px-4"> <div class="bg-white rounded-xl shadow-lg max-w-md w-full p-6"> <div class="flex items-center justify-between mb-4"> <h3 class="text-lg font-bold text-slate-800">Upload Approved Budget</h3> <button id="closeBudgetBtn" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button> </div> <label class="block text-xs font-semibold text-slate-500 mb-1">Fiscal year</label> <input id="budgetYearInput" type="number" placeholder="e.g. 2025" class="w-full mb-4 px-3 py-2 text-sm border border-slate-200 rounded-lg"> <label class="block text-xs font-semibold text-slate-500 mb-1">Excel or CSV file</label> <input id="budgetFileInput" type="file" accept=".xlsx,.xls,.csv" class="w-full mb-4 text-sm border border-slate-200 rounded-lg px-3 py-2"> <div id="budgetStatus" class="hidden text-xs rounded-lg px-3 py-2 mb-4 border"></div> <button id="startBudgetBtn" class="w-full py-2.5 bg-hoechst-blue text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50">Upload Budget</button> <p class="text-xs text-slate-400 mt-3">Two columns: <b>Department</b> and <b>Budget</b>. Re-uploading a year overwrites it. Departments with an approved budget increase are not flagged for the increase itself.</p> </div> </div>
 
-<script>
-/* ==================================================================
-   CONFIG
-   ================================================================== */
-const SUPABASE_URL = "https://irxyvtlzeespvfgtpeli.supabase.co/";
-const SUPABASE_ANON_KEY = "sb_publishable_xdIgxM3EbVY21JwfmHlhuw_Xg3aJWZ1";
+<script> /* ================================================================== CONFIG ================================================================== */ const SUPABASEURL = "https://irxyvtlzeespvfgtpeli.supabase.co/"; const SUPABASEANONKEY = "sbpublishablexdIgxM3EbVY21JwfmHlhuwXg3aJWZ1";
 
-const TABLE = "opex_data";
-const PAGE_SIZE = 1000;
+const TABLE = "opexdata"; const PAGESIZE = 1000; const PREVIEW_MODE = true; // set to false on 14 Oct to bring the login back
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = supabase.createClient(SUPABASEURL, SUPABASEANON_KEY);
 
-/* ==================================================================
-   AUTH
-   ================================================================== */
-const authScreen = document.getElementById('authScreen');
-const appScreen = document.getElementById('appScreen');
-const loginForm = document.getElementById('loginForm');
-const authError = document.getElementById('authError');
-const loginBtn = document.getElementById('loginBtn');
-const userEmailLabel = document.getElementById('userEmailLabel');
-const signOutBtn = document.getElementById('signOutBtn');
+/* ================================================================== AUTH ================================================================== */ const authScreen = document.getElementById('authScreen'); const appScreen = document.getElementById('appScreen'); const loginForm = document.getElementById('loginForm'); const authError = document.getElementById('authError'); const loginBtn = document.getElementById('loginBtn'); const userEmailLabel = document.getElementById('userEmailLabel'); const signOutBtn = document.getElementById('signOutBtn');
 
 let dashboardInitialized = false;
 
-loginForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  authError.classList.add('hidden');
-  const email = document.getElementById('emailInput').value.trim();
-  const password = document.getElementById('passwordInput').value;
-  loginBtn.disabled = true; loginBtn.textContent = 'Signing in...';
-  const { error } = await sb.auth.signInWithPassword({ email, password });
-  loginBtn.disabled = false; loginBtn.textContent = 'Sign In';
-  if (error) { authError.textContent = error.message; authError.classList.remove('hidden'); }
-});
+loginForm.addEventListener('submit', async (e) => { e.preventDefault(); authError.classList.add('hidden'); const email = document.getElementById('emailInput').value.trim(); const password = document.getElementById('passwordInput').value; loginBtn.disabled = true; loginBtn.textContent = 'Signing in...'; const { error } = await sb.auth.signInWithPassword({ email, password }); loginBtn.disabled = false; loginBtn.textContent = 'Sign In'; if (error) { authError.textContent = error.message; authError.classList.remove('hidden'); } });
 
 signOutBtn.addEventListener('click', async () => { await sb.auth.signOut(); });
 
-sb.auth.onAuthStateChange((_event, session) => {
-  if (session) {
-    authScreen.classList.add('hidden');
-    appScreen.classList.remove('hidden');
-    userEmailLabel.textContent = session.user.email;
-    userEmailLabel.classList.remove('hidden');
-    if (!dashboardInitialized) { dashboardInitialized = true; initDashboard(); }
-  } else {
-    appScreen.classList.add('hidden');
-    authScreen.classList.remove('hidden');
-  }
-});
-sb.auth.getSession();
+sb.auth.onAuthStateChange((event, session) => { if (session) { authScreen.classList.add('hidden'); appScreen.classList.remove('hidden'); userEmailLabel.textContent = session.user.email; userEmailLabel.classList.remove('hidden'); if (!dashboardInitialized) { dashboardInitialized = true; initDashboard(); } } else if (!PREVIEWMODE) { appScreen.classList.add('hidden'); authScreen.classList.remove('hidden'); } });
 
-/* ==================================================================
-   STATE
-   ================================================================== */
-let availableYears = [];
-let selectedYears = new Set();
+if (PREVIEW_MODE) { authScreen.classList.add('hidden'); appScreen.classList.remove('hidden'); ['signOutBtn','openUploadBtn','openBudgetBtn'].forEach(id => document.getElementById(id).classList.add('hidden')); if (!dashboardInitialized) { dashboardInitialized = true; initDashboard(); } } else { sb.auth.getSession(); }
 
-let departments = [];
-let costCenters = [];
-let costElements = [];
-let statutoryMappings = [];
+/* ================================================================== STATE ================================================================== */ let availableYears = []; let selectedYears = new Set();
 
-let selectedDepts = new Set();
-let selectedCostCenters = new Set();
-let selectedCostElements = new Set();
-let selectedStatutoryMappings = new Set();
+let departments = []; let costCenters = []; let costElements = []; let statutoryMappings = [];
 
-let deptsLoaded = false, ccLoaded = false, statLoaded = false, ceStale = true;
-let activeTab = 'dept';
+let selectedDepts = new Set(); let selectedCostCenters = new Set(); let selectedCostElements = new Set(); let selectedStatutoryMappings = new Set();
 
-// Budget / flag / review state
-let budgetsByYear = new Map();   // year -> Map(dept -> amount)
-let reviewsMap = new Map();      // "year|dept" -> latest review
-let lastFlags = [], currentFlagYear = null, aiCommentary = new Map();
+let deptsLoaded = false, ccLoaded = false, statLoaded = false, ceStale = true; let activeTab = 'dept';
 
-const listContainer = document.getElementById('listContainer');
-const selectedCountEl = document.getElementById('selectedCount');
-const panelLabel = document.getElementById('panelLabel');
-const panelHint = document.getElementById('panelHint');
-const activeSelectionDisplay = document.getElementById('activeSelectionDisplay');
-const listSearch = document.getElementById('listSearch');
-const selectAllBtn = document.getElementById('selectAllBtn');
-const clearAllBtn = document.getElementById('clearAllBtn');
-const refreshListBtn = document.getElementById('refreshListBtn');
-const yearChips = document.getElementById('yearChips');
-const globalError = document.getElementById('globalError');
+// Budget / flag / review state let budgetsByYear = new Map(); // year -> Map(dept -> amount) let reviewsMap = new Map(); // "year|dept" -> latest review let lastFlags = [], currentFlagYear = null, aiCommentary = new Map();
 
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function ccLabel(item) { return `${item.code} - ${item.name}`; }
-function ceLabel(item) { return `${item.code} - ${item.name}`; }
+const listContainer = document.getElementById('listContainer'); const selectedCountEl = document.getElementById('selectedCount'); const panelLabel = document.getElementById('panelLabel'); const panelHint = document.getElementById('panelHint'); const activeSelectionDisplay = document.getElementById('activeSelectionDisplay'); const listSearch = document.getElementById('listSearch'); const selectAllBtn = document.getElementById('selectAllBtn'); const clearAllBtn = document.getElementById('clearAllBtn'); const refreshListBtn = document.getElementById('refreshListBtn'); const yearChips = document.getElementById('yearChips'); const globalError = document.getElementById('globalError');
 
-function currentDataset() {
-  if (activeTab === 'dept') return { items: departments, getKey: d => d, getLabel: d => d, selectedSet: selectedDepts, placeholder: 'Search department...' };
-  if (activeTab === 'cc')   return { items: costCenters, getKey: c => c.code, getLabel: ccLabel, selectedSet: selectedCostCenters, placeholder: 'Search cost center...' };
-  if (activeTab === 'stat') return { items: statutoryMappings, getKey: s => s, getLabel: s => s, selectedSet: selectedStatutoryMappings, placeholder: 'Search statutory mapping...' };
-  return { items: costElements, getKey: c => c.code, getLabel: ceLabel, selectedSet: selectedCostElements, placeholder: 'Search cost element...' };
-}
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&','<':'<','>':'>','"':'"',"'":'''}[c])); function ccLabel(item) { return ${item.code} - ${item.name}; } function ceLabel(item) { return ${item.code} - ${item.name}; }
 
-/* ==================================================================
-   YEARS
-   ================================================================== */
-async function loadYears(preserveSelection = true) {
-  try {
-    const { data, error } = await sb.rpc('opex_years');
-    if (error) throw error;
-    availableYears = data || [];
-    if (!preserveSelection || selectedYears.size === 0) {
-      selectedYears = new Set(availableYears.slice(0, 2).map(y => y.fiscal_year));
-    }
-    renderYearChips();
-  } catch (err) {
-    showError('Failed to load years: ' + err.message +
-      ' - if this mentions opex_years or opex_data, run opex_multiyear_migration.sql in Supabase first.');
-    yearChips.innerHTML = '<span class="text-sm text-rose-500">Could not load years.</span>';
-  }
-}
+function currentDataset() { if (activeTab === 'dept') return { items: departments, getKey: d => d, getLabel: d => d, selectedSet: selectedDepts, placeholder: 'Search department...' }; if (activeTab === 'cc') return { items: costCenters, getKey: c => c.code, getLabel: ccLabel, selectedSet: selectedCostCenters, placeholder: 'Search cost center...' }; if (activeTab === 'stat') return { items: statutoryMappings, getKey: s => s, getLabel: s => s, selectedSet: selectedStatutoryMappings, placeholder: 'Search statutory mapping...' }; return { items: costElements, getKey: c => c.code, getLabel: ceLabel, selectedSet: selectedCostElements, placeholder: 'Search cost element...' }; }
 
-function renderYearChips() {
-  yearChips.innerHTML = '';
-  if (availableYears.length === 0) {
-    yearChips.innerHTML = '<span class="text-sm text-slate-400 italic">No data yet - upload a file to get started.</span>';
-    return;
-  }
-  availableYears.forEach(y => {
-    const on = selectedYears.has(y.fiscal_year);
-    const btn = document.createElement('button');
-    btn.className = `px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
-      on ? 'bg-hoechst-blue text-white border-hoechst-blue' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`;
-    btn.innerHTML = `FY${y.fiscal_year} <span class="${on ? 'text-blue-100' : 'text-slate-400'}">(${Number(y.row_count).toLocaleString()})</span>`;
-    btn.addEventListener('click', () => {
-      if (selectedYears.has(y.fiscal_year)) selectedYears.delete(y.fiscal_year);
-      else selectedYears.add(y.fiscal_year);
-      renderYearChips();
-    });
-    yearChips.appendChild(btn);
-  });
-}
+/* ================================================================== YEARS ================================================================== */ async function loadYears(preserveSelection = true) { try { const { data, error } = await sb.rpc('opexyears'); if (error) throw error; availableYears = data || []; if (!preserveSelection || selectedYears.size === 0) { selectedYears = new Set(availableYears.slice(0, 2).map(y => y.fiscalyear)); } renderYearChips(); } catch (err) { showError('Failed to load years: ' + err.message + ' - if this mentions opexyears or opexdata, run opexmultiyearmigration.sql in Supabase first.'); yearChips.innerHTML = '<span class="text-sm text-rose-500">Could not load years.</span>'; } }
 
-/* ==================================================================
-   FILTER LISTS - all loaded from the database
-   ================================================================== */
-function setListLoading(msg) {
-  listContainer.innerHTML = `<div class="text-xs text-slate-400 text-center py-4"><i class="fa-solid fa-spinner fa-spin mr-1"></i>${msg}</div>`;
-}
+function renderYearChips() { yearChips.innerHTML = ''; if (availableYears.length === 0) { yearChips.innerHTML = '<span class="text-sm text-slate-400 italic">No data yet - upload a file to get started.</span>'; return; } availableYears.forEach(y => { const on = selectedYears.has(y.fiscalyear); const btn = document.createElement('button'); btn.className = px-3 py-1.5 rounded-full text-xs font-semibold border transition ${ on ? 'bg-hoechst-blue text-white border-hoechst-blue' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}; btn.innerHTML = FY${y.fiscal_year} <span class="${on ? 'text-blue-100' : 'text-slate-400'}">(${Number(y.row_count).toLocaleString()})</span>; btn.addEventListener('click', () => { if (selectedYears.has(y.fiscalyear)) selectedYears.delete(y.fiscalyear); else selectedYears.add(y.fiscalyear); renderYearChips(); }); yearChips.appendChild(btn); }); }
 
-async function loadDepartments(force = false) {
-  if (deptsLoaded && !force) return;
-  setListLoading('Loading departments...');
-  try {
-    const { data, error } = await sb.rpc('opex_departments');
-    if (error) throw error;
-    departments = (data || []).map(r => r.department);
-    deptsLoaded = true;
-  } catch (err) { showError('Failed to load departments: ' + err.message); departments = []; }
-  if (activeTab === 'dept') { renderList(listSearch.value); updateUI(); }
-}
+/* ================================================================== FILTER LISTS - all loaded from the database ================================================================== */ function setListLoading(msg) { listContainer.innerHTML = <div class="text-xs text-slate-400 text-center py-4"><i class="fa-solid fa-spinner fa-spin mr-1"></i>${msg}</div>; }
 
-async function loadCostCenters(force = false) {
-  if (ccLoaded && !force) return;
-  setListLoading('Loading cost centers...');
-  try {
-    const { data, error } = await sb.rpc('opex_cost_centers');
-    if (error) throw error;
-    costCenters = (data || []).map(r => ({ code: String(r.cost_ctr), name: r.description || '(no description)' }));
-    ccLoaded = true;
-  } catch (err) { showError('Failed to load cost centers: ' + err.message); costCenters = []; }
-  if (activeTab === 'cc') { renderList(listSearch.value); updateUI(); }
-}
+async function loadDepartments(force = false) { if (deptsLoaded && !force) return; setListLoading('Loading departments...'); try { const { data, error } = await sb.rpc('opex_departments'); if (error) throw error; departments = (data || []).map(r => r.department); deptsLoaded = true; } catch (err) { showError('Failed to load departments: ' + err.message); departments = []; } if (activeTab === 'dept') { renderList(listSearch.value); updateUI(); } }
 
-async function loadStatutoryMappings(force = false) {
-  if (statLoaded && !force) return;
-  setListLoading('Loading statutory mappings...');
-  try {
-    const { data, error } = await sb.rpc('opex_statutory_mappings');
-    if (error) throw error;
-    statutoryMappings = (data || []).map(r => r.statutory_mapping);
-    statLoaded = true;
-  } catch (err) { showError('Failed to load statutory mappings: ' + err.message); statutoryMappings = []; }
-  if (activeTab === 'stat') { renderList(listSearch.value); updateUI(); }
-}
+async function loadCostCenters(force = false) { if (ccLoaded && !force) return; setListLoading('Loading cost centers...'); try { const { data, error } = await sb.rpc('opexcostcenters'); if (error) throw error; costCenters = (data || []).map(r => ({ code: String(r.cost_ctr), name: r.description || '(no description)' })); ccLoaded = true; } catch (err) { showError('Failed to load cost centers: ' + err.message); costCenters = []; } if (activeTab === 'cc') { renderList(listSearch.value); updateUI(); } }
 
-async function loadCostElements() {
-  ceStale = false;
-  setListLoading('Loading cost elements...');
-  try {
-    const { data, error } = await sb.rpc('opex_cost_elements', {
-      p_departments:  selectedDepts.size ? [...selectedDepts] : null,
-      p_cost_centers: selectedCostCenters.size ? [...selectedCostCenters].map(Number) : null
-    });
-    if (error) throw error;
-    costElements = (data || []).map(r => ({ code: String(r.cost_elem), name: r.cost_element_name || '(unnamed)' }));
-  } catch (err) { showError('Failed to load cost elements: ' + err.message); costElements = []; }
-  if (activeTab === 'ce') { renderList(listSearch.value); updateUI(); }
-}
+async function loadStatutoryMappings(force = false) { if (statLoaded && !force) return; setListLoading('Loading statutory mappings...'); try { const { data, error } = await sb.rpc('opexstatutorymappings'); if (error) throw error; statutoryMappings = (data || []).map(r => r.statutory_mapping); statLoaded = true; } catch (err) { showError('Failed to load statutory mappings: ' + err.message); statutoryMappings = []; } if (activeTab === 'stat') { renderList(listSearch.value); updateUI(); } }
 
-/* ==================================================================
-   LIST RENDERING
-   ================================================================== */
-function renderList(filter = "") {
-  const { items, getKey, getLabel, selectedSet } = currentDataset();
-  listContainer.innerHTML = "";
-  const f = filter.toLowerCase();
-  const filtered = items.filter(item => getLabel(item).toLowerCase().includes(f));
+async function loadCostElements() { ceStale = false; setListLoading('Loading cost elements...'); try { const { data, error } = await sb.rpc('opexcostelements', { pdepartments: selectedDepts.size ? [...selectedDepts] : null, pcostcenters: selectedCostCenters.size ? [...selectedCostCenters].map(Number) : null }); if (error) throw error; costElements = (data || []).map(r => ({ code: String(r.costelem), name: r.costelementname || '(unnamed)' })); } catch (err) { showError('Failed to load cost elements: ' + err.message); costElements = []; } if (activeTab === 'ce') { renderList(listSearch.value); updateUI(); } }
 
-  if (filtered.length === 0) {
-    listContainer.innerHTML = `<div class="text-xs text-slate-400 text-center py-4">No results found</div>`;
-    return;
-  }
+/* ================================================================== LIST RENDERING ================================================================== */ function renderList(filter = "") { const { items, getKey, getLabel, selectedSet } = currentDataset(); listContainer.innerHTML = ""; const f = filter.toLowerCase(); const filtered = items.filter(item => getLabel(item).toLowerCase().includes(f));
 
-  filtered.forEach(item => {
-    const key = getKey(item);
-    const label = document.createElement('label');
-    label.className = "flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer transition select-none";
-    const checkbox = document.createElement('input');
-    checkbox.type = "checkbox"; checkbox.value = key;
-    checkbox.className = "w-4 h-4 text-hoechst-blue border-slate-300 rounded focus:ring-hoechst-blue";
-    if (selectedSet.has(key)) checkbox.checked = true;
-    checkbox.addEventListener('change', (e) => {
-      if (e.target.checked) selectedSet.add(key); else selectedSet.delete(key);
-      if (activeTab === 'dept' || activeTab === 'cc') ceStale = true;
-      updateUI();
-    });
-    const span = document.createElement('span');
-    span.className = "text-xs font-medium text-slate-700";
-    span.textContent = getLabel(item);
-    label.appendChild(checkbox); label.appendChild(span);
-    listContainer.appendChild(label);
-  });
-}
+if (filtered.length === 0) { listContainer.innerHTML = <div class="text-xs text-slate-400 text-center py-4">No results found</div>; return; }
 
-function updateUI() {
-  const { selectedSet } = currentDataset();
-  selectedCountEl.textContent = `${selectedSet.size} Selected`;
+filtered.forEach(item => { const key = getKey(item); const label = document.createElement('label'); label.className = "flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer transition select-none"; const checkbox = document.createElement('input'); checkbox.type = "checkbox"; checkbox.value = key; checkbox.className = "w-4 h-4 text-hoechst-blue border-slate-300 rounded focus:ring-hoechst-blue"; if (selectedSet.has(key)) checkbox.checked = true; checkbox.addEventListener('change', (e) => { if (e.target.checked) selectedSet.add(key); else selectedSet.delete(key); if (activeTab === 'dept' || activeTab === 'cc') ceStale = true; updateUI(); }); const span = document.createElement('span'); span.className = "text-xs font-medium text-slate-700"; span.textContent = getLabel(item); label.appendChild(checkbox); label.appendChild(span); listContainer.appendChild(label); }); }
 
-  const total = selectedDepts.size + selectedCostCenters.size + selectedCostElements.size + selectedStatutoryMappings.size;
-  if (total === 0) {
-    activeSelectionDisplay.innerHTML = `<span class="text-sm text-slate-400 italic">No filters selected - leaving all tiers empty compares the whole company.</span>`;
-    return;
-  }
-  activeSelectionDisplay.innerHTML = "";
+function updateUI() { const { selectedSet } = currentDataset(); selectedCountEl.textContent = ${selectedSet.size} Selected;
 
-  const addChip = (text, colorClasses, onRemove) => {
-    const tag = document.createElement('span');
-    tag.className = `inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${colorClasses}`;
-    const btn = document.createElement('button');
-    btn.className = "ml-2 hover:opacity-70 focus:outline-none";
-    btn.innerHTML = "&times;";
-    btn.addEventListener('click', onRemove);
-    tag.textContent = text; tag.appendChild(btn);
-    activeSelectionDisplay.appendChild(tag);
-  };
+const total = selectedDepts.size + selectedCostCenters.size + selectedCostElements.size + selectedStatutoryMappings.size; if (total === 0) { activeSelectionDisplay.innerHTML = <span class="text-sm text-slate-400 italic">No filters selected - leaving all tiers empty compares the whole company.</span>; return; } activeSelectionDisplay.innerHTML = "";
 
-  selectedDepts.forEach(d => addChip(`Dept: ${d}`, "bg-blue-50 text-hoechst-blue border-blue-200", () => {
-    selectedDepts.delete(d); ceStale = true;
-    if (activeTab === 'dept') renderList(listSearch.value);
-    updateUI();
-  }));
+const addChip = (text, colorClasses, onRemove) => { const tag = document.createElement('span'); tag.className = inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${colorClasses}; const btn = document.createElement('button'); btn.className = "ml-2 hover:opacity-70 focus:outline-none"; btn.innerHTML = "&times;"; btn.addEventListener('click', onRemove); tag.textContent = text; tag.appendChild(btn); activeSelectionDisplay.appendChild(tag); };
 
-  selectedCostCenters.forEach(code => {
-    const item = costCenters.find(c => c.code === code);
-    addChip(`Cost Ctr: ${item ? ccLabel(item) : code}`, "bg-emerald-50 text-emerald-700 border-emerald-200", () => {
-      selectedCostCenters.delete(code); ceStale = true;
-      if (activeTab === 'cc') renderList(listSearch.value);
-      updateUI();
-    });
-  });
+selectedDepts.forEach(d => addChip(Dept: ${d}, "bg-blue-50 text-hoechst-blue border-blue-200", () => { selectedDepts.delete(d); ceStale = true; if (activeTab === 'dept') renderList(listSearch.value); updateUI(); }));
 
-  selectedCostElements.forEach(code => {
-    const item = costElements.find(c => c.code === code);
-    addChip(`Cost Elem: ${item ? ceLabel(item) : code}`, "bg-amber-50 text-amber-700 border-amber-200", () => {
-      selectedCostElements.delete(code);
-      if (activeTab === 'ce') renderList(listSearch.value);
-      updateUI();
-    });
-  });
+selectedCostCenters.forEach(code => { const item = costCenters.find(c => c.code === code); addChip(Cost Ctr: ${item ? ccLabel(item) : code}, "bg-emerald-50 text-emerald-700 border-emerald-200", () => { selectedCostCenters.delete(code); ceStale = true; if (activeTab === 'cc') renderList(listSearch.value); updateUI(); }); });
 
-  selectedStatutoryMappings.forEach(s => addChip(`Statutory: ${s}`, "bg-purple-50 text-purple-700 border-purple-200", () => {
-    selectedStatutoryMappings.delete(s);
-    if (activeTab === 'stat') renderList(listSearch.value);
-    updateUI();
-  }));
-}
+selectedCostElements.forEach(code => { const item = costElements.find(c => c.code === code); addChip(Cost Elem: ${item ? ceLabel(item) : code}, "bg-amber-50 text-amber-700 border-amber-200", () => { selectedCostElements.delete(code); if (activeTab === 'ce') renderList(listSearch.value); updateUI(); }); });
 
-function setActiveTab(tab) {
-  activeTab = tab;
-  const map = { dept: 'tabDeptBtn', cc: 'tabCcBtn', ce: 'tabCeBtn', stat: 'tabStatBtn' };
-  Object.entries(map).forEach(([key, id]) => {
-    document.getElementById(id).className =
-      `tier-tab flex-1 text-xs font-semibold py-1.5 rounded-md transition ${key === tab ? 'bg-white text-hoechst-blue shadow-sm' : 'text-slate-500'}`;
-  });
+selectedStatutoryMappings.forEach(s => addChip(Statutory: ${s}, "bg-purple-50 text-purple-700 border-purple-200", () => { selectedStatutoryMappings.delete(s); if (activeTab === 'stat') renderList(listSearch.value); updateUI(); })); }
 
-  panelLabel.textContent = tab === 'dept' ? 'Departments' : tab === 'cc' ? 'Cost Centers' : tab === 'ce' ? 'Cost Elements' : 'Statutory Mapping';
-  listSearch.value = "";
-  listSearch.placeholder = currentDataset().placeholder;
-  panelHint.classList.add('hidden');
+function setActiveTab(tab) { activeTab = tab; const map = { dept: 'tabDeptBtn', cc: 'tabCcBtn', ce: 'tabCeBtn', stat: 'tabStatBtn' }; Object.entries(map).forEach(([key, id]) => { document.getElementById(id).className = tier-tab flex-1 text-xs font-semibold py-1.5 rounded-md transition ${key === tab ? 'bg-white text-hoechst-blue shadow-sm' : 'text-slate-500'}; });
 
-  if (tab === 'dept') loadDepartments();
-  else if (tab === 'cc') loadCostCenters();
-  else if (tab === 'stat') loadStatutoryMappings();
-  else {
-    panelHint.textContent = 'Narrowed by any Departments / Cost Centers you have selected.';
-    panelHint.classList.remove('hidden');
-    if (ceStale) loadCostElements(); else renderList();
-  }
-  updateUI();
-}
+panelLabel.textContent = tab === 'dept' ? 'Departments' : tab === 'cc' ? 'Cost Centers' : tab === 'ce' ? 'Cost Elements' : 'Statutory Mapping'; listSearch.value = ""; listSearch.placeholder = currentDataset().placeholder; panelHint.classList.add('hidden');
 
-document.getElementById('tabDeptBtn').addEventListener('click', () => setActiveTab('dept'));
-document.getElementById('tabCcBtn').addEventListener('click', () => setActiveTab('cc'));
-document.getElementById('tabCeBtn').addEventListener('click', () => setActiveTab('ce'));
-document.getElementById('tabStatBtn').addEventListener('click', () => setActiveTab('stat'));
+if (tab === 'dept') loadDepartments(); else if (tab === 'cc') loadCostCenters(); else if (tab === 'stat') loadStatutoryMappings(); else { panelHint.textContent = 'Narrowed by any Departments / Cost Centers you have selected.'; panelHint.classList.remove('hidden'); if (ceStale) loadCostElements(); else renderList(); } updateUI(); }
 
-refreshListBtn.addEventListener('click', () => {
-  if (activeTab === 'dept') loadDepartments(true);
-  else if (activeTab === 'cc') loadCostCenters(true);
-  else if (activeTab === 'stat') loadStatutoryMappings(true);
-  else loadCostElements();
-});
+document.getElementById('tabDeptBtn').addEventListener('click', () => setActiveTab('dept')); document.getElementById('tabCcBtn').addEventListener('click', () => setActiveTab('cc')); document.getElementById('tabCeBtn').addEventListener('click', () => setActiveTab('ce')); document.getElementById('tabStatBtn').addEventListener('click', () => setActiveTab('stat'));
+
+refreshListBtn.addEventListener('click', () => { if (activeTab === 'dept') loadDepartments(true); else if (activeTab === 'cc') loadCostCenters(true); else if (activeTab === 'stat') loadStatutoryMappings(true); else loadCostElements(); });
 
 listSearch.addEventListener('input', (e) => renderList(e.target.value));
 
-selectAllBtn.addEventListener('click', () => {
-  const { items, getKey, selectedSet } = currentDataset();
-  items.forEach(item => selectedSet.add(getKey(item)));
-  if (activeTab === 'dept' || activeTab === 'cc') ceStale = true;
-  renderList(listSearch.value); updateUI();
-});
+selectAllBtn.addEventListener('click', () => { const { items, getKey, selectedSet } = currentDataset(); items.forEach(item => selectedSet.add(getKey(item))); if (activeTab === 'dept' || activeTab === 'cc') ceStale = true; renderList(listSearch.value); updateUI(); });
 
-clearAllBtn.addEventListener('click', () => {
-  const { selectedSet } = currentDataset();
-  selectedSet.clear();
-  if (activeTab === 'dept' || activeTab === 'cc') ceStale = true;
-  renderList(listSearch.value); updateUI();
-});
+clearAllBtn.addEventListener('click', () => { const { selectedSet } = currentDataset(); selectedSet.clear(); if (activeTab === 'dept' || activeTab === 'cc') ceStale = true; renderList(listSearch.value); updateUI(); });
 
-/* ==================================================================
-   MAIN QUERY - one fetch per selected year
-   ================================================================== */
-const runBtn = document.getElementById('runBtn');
-const runBtnText = document.getElementById('runBtnText');
-const runSpinner = document.getElementById('runSpinner');
-const resultsSection = document.getElementById('resultsSection');
+/* ================================================================== MAIN QUERY - one fetch per selected year ================================================================== */ const runBtn = document.getElementById('runBtn'); const runBtnText = document.getElementById('runBtnText'); const runSpinner = document.getElementById('runSpinner'); const resultsSection = document.getElementById('resultsSection');
 
 runBtn.addEventListener('click', runComparison);
 
-async function fetchYearRows(year, filters) {
-  let all = [], from = 0;
-  const cols = 'cost_ctr, description, cost_elem, cost_element_name, actual_amount, month, category, statutory_mapping, management_mapping, department';
-  while (true) {
-    let query = sb.from(TABLE).select(cols).eq('fiscal_year', year);
-    if (filters.departments.length) query = query.in('department', filters.departments);
-    if (filters.costCenters.length) query = query.in('cost_ctr', filters.costCenters);
-    if (filters.costElements.length) query = query.in('cost_elem', filters.costElements);
-    if (filters.statutoryMappings.length) query = query.in('statutory_mapping', filters.statutoryMappings);
-    query = query.range(from, from + PAGE_SIZE - 1);
-    const { data, error } = await query;
-    if (error) throw error;
-    all = all.concat(data || []);
-    if (!data || data.length < PAGE_SIZE) break;
-    from += PAGE_SIZE;
-  }
-  return all;
-}
+async function fetchYearRows(year, filters) { let all = [], from = 0; const cols = 'costctr, description, costelem, costelementname, actualamount, month, category, statutorymapping, managementmapping, department'; while (true) { let query = sb.from(TABLE).select(cols).eq('fiscalyear', year); if (filters.departments.length) query = query.in('department', filters.departments); if (filters.costCenters.length) query = query.in('costctr', filters.costCenters); if (filters.costElements.length) query = query.in('costelem', filters.costElements); if (filters.statutoryMappings.length) query = query.in('statutorymapping', filters.statutoryMappings); query = query.range(from, from + PAGESIZE - 1); const { data, error } = await query; if (error) throw error; all = all.concat(data || []); if (!data || data.length < PAGESIZE) break; from += PAGESIZE; } return all; }
 
-async function runComparison() {
-  hideError();
-  if (selectedYears.size === 0) {
-    showError('Select at least one year to analyze.');
-    return;
-  }
-  runBtn.disabled = true;
-  runSpinner.classList.remove('hidden');
-  runBtnText.textContent = 'Fetching data...';
-  resultsSection.classList.add('hidden');
+async function runComparison() { hideError(); if (selectedYears.size === 0) { showError('Select at least one year to analyze.'); return; } runBtn.disabled = true; runSpinner.classList.remove('hidden'); runBtnText.textContent = 'Fetching data...'; resultsSection.classList.add('hidden');
 
-  try {
-    const filters = {
-      departments: [...selectedDepts],
-      costCenters: [...selectedCostCenters].map(Number),
-      costElements: [...selectedCostElements].map(Number),
-      statutoryMappings: [...selectedStatutoryMappings]
-    };
-    const years = [...selectedYears].sort((a, b) => a - b);
-    const results = await Promise.all(years.map(y => fetchYearRows(y, filters)));
-    const byYear = new Map(years.map((y, i) => [y, results[i]]));
+try { const filters = { departments: [...selectedDepts], costCenters: [...selectedCostCenters].map(Number), costElements: [...selectedCostElements].map(Number), statutoryMappings: [...selectedStatutoryMappings] }; const years = [...selectedYears].sort((a, b) => a - b); const results = await Promise.all(years.map(y => fetchYearRows(y, filters))); const byYear = new Map(years.map((y, i) => [y, results[i]]));
 
-    if (years.every(y => byYear.get(y).length === 0)) {
-      showError('No records matched your filters in any selected year. Try widening your selection.');
-      return;
-    }
+if (years.every(y => byYear.get(y).length === 0)) { showError('No records matched your filters in any selected year. Try widening your selection.'); return; }
 
-    // Budgets + reviewer decisions for the latest selected year
-    const lastYear = years[years.length - 1];
-    try { await Promise.all([loadBudgets(lastYear), loadReviews(lastYear)]); }
-    catch (e) { showError('Budget/review tables not available: ' + e.message); }
+// Budgets + reviewer decisions for the latest selected year const lastYear = years[years.length - 1]; try { await Promise.all([loadBudgets(lastYear), loadReviews(lastYear)]); } catch (e) { showError('Budget/review tables not available: ' + e.message); }
 
-    renderResults(years, byYear);
-    resultsSection.classList.remove('hidden');
-  } catch (err) {
-    showError('Comparison failed: ' + err.message);
-  } finally {
-    runBtn.disabled = false;
-    runSpinner.classList.add('hidden');
-    runBtnText.textContent = 'Run Comparison';
-  }
-}
+renderResults(years, byYear); resultsSection.classList.remove('hidden'); } catch (err) { showError('Comparison failed: ' + err.message); } finally { runBtn.disabled = false; runSpinner.classList.add('hidden'); runBtnText.textContent = 'Run Comparison'; } }
 
-/* ==================================================================
-   AGGREGATION + RENDERING
-   ================================================================== */
-function sumBy(rows, keyFn) {
-  const map = new Map();
-  rows.forEach(r => {
-    const k = keyFn(r) ?? 'Unspecified';
-    map.set(k, (map.get(k) || 0) + (Number(r.actual_amount) || 0));
-  });
-  return map;
-}
-function totalOf(rows) { return rows.reduce((s, r) => s + (Number(r.actual_amount) || 0), 0); }
-function fmtCurrency(n) {
-  return (n < 0 ? '-' : '') + 'PKR ' + Math.abs(Math.round(n)).toLocaleString('en-PK');
-}
-const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-function monthName(m) { return MONTH_NAMES[Number(m) - 1] ?? `M${m}`; }
+/* ================================================================== AGGREGATION + RENDERING ================================================================== */ function sumBy(rows, keyFn) { const map = new Map(); rows.forEach(r => { const k = keyFn(r) ?? 'Unspecified'; map.set(k, (map.get(k) || 0) + (Number(r.actualamount) || 0)); }); return map; } function totalOf(rows) { return rows.reduce((s, r) => s + (Number(r.actualamount) || 0), 0); } function fmtCurrency(n) { return (n < 0 ? '-' : '') + 'PKR ' + Math.abs(Math.round(n)).toLocaleString('en-PK'); } const MONTHNAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; function monthName(m) { return MONTHNAMES[Number(m) - 1] ?? M${m}; }
 
-function yearColor(i, total) {
-  const base = ['#94a3b8','#0085CA','#F97316','#10B981','#8B5CF6','#EF4444','#14B8A6','#EC4899','#F59E0B','#22D3EE'];
-  if (total <= 2) return i === total - 1 ? '#0085CA' : '#94a3b8';
-  return base[i % base.length];
-}
-function palette(n) {
-  const base = ['#0085CA','#F97316','#10B981','#EF4444','#8B5CF6','#F59E0B','#14B8A6','#EC4899','#64748B','#22D3EE'];
-  return Array.from({ length: n }, (_, i) => base[i % base.length]);
-}
+function yearColor(i, total) { const base = ['#94a3b8','#0085CA','#F97316','#10B981','#8B5CF6','#EF4444','#14B8A6','#EC4899','#F59E0B','#22D3EE']; if (total <= 2) return i === total - 1 ? '#0085CA' : '#94a3b8'; return base[i % base.length]; } function palette(n) { const base = ['#0085CA','#F97316','#10B981','#EF4444','#8B5CF6','#F59E0B','#14B8A6','#EC4899','#64748B','#22D3EE']; return Array.from({ length: n }, (_, i) => base[i % base.length]); }
 
 let barChart, pieChart, lineChart;
 
-function renderResults(years, byYear) {
-  renderKpis(years, byYear);
-
-  // Flags: budget-adjusted rules + anomaly scoring + projection (all local)
-  aiCommentary = new Map();
-  lastFlags = computeFlags(years, byYear);
-  currentFlagYear = years[years.length - 1];
-  renderFlags();
-
-  let keyFn, breakdownLabel;
-  if (selectedCostCenters.size > 0 || selectedCostElements.size > 0) {
-    keyFn = r => `${r.cost_elem ?? '-'} ${r.cost_element_name ?? ''}`.trim();
-    breakdownLabel = 'By Cost Element';
-  } else if (selectedDepts.size > 0) {
-    keyFn = r => `${r.cost_ctr ?? '-'} ${r.description ?? ''}`.trim();
-    breakdownLabel = 'By Cost Center';
-  } else {
-    keyFn = r => r.department || 'Unspecified';
-    breakdownLabel = selectedStatutoryMappings.size > 0 ? 'By Department (Statutory Mapping filter)' : 'By Department';
-  }
-
-  const maps = new Map(years.map(y => [y, sumBy(byYear.get(y), keyFn)]));
-  const allKeys = [...new Set(years.flatMap(y => [...maps.get(y).keys()]))];
-  allKeys.sort((a, b) =>
-    years.reduce((s, y) => s + Math.abs(maps.get(y).get(b) || 0), 0) -
-    years.reduce((s, y) => s + Math.abs(maps.get(y).get(a) || 0), 0));
-  const topKeys = allKeys.slice(0, 12);
-
-  renderBarChart(breakdownLabel, topKeys, years, maps);
-
-  const latest = years[years.length - 1];
-  const statLatest = sumBy(byYear.get(latest), r => r.statutory_mapping || 'Unmapped');
-  renderPieChart([...statLatest.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8), latest);
-
-  renderLineChart(years, byYear);
-  renderMoversTable(years, byYear);
-}
-
-function renderKpis(years, byYear) {
-  const grid = document.getElementById('kpiGrid');
-  grid.innerHTML = '';
-  const totals = new Map(years.map(y => [y, totalOf(byYear.get(y))]));
-
-  years.forEach(y => {
-    const card = document.createElement('div');
-    card.className = 'bg-white rounded-xl shadow-sm border border-slate-200 p-4';
-    card.innerHTML = `<p class="text-xs font-semibold text-slate-400 uppercase">FY${y} Total</p>
-      <p class="text-2xl font-bold text-slate-700 mt-1">${fmtCurrency(totals.get(y))}</p>`;
-    grid.appendChild(card);
-  });
-
-  if (years.length >= 2) {
-    const first = years[0], last = years[years.length - 1];
-    const v = totals.get(last) - totals.get(first);
-    const pct = totals.get(first) !== 0 ? (v / Math.abs(totals.get(first))) * 100 : (totals.get(last) !== 0 ? 100 : 0);
-    const color = v >= 0 ? 'text-rose-600' : 'text-emerald-600';
-
-    const vCard = document.createElement('div');
-    vCard.className = 'bg-white rounded-xl shadow-sm border border-slate-200 p-4';
-    vCard.innerHTML = `<p class="text-xs font-semibold text-slate-400 uppercase">Variance FY${first}&rarr;FY${last}</p>
-      <p class="text-2xl font-bold mt-1 ${color}">${v >= 0 ? '+' : ''}${fmtCurrency(v)}</p>`;
-    grid.appendChild(vCard);
-
-    const pCard = document.createElement('div');
-    pCard.className = 'bg-white rounded-xl shadow-sm border border-slate-200 p-4';
-    pCard.innerHTML = `<p class="text-xs font-semibold text-slate-400 uppercase">% Change</p>
-      <p class="text-2xl font-bold mt-1 ${color}">${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%</p>`;
-    grid.appendChild(pCard);
-  }
-}
-
-function renderBarChart(label, keys, years, maps) {
-  if (barChart) barChart.destroy();
-  const ctx = document.getElementById('barChart').getContext('2d');
-  barChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: keys,
-      datasets: years.map((y, i) => ({
-        label: `FY${y}`,
-        data: keys.map(k => maps.get(y).get(k) || 0),
-        backgroundColor: yearColor(i, years.length)
-      }))
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-      plugins: { title: { display: true, text: label, font: { size: 14 } } },
-      scales: { x: { beginAtZero: true } }
-    }
-  });
-}
-
-function renderPieChart(entries, year) {
-  if (pieChart) pieChart.destroy();
-  const ctx = document.getElementById('pieChart').getContext('2d');
-  pieChart = new Chart(ctx, {
-    type: 'doughnut',
-    data: { labels: entries.map(e => e[0]), datasets: [{ data: entries.map(e => e[1]), backgroundColor: palette(entries.length) }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        title: { display: true, text: `FY${year} Share by Statutory Mapping`, font: { size: 14 } },
-        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }
-      }
-    }
-  });
-}
-
-function renderLineChart(years, byYear) {
-  if (lineChart) lineChart.destroy();
-  const months = Array.from({ length: 12 }, (_, i) => i + 1);
-  const ctx = document.getElementById('lineChart').getContext('2d');
-  lineChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: months.map(monthName),
-      datasets: years.map((y, i) => {
-        const m = sumBy(byYear.get(y), r => r.month);
-        const c = yearColor(i, years.length);
-        return { label: `FY${y}`, data: months.map(mm => m.get(mm) || 0), borderColor: c, backgroundColor: c, tension: 0.3 };
-      })
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { title: { display: true, text: 'Monthly Trend', font: { size: 14 } } },
-      scales: { y: { beginAtZero: true } }
-    }
-  });
-}
-
-function renderMoversTable(years, byYear) {
-  const head = document.getElementById('moversHeadRow');
-  const body = document.getElementById('moversTableBody');
-  const maps = new Map(years.map(y => [y, sumBy(byYear.get(y), r => r.statutory_mapping || 'Unmapped')]));
-  const keys = [...new Set(years.flatMap(y => [...maps.get(y).keys()]))];
-
-  const multi = years.length >= 2;
-  const first = years[0], last = years[years.length - 1];
-
-  head.innerHTML = `<th class="py-2 pr-4">Statutory Mapping</th>` +
-    years.map(y => `<th class="py-2 pr-4 text-right">FY${y}</th>`).join('') +
-    (multi ? `<th class="py-2 pr-4 text-right">Variance</th><th class="py-2 text-right">% Change</th>` : '');
-
-  const rows = keys.map(k => {
-    const vals = years.map(y => maps.get(y).get(k) || 0);
-    const v = multi ? (maps.get(last).get(k) || 0) - (maps.get(first).get(k) || 0) : 0;
-    const base = maps.get(first).get(k) || 0;
-    const pct = base !== 0 ? (v / Math.abs(base)) * 100 : ((maps.get(last)?.get(k) || 0) !== 0 ? 100 : 0);
-    return { k, vals, v, pct, weight: multi ? Math.abs(v) : Math.abs(vals[0]) };
-  }).sort((a, b) => b.weight - a.weight).slice(0, 15);
-
-  body.innerHTML = '';
-  rows.forEach(r => {
-    const tr = document.createElement('tr');
-    tr.className = "border-b border-slate-50 last:border-0";
-    const varColor = r.v >= 0 ? 'text-rose-600' : 'text-emerald-600';
-    tr.innerHTML = `<td class="py-2 pr-4 text-slate-700">${esc(r.k)}</td>` +
-      r.vals.map(v => `<td class="py-2 pr-4 text-right text-slate-500">${fmtCurrency(v)}</td>`).join('') +
-      (multi
-        ? `<td class="py-2 pr-4 text-right font-semibold ${varColor}">${r.v >= 0 ? '+' : ''}${fmtCurrency(r.v)}</td>
-           <td class="py-2 text-right font-semibold ${varColor}">${r.pct >= 0 ? '+' : ''}${r.pct.toFixed(1)}%</td>`
-        : '');
-    body.appendChild(tr);
-  });
-}
-
-/* ==================================================================
-   BUDGETS + REVIEWS (database)
-   ================================================================== */
-async function loadBudgets(year) {
-  const { data, error } = await sb.from('opex_budgets').select('department,budget_amount').eq('fiscal_year', year);
-  if (error) throw error;
-  budgetsByYear.set(year, new Map((data || []).map(r => [r.department, Number(r.budget_amount)])));
-}
-async function loadReviews(year) {
-  const { data, error } = await sb.from('opex_flag_reviews')
-    .select('department,status,comment,reviewer,reviewed_at')
-    .eq('fiscal_year', year).order('reviewed_at', { ascending: true });
-  if (error) throw error;
-  reviewsMap = new Map();
-  (data || []).forEach(r => reviewsMap.set(`${year}|${r.department}`, r));   // latest decision wins
-}
-
-/* ==================================================================
-   FLAG ENGINE - runs entirely in the browser, no data leaves
-   ================================================================== */
-const FLAG_CFG = { overMed: 0.10, overHigh: 0.25, noBudgetYoy: 0.20, zMed: 2, zHigh: 3, projTol: 0.05 };
-const SEV_RANK = { Low: 1, Medium: 2, High: 3 };
-const mean = a => a.reduce((s, x) => s + x, 0) / a.length;
-const stdev = a => { const m = mean(a); return Math.sqrt(mean(a.map(x => (x - m) ** 2))); };
-
-function groupByDept(rows) {
-  const g = new Map();
-  rows.forEach(r => { const k = r.department || 'Unspecified'; if (!g.has(k)) g.set(k, []); g.get(k).push(r); });
-  return g;
-}
-
-function computeFlags(years, byYear) {
-  const last = years[years.length - 1];
-  const prevYears = years.slice(0, -1);
-  const prev = prevYears.length ? prevYears[prevYears.length - 1] : null;
-  const budgets = budgetsByYear.get(last) || new Map();
-  const gLast = groupByDept(byYear.get(last));
-  const gBy = new Map(prevYears.map(y => [y, groupByDept(byYear.get(y))]));
-  const flags = [];
-
-  gLast.forEach((rows, dept) => {
-    const actual = totalOf(rows);
-    const prevRows = prev ? (gBy.get(prev).get(dept) || []) : [];
-    const prevActual = prev ? totalOf(prevRows) : null;
-    const yoy = prevActual ? (actual - prevActual) / Math.abs(prevActual) : null;
-    const b = budgets.has(dept) ? budgets.get(dept) : null;
-    const hasBudget = b !== null && b > 0;
-    const overPct = hasBudget ? (actual - b) / b : null;
-
-    // Year-end projection from the last 3 months' run-rate
-    const m = sumBy(rows, r => r.month);
-    const months = [...m.keys()].map(Number).filter(x => x >= 1 && x <= 12).sort((a, b) => a - b);
-    const elapsed = months.length ? months[months.length - 1] : 12;
-    const tail = [elapsed - 2, elapsed - 1, elapsed].filter(x => x >= 1).map(x => m.get(x) || 0);
-    const proj = elapsed >= 12 ? actual : actual + mean(tail) * (12 - elapsed);
-
-    // Anomaly score: each month vs this department's own prior-year monthly history
-    const hist = [];
-    prevYears.forEach(y => {
-      sumBy(gBy.get(y).get(dept) || [], r => r.month).forEach((v, k) => { if (Number(k) >= 1 && Number(k) <= 12) hist.push(v); });
-    });
-    let maxZ = null, zMonth = null;
-    if (hist.length >= 6) {
-      const mu = mean(hist), sd = stdev(hist);
-      if (sd > 0) m.forEach((v, k) => { const z = (v - mu) / sd; if (maxZ === null || z > maxZ) { maxZ = z; zMonth = k; } });
-    }
-
-    const reasons = []; let sev = 0;
-    const bump = (s, t) => { reasons.push(t); sev = Math.max(sev, SEV_RANK[s]); };
-    if (hasBudget) {
-      if (overPct >= FLAG_CFG.overHigh) bump('High', `Over approved budget by ${(overPct * 100).toFixed(0)}%`);
-      else if (overPct >= FLAG_CFG.overMed) bump('Medium', `Over approved budget by ${(overPct * 100).toFixed(0)}%`);
-      else if (proj > b * (1 + FLAG_CFG.projTol)) bump('Medium', `Projected to exceed budget by ${((proj - b) / b * 100).toFixed(0)}%`);
-    } else if (yoy !== null && yoy >= FLAG_CFG.noBudgetYoy) {
-      bump(yoy >= 0.5 ? 'Medium' : 'Low', `No budget on file; spend up ${(yoy * 100).toFixed(0)}% YoY`);
-    }
-    if (maxZ !== null && maxZ >= FLAG_CFG.zMed) bump(maxZ >= FLAG_CFG.zHigh ? 'High' : 'Medium', `Unusual spike in ${monthName(zMonth)} (z=${maxZ.toFixed(1)})`);
-    if (!reasons.length) return;
-
-    // Top categories driving the increase (shares only - used for AI commentary)
-    const sl = sumBy(rows, r => r.statutory_mapping || 'Unmapped');
-    const sp = sumBy(prevRows, r => r.statutory_mapping || 'Unmapped');
-    const deltas = [...sl.keys()].map(k => ({ category: k, delta: (sl.get(k) || 0) - (sp.get(k) || 0) }))
-      .filter(x => x.delta > 0).sort((a, b) => b.delta - a.delta);
-    const totalPos = deltas.reduce((s, x) => s + x.delta, 0);
-    const drivers = deltas.slice(0, 3).map(x => ({ category: x.category, share_of_increase_pct: Math.round(x.delta / totalPos * 100) }));
-
-    flags.push({ dept, actual, budget: hasBudget ? b : null, overPct, yoy, proj, maxZ, zMonth, drivers,
-      severity: Object.keys(SEV_RANK).find(k => SEV_RANK[k] === sev), reasons });
-  });
-
-  return flags.sort((a, b) => SEV_RANK[b.severity] - SEV_RANK[a.severity] || (b.overPct ?? b.yoy ?? 0) - (a.overPct ?? a.yoy ?? 0));
-}
-
-/* ==================================================================
-   FLAGS TABLE + HUMAN REVIEW
-   ================================================================== */
-function renderFlags() {
-  const body = document.getElementById('flagsBody');
-  const hasB = (budgetsByYear.get(currentFlagYear) || new Map()).size > 0;
-  document.getElementById('flagsSubtitle').textContent = lastFlags.length
-    ? `${lastFlags.length} flagged for FY${currentFlagYear}. Budget: ${hasB ? 'loaded' : 'none uploaded'}. AI recommends, a human decides.`
-    : `No departments flagged for FY${currentFlagYear}.`;
-  document.getElementById('explainBtn').disabled = lastFlags.length === 0;
-  body.innerHTML = '';
-  const sevCls = { High: 'bg-rose-50 text-rose-700 border-rose-200', Medium: 'bg-amber-50 text-amber-700 border-amber-200', Low: 'bg-slate-50 text-slate-600 border-slate-200' };
-  const revCls = { justified: 'bg-emerald-50 text-emerald-700', investigate: 'bg-amber-50 text-amber-700', escalate: 'bg-rose-50 text-rose-700' };
-  const btn = (s, label, c) => `<button data-status="${s}" class="px-2 py-1 text-[11px] font-semibold rounded border ${c} mr-1">${label}</button>`;
-
-  lastFlags.forEach(f => {
-    const rev = reviewsMap.get(`${currentFlagYear}|${f.dept}`);
-    const variance = f.overPct !== null ? `${(f.overPct * 100).toFixed(0)}% vs budget`
-                   : f.yoy !== null ? `${(f.yoy * 100).toFixed(0)}% YoY` : '-';
-    const tr = document.createElement('tr');
-    tr.dataset.dept = f.dept;
-    tr.className = 'border-b border-slate-50' + (rev && rev.status === 'justified' ? ' opacity-60' : '');
-    tr.innerHTML = `
-      <td class="py-2 pr-3 font-medium text-slate-700">${esc(f.dept)}</td>
-      <td class="py-2 pr-3 text-right text-slate-500">${fmtCurrency(f.actual)}</td>
-      <td class="py-2 pr-3 text-right text-slate-500">${f.budget !== null ? fmtCurrency(f.budget) : '-'}</td>
-      <td class="py-2 pr-3 text-right font-semibold text-slate-700">${variance}</td>
-      <td class="py-2 pr-3 text-right text-slate-500">${fmtCurrency(f.proj)}</td>
-      <td class="py-2 pr-3"><span class="px-2 py-0.5 text-xs font-semibold rounded-full border ${sevCls[f.severity]}">${f.severity}</span></td>
-      <td class="py-2 pr-3 text-xs text-slate-500">${f.reasons.map(esc).join('<br>')}</td>
-      <td class="py-2 pr-3 text-xs">${rev
-        ? `<span class="px-2 py-0.5 rounded-full font-semibold ${revCls[rev.status]}" title="${esc(rev.comment || '')}">${rev.status}</span><div class="text-slate-400 mt-0.5">${esc(rev.reviewer || '')}</div>`
-        : '<span class="text-slate-400">Pending</span>'}</td>
-      <td class="py-2 whitespace-nowrap">
-        ${btn('justified', 'Justified', 'text-emerald-700 border-emerald-200 hover:bg-emerald-50')}
-        ${btn('investigate', 'Investigate', 'text-amber-700 border-amber-200 hover:bg-amber-50')}
-        ${btn('escalate', 'Escalate', 'text-rose-700 border-rose-200 hover:bg-rose-50')}
-      </td>`;
-    body.appendChild(tr);
-
-    const ai = aiCommentary.get(f.dept);
-    if (ai) {
-      const tr2 = document.createElement('tr');
-      tr2.innerHTML = `<td colspan="9" class="py-2 px-3 text-xs text-slate-600 bg-blue-50/50"><i class="fa-solid fa-wand-magic-sparkles text-hoechst-blue mr-1"></i>${esc(ai)}</td>`;
-      body.appendChild(tr2);
-    }
-  });
-}
-
-async function submitReview(dept, status) {
-  const comment = prompt(`Comment for ${dept} (optional):`);
-  if (comment === null) return;
-  const { error } = await sb.from('opex_flag_reviews')
-    .insert({ fiscal_year: currentFlagYear, department: dept, status, comment: comment || null });
-  if (error) { showError('Could not save review: ' + error.message); return; }
-  await loadReviews(currentFlagYear);
-  renderFlags();
-}
-
-document.getElementById('flagsBody').addEventListener('click', e => {
-  const b = e.target.closest('button[data-status]');
-  if (b) submitReview(b.closest('tr').dataset.dept, b.dataset.status);
-});
-
-/* ==================================================================
-   AI (via Supabase Edge Function "opex-explain")
-   Only percentages and generic codes ("Dept 1") are ever sent.
-   ================================================================== */
-const parseJson = t => JSON.parse(String(t).replace(/```json|```/g, '').trim());
-
-document.getElementById('explainBtn').addEventListener('click', async () => {
-  if (!lastFlags.length) return;
-  const btn = document.getElementById('explainBtn');
-  btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Thinking...';
-  try {
-    const codeToDept = new Map();
-    const items = lastFlags.slice(0, 10).map((f, i) => {
-      const code = `Dept ${i + 1}`; codeToDept.set(code, f.dept);
-      return {
-        code, severity: f.severity, has_budget: f.budget !== null,
-        over_budget_pct: f.overPct === null ? null : +(f.overPct * 100).toFixed(1),
-        yoy_growth_pct: f.yoy === null ? null : +(f.yoy * 100).toFixed(1),
-        projected_vs_budget_pct: f.budget ? +((f.proj - f.budget) / f.budget * 100).toFixed(1) : null,
-        peak_month: f.zMonth ? monthName(f.zMonth) : null,
-        peak_month_zscore: f.maxZ === null ? null : +f.maxZ.toFixed(1),
-        top_drivers: f.drivers
-      };
-    });
-    const { data, error } = await sb.functions.invoke('opex-explain', { body: { mode: 'explain', payload: { flags: items } } });
-    if (error) throw error;
-    const out = parseJson(data.text);
-    aiCommentary = new Map(Object.entries(out).map(([code, txt]) => [codeToDept.get(code), txt]).filter(([d]) => d));
-    renderFlags();
-  } catch (e) { showError('AI commentary failed: ' + (e.message || e)); }
-  finally { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI Commentary'; }
-});
-
-document.getElementById('nlBtn').addEventListener('click', async () => {
-  const q = document.getElementById('nlInput').value.trim();
-  if (!q) return;
-  const btn = document.getElementById('nlBtn'); btn.disabled = true;
-  try {
-    const { data, error } = await sb.functions.invoke('opex-explain', { body: { mode: 'intent', payload: { question: q } } });
-    if (error) throw error;
-    const intent = parseJson(data.text);
-
-    await Promise.all([loadDepartments(), loadStatutoryMappings()]);
-    selectedDepts.clear(); selectedCostCenters.clear(); selectedCostElements.clear(); selectedStatutoryMappings.clear();
-    ceStale = true;
-    const match = (list, kws) => list.filter(x => (kws || []).some(k => x.toLowerCase().includes(String(k).toLowerCase())));
-    match(departments, intent.department_keywords).forEach(d => selectedDepts.add(d));
-    match(statutoryMappings, intent.statutory_keywords).forEach(s => selectedStatutoryMappings.add(s));
-
-    const valid = (intent.years || []).filter(y => availableYears.some(a => a.fiscal_year === y));
-    if (valid.length) { selectedYears = new Set(valid); renderYearChips(); }
-
-    renderList(listSearch.value); updateUI();
-    await runComparison();
-  } catch (e) { showError('Could not interpret the question: ' + (e.message || e)); }
-  finally { btn.disabled = false; }
-});
-
-/* ==================================================================
-   ERRORS + INIT
-   ================================================================== */
-function showError(msg) { globalError.textContent = msg; globalError.classList.remove('hidden'); }
-function hideError() { globalError.classList.add('hidden'); }
-
-async function initDashboard() {
-  await loadYears(false);
-  await loadDepartments();
-  renderList(); updateUI();
-}
-
-/* ==================================================================
-   EXCEL / CSV UPLOAD (OPEX data)
-   ================================================================== */
-const COLUMNS = {
-  document_no:        'text',
-  doc_date:           'text',
-  purch_doc:          'bigint',
-  postg_date:         'text',
-  ref_doc_no:         'bigint',
-  cost_ctr:           'bigint',
-  description:        'text',
-  cost_elem:          'bigint',
-  cost_element_name:  'text',
-  actual_amount:      'number',
-  user_name:          'text',
-  name:               'text',
-  po_text:            'text',
-  month:              'bigint',
-  to_be_captured:     'text',
-  category:           'text',
-  statutory_mapping:  'text',
-  management_mapping: 'text',
-  department:         'text'
-};
-
-const HEADER_ALIASES = {
-  documentno:'document_no', documentnumber:'document_no', docno:'document_no', doc:'document_no',
-  docdate:'doc_date', documentdate:'doc_date', date:'doc_date',
-  purchdoc:'purch_doc', purchasedoc:'purch_doc', purchasedocument:'purch_doc',
-  postgdate:'postg_date', postingdate:'postg_date',
-  refdocno:'ref_doc_no', referencedocno:'ref_doc_no', referencedocumentno:'ref_doc_no',
-  costctr:'cost_ctr', costcenter:'cost_ctr', costcentre:'cost_ctr', cctr:'cost_ctr',
-  description:'description', desc:'description',
-  costelem:'cost_elem', costelement:'cost_elem', costelementno:'cost_elem',
-  costelementname:'cost_element_name', elementname:'cost_element_name',
-  actualamount:'actual_amount', amount:'actual_amount', value:'actual_amount', amt:'actual_amount',
-  username:'user_name', user:'user_name',
-  name:'name',
-  purchaseordertext:'po_text', potext:'po_text', purchaseorder:'po_text',
-  month:'month',
-  tobecaptured:'to_be_captured', capture:'to_be_captured',
-  category:'category',
-  statutorymapping:'statutory_mapping', statutory:'statutory_mapping',
-  managementmapping:'management_mapping', management:'management_mapping',
-  department:'department', dept:'department'
-};
-
-const normalizeHeader = h => String(h ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
-const normalizeDepartment = v => String(v).trim().replace(/\s*-\s*/g, '-');
-
-function coerceValue(raw, type) {
-  if (raw === undefined || raw === null || raw === '') return null;
-  if (type === 'text') { const s = String(raw).trim(); return s === '' ? null : s; }
-  const cleaned = String(raw).replace(/[^0-9.\-]/g, '');
-  const n = type === 'bigint' ? parseInt(cleaned, 10) : parseFloat(cleaned);
-  return Number.isFinite(n) ? n : null;
-}
-
-function mapHeaderRow(line) {
-  const idxToCol = {};
-  const unmatched = [];
-  (line || []).forEach((h, idx) => {
-    const norm = normalizeHeader(h);
-    const col = HEADER_ALIASES[norm] || (COLUMNS[norm] ? norm : null);
-    if (col && COLUMNS[col] && !Object.values(idxToCol).includes(col)) idxToCol[idx] = col;
-    else if (h !== null && String(h).trim() !== '') unmatched.push(h);
-  });
-  return { idxToCol, unmatched };
-}
-
-const HEADER_SCAN_ROWS = 25;
-const MIN_HEADER_MATCHES = 3;
-
-function findHeaderRow(raw) {
-  let best = { rowIndex: -1, idxToCol: {}, unmatched: [], score: 0 };
-  const limit = Math.min(raw.length, HEADER_SCAN_ROWS);
-  for (let r = 0; r < limit; r++) {
-    const line = raw[r];
-    if (!line || line.every(v => v === null || v === '')) continue;
-    const { idxToCol, unmatched } = mapHeaderRow(line);
-    const score = Object.keys(idxToCol).length;
-    if (score > best.score) best = { rowIndex: r, idxToCol, unmatched, score };
-  }
-  return best;
-}
-
-function parseWorkbook(workbook, fiscalYear) {
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null, raw: true });
-  if (raw.length === 0) return { rows: [], unmatchedHeaders: [], matchedCount: 0, headerRowNumber: null, skippedPreambleRows: 0 };
-
-  const header = findHeaderRow(raw);
-  if (header.rowIndex === -1 || header.score < MIN_HEADER_MATCHES) {
-    return { rows: [], unmatchedHeaders: [], matchedCount: header.score, headerRowNumber: null, skippedPreambleRows: 0 };
-  }
-
-  const idxToCol = header.idxToCol;
-  const rows = [];
-  let skippedNonData = 0;
-
-  for (let r = header.rowIndex + 1; r < raw.length; r++) {
-    const line = raw[r];
-    if (!line || line.every(v => v === null || v === '')) continue;
-
-    const joined = line.filter(v => v !== null && v !== '').map(v => String(v).toLowerCase()).join(' ');
-    const looksLikeTotalLine = /(^|\s)(sub\s*total|subtotal|sum|grand\s*total|total)\s*:?\s*$|^(sub\s*total|subtotal|sum|grand\s*total|total)\b/.test(joined.trim());
-
-    const obj = { fiscal_year: fiscalYear };
-    let hasValue = false;
-    Object.entries(idxToCol).forEach(([idx, col]) => {
-      let val = coerceValue(line[Number(idx)], COLUMNS[col]);
-      if (col === 'department' && val !== null) val = normalizeDepartment(val);
-      if (col === 'statutory_mapping' && val !== null) val = String(val).trim();
-      obj[col] = val;
-      if (val !== null) hasValue = true;
-    });
-
-    const hasAnchor = obj.cost_ctr !== null && obj.cost_ctr !== undefined
-                   || obj.cost_elem !== null && obj.cost_elem !== undefined
-                   || (obj.department !== null && obj.department !== undefined)
-                   || (obj.document_no !== null && obj.document_no !== undefined);
-
-    if (!hasValue) continue;
-    if (looksLikeTotalLine && !hasAnchor) { skippedNonData++; continue; }
-    if (!hasAnchor) { skippedNonData++; continue; }
-
-    rows.push(obj);
-  }
-
-  return {
-    rows,
-    unmatchedHeaders: [...new Set(header.unmatched)],
-    matchedCount: Object.keys(idxToCol).length,
-    headerRowNumber: header.rowIndex + 1,
-    skippedPreambleRows: header.rowIndex + skippedNonData
-  };
-}
-
-async function insertInChunks(rows, onProgress) {
-  const CHUNK = 500;
-  let inserted = 0, failed = 0, firstError = null;
-  for (let i = 0; i < rows.length; i += CHUNK) {
-    const chunk = rows.slice(i, i + CHUNK);
-    const { error } = await sb.from(TABLE).insert(chunk);
-    if (error) { failed += chunk.length; if (!firstError) firstError = error.message; console.error('Insert failed:', error.message); }
-    else inserted += chunk.length;
-    onProgress(Math.min(i + CHUNK, rows.length), rows.length);
-  }
-  return { inserted, failed, firstError };
-}
-
-const uploadModal = document.getElementById('uploadModal');
-const uploadYearInput = document.getElementById('uploadYearInput');
-const uploadFileInput = document.getElementById('uploadFileInput');
-const replaceYearCheckbox = document.getElementById('replaceYearCheckbox');
-const startUploadBtn = document.getElementById('startUploadBtn');
-const uploadStatus = document.getElementById('uploadStatus');
-const uploadProgressWrap = document.getElementById('uploadProgressWrap');
-const uploadProgressBar = document.getElementById('uploadProgressBar');
-const uploadProgressText = document.getElementById('uploadProgressText');
-const yearExistsNote = document.getElementById('yearExistsNote');
-
-document.getElementById('openUploadBtn').addEventListener('click', () => uploadModal.classList.remove('hidden'));
-document.getElementById('closeUploadBtn').addEventListener('click', () => uploadModal.classList.add('hidden'));
-
-uploadYearInput.addEventListener('input', () => {
-  const y = parseInt(uploadYearInput.value, 10);
-  const existing = availableYears.find(a => a.fiscal_year === y);
-  if (existing) {
-    yearExistsNote.className = 'text-xs mb-3 text-amber-600';
-    yearExistsNote.textContent = `FY${y} already has ${Number(existing.row_count).toLocaleString()} rows. Uploading appends unless you tick "replace" below.`;
-    yearExistsNote.classList.remove('hidden');
-  } else if (Number.isFinite(y)) {
-    yearExistsNote.className = 'text-xs mb-3 text-emerald-600';
-    yearExistsNote.textContent = `FY${y} is new - this will create it.`;
-    yearExistsNote.classList.remove('hidden');
-  } else {
-    yearExistsNote.classList.add('hidden');
-  }
-});
-
-function setUploadStatus(msg, kind) {
-  uploadStatus.className = 'text-xs rounded-lg px-3 py-2 mb-4 border ' + ({
-    error:   'text-rose-700 bg-rose-50 border-rose-200',
-    success: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-    info:    'text-slate-600 bg-slate-50 border-slate-200'
-  }[kind] || 'text-slate-600 bg-slate-50 border-slate-200');
-  uploadStatus.innerHTML = msg;
-}
-
-startUploadBtn.addEventListener('click', async () => {
-  const file = uploadFileInput.files[0];
-  const fiscalYear = parseInt(uploadYearInput.value, 10);
-
-  if (!Number.isFinite(fiscalYear)) { setUploadStatus('Enter the fiscal year this file belongs to.', 'error'); return; }
-  if (!file) { setUploadStatus('Choose a file first.', 'error'); return; }
-
-  startUploadBtn.disabled = true;
-  setUploadStatus('Reading file...', 'info');
-  uploadProgressWrap.classList.add('hidden');
-
-  try {
-    const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-    const { rows, unmatchedHeaders, matchedCount, headerRowNumber, skippedPreambleRows } = parseWorkbook(workbook, fiscalYear);
-
-    if (headerRowNumber === null) {
-      setUploadStatus(`Could not find a header row in the first ${HEADER_SCAN_ROWS} rows. Check the file has a row with names like "Cost Ctr", "Department", "Actual Amount".`, 'error');
-      startUploadBtn.disabled = false; return;
-    }
-    if (rows.length === 0) {
-      setUploadStatus(`Found headers on row ${headerRowNumber}, but no data rows below them.`, 'error');
-      startUploadBtn.disabled = false; return;
-    }
-
-    if (replaceYearCheckbox.checked) {
-      setUploadStatus(`Removing existing FY${fiscalYear} rows...`, 'info');
-      const { error: delError } = await sb.from(TABLE).delete().eq('fiscal_year', fiscalYear);
-      if (delError) {
-        setUploadStatus('Could not clear existing rows: ' + delError.message + ' - nothing was imported.', 'error');
-        startUploadBtn.disabled = false; return;
-      }
-    }
-
-    const warn = (unmatchedHeaders.length
-        ? `<br><span class="text-amber-600">Skipped unrecognized column(s): ${unmatchedHeaders.map(esc).join(', ')}</span>` : '')
-      + `<br><span class="text-slate-400">Headers found on row ${headerRowNumber} (${matchedCount} columns matched)`
-      + (skippedPreambleRows ? `; skipped ${skippedPreambleRows} non-data row(s) such as blanks or Subtotal/Sum lines` : '')
-      + `.</span>`;
-
-    setUploadStatus(`Uploading ${rows.length.toLocaleString()} row(s) to FY${fiscalYear}...${warn}`, 'info');
-    uploadProgressWrap.classList.remove('hidden');
-
-    const { inserted, failed, firstError } = await insertInChunks(rows, (done, total) => {
-      uploadProgressBar.style.width = Math.round((done / total) * 100) + '%';
-      uploadProgressText.textContent = `${done.toLocaleString()} / ${total.toLocaleString()} rows`;
-    });
-
-    if (failed === 0) {
-      setUploadStatus(`Done - ${inserted.toLocaleString()} row(s) imported into FY${fiscalYear}.${warn}`, 'success');
-    } else {
-      setUploadStatus(`Imported ${inserted.toLocaleString()}, but ${failed.toLocaleString()} failed. First error: ${esc(firstError)}${warn}`, 'error');
-    }
-
-    deptsLoaded = ccLoaded = statLoaded = false;
-    ceStale = true;
-    await loadYears(true);
-    if (activeTab === 'dept') loadDepartments();
-    else if (activeTab === 'cc') loadCostCenters();
-    else if (activeTab === 'stat') loadStatutoryMappings();
-  } catch (err) {
-    setUploadStatus('Upload failed: ' + err.message, 'error');
-  } finally {
-    startUploadBtn.disabled = false;
-  }
-});
-
-/* ==================================================================
-   BUDGET UPLOAD
-   ================================================================== */
-const budgetModal = document.getElementById('budgetModal');
-document.getElementById('openBudgetBtn').addEventListener('click', () => budgetModal.classList.remove('hidden'));
-document.getElementById('closeBudgetBtn').addEventListener('click', () => budgetModal.classList.add('hidden'));
-
-function setBudgetStatus(msg, kind) {
-  const el = document.getElementById('budgetStatus');
-  el.className = 'text-xs rounded-lg px-3 py-2 mb-4 border ' + (kind === 'error'
-    ? 'text-rose-700 bg-rose-50 border-rose-200'
-    : kind === 'success' ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-    : 'text-slate-600 bg-slate-50 border-slate-200');
-  el.innerHTML = msg;
-}
-
-document.getElementById('startBudgetBtn').addEventListener('click', async () => {
-  const fy = parseInt(document.getElementById('budgetYearInput').value, 10);
-  const file = document.getElementById('budgetFileInput').files[0];
-  if (!Number.isFinite(fy) || !file) { setBudgetStatus('Enter a fiscal year and choose a file.', 'error'); return; }
-  try {
-    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-    const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
-    const totals = new Map();
-    raw.forEach(r => {
-      let dept = null, amt = null;
-      Object.entries(r).forEach(([k, v]) => {
-        const n = normalizeHeader(k);
-        if (n.includes('department') || n.includes('dept')) dept = v;
-        else if (n.includes('budget') || n.includes('amount')) amt = v;
-      });
-      const a = coerceValue(amt, 'number');
-      if (dept && a !== null) {
-        const d = normalizeDepartment(dept);
-        totals.set(d, (totals.get(d) || 0) + a);
-      }
-    });
-    const rows = [...totals].map(([department, budget_amount]) => ({ fiscal_year: fy, department, budget_amount }));
-    if (!rows.length) { setBudgetStatus('No rows found. Check the headers are "Department" and "Budget".', 'error'); return; }
-
-    const { error } = await sb.from('opex_budgets').upsert(rows, { onConflict: 'fiscal_year,department' });
-    if (error) throw error;
-
-    await loadDepartments();
-    const unknown = rows.filter(r => !departments.includes(r.department)).map(r => r.department);
-    setBudgetStatus(`Saved ${rows.length} department budget(s) for FY${fy}.` +
-      (unknown.length ? `<br><span class="text-amber-600">Not matching any department in your data: ${unknown.map(esc).join(', ')}</span>` : ''), 'success');
-  } catch (e) { setBudgetStatus('Upload failed: ' + esc(e.message), 'error'); }
-});
-</script>
-</body>
-</html>
+function renderResults(years, byYear) { renderKpis(years, byYear);
+
+// Flags: budget-adjusted rules + anomaly scoring + projection (all local) aiCommentary = new Map(); lastFlags = computeFlags(years, byYear); currentFlagYear = years[years.length - 1]; renderFlags();
+
+let keyFn, breakdownLabel; if (selectedCostCenters.size > 0 || selectedCostElements.size > 0) { keyFn = r => ${r.cost_elem ?? '-'} ${r.cost_element_name ?? ''}.trim(); breakdownLabel = 'By Cost Element'; } else if (selectedDepts.size > 0) { keyFn = r => ${r.cost_ctr ?? '-'} ${r.description ?? ''}.trim(); breakdownLabel = 'By Cost Center'; } else { keyFn = r => r.department || 'Unspecified'; breakdownLabel = selectedStatutoryMappings.size > 0 ? 'By Department (Statutory Mapping filter)' : 'By Department'; }
+
+const maps = new Map(years.map(y => [y, sumBy(byYear.get(y), keyFn)])); const allKeys = [...new Set(years.flatMap(y => [...maps.get(y).keys()]))]; allKeys.sort((a, b) => years.reduce((s, y) => s + Math.abs(maps.get(y).get(b) || 0), 0) - years.reduce((s, y) => s + Math.abs(maps.get(y).get(a) || 0), 0)); const topKeys = allKeys.slice(0, 12);
+
+renderBarChart(breakdownLabel, topKeys, years, maps);
+
+const latest = years[years.length - 1]; const statLatest = sumBy(byYear.get(latest), r => r.statutory_mapping || 'Unmapped'); renderPieChart([...statLatest.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8), latest);
+
+renderLineChart(years, byYear); renderMoversTable(years, byYear); }
+
+function renderKpis(years, byYear) { const grid = document.getElementById('kpiGrid'); grid.innerHTML = ''; const totals = new Map(years.map(y => [y, totalOf(byYear.get(y))]));
+
+years.forEach(y => { const card = document.createElement('div'); card.className = 'bg-white rounded-xl shadow-sm border border-slate-200 p-4'; card.innerHTML = <p class="text-xs font-semibold text-slate-400 uppercase">FY${y} Total</p> <p class="text-2xl font-bold text-slate-700 mt-1">${fmtCurrency(totals.get(y))}</p>; grid.appendChild(card); });
+
+if (years.length >= 2) { const first = years[0], last = years[years.length - 1]; const v = totals.get(last) - totals.get(first); const pct = totals.get(first) !== 0 ? (v / Math.abs(totals.get(first))) * 100 : (totals.get(last) !== 0 ? 100 : 0); const color = v >= 0 ? 'text-rose-600' : 'text-emerald-600';
+
+const vCard = document.createElement('div'); vCard.className = 'bg-white rounded-xl shadow-sm border border-slate-200 p-4'; vCard.innerHTML = <p class="text-xs font-semibold text-slate-400 uppercase">Variance FY${first}&rarr;FY${last}</p> <p class="text-2xl font-bold mt-1 ${color}">${v >= 0 ? '+' : ''}${fmtCurrency(v)}</p>; grid.appendChild(vCard);
+
+const pCard = document.createElement('div'); pCard.className = 'bg-white rounded-xl shadow-sm border border-slate-200 p-4'; pCard.innerHTML = <p class="text-xs font-semibold text-slate-400 uppercase">% Change</p> <p class="text-2xl font-bold mt-1 ${color}">${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%</p>; grid.appendChild(pCard); } }
+
+function renderBarChart(label, keys, years, maps) { if (barChart) barChart.destroy(); const ctx = document.getElementById('barChart').getContext('2d'); barChart = new Chart(ctx, { type: 'bar', data: { labels: keys, datasets: years.map((y, i) => ({ label: FY${y}, data: keys.map(k => maps.get(y).get(k) || 0), backgroundColor: yearColor(i, years.length) })) }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { title: { display: true, text: label, font: { size: 14 } } }, scales: { x: { beginAtZero: true } } } }); }
+
+function renderPieChart(entries, year) { if (pieChart) pieChart.destroy(); const ctx = document.getElementById('pieChart').getContext('2d'); pieChart = new Chart(ctx, { type: 'doughnut', data: { labels: entries.map(e => e[0]), datasets: [{ data: entries.map(e => e[1]), backgroundColor: palette(entries.length) }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: FY${year} Share by Statutory Mapping, font: { size: 14 } }, legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } } } } }); }
+
+function renderLineChart(years, byYear) { if (lineChart) lineChart.destroy(); const months = Array.from({ length: 12 }, (_, i) => i + 1); const ctx = document.getElementById('lineChart').getContext('2d'); lineChart = new Chart(ctx, { type: 'line', data: { labels: months.map(monthName), datasets: years.map((y, i) => { const m = sumBy(byYear.get(y), r => r.month); const c = yearColor(i, years.length); return { label: FY${y}, data: months.map(mm => m.get(mm) || 0), borderColor: c, backgroundColor: c, tension: 0.3 }; }) }, options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Monthly Trend', font: { size: 14 } } }, scales: { y: { beginAtZero: true } } } }); }
+
+function renderMoversTable(years, byYear) { const head = document.getElementById('moversHeadRow'); const body = document.getElementById('moversTableBody'); const maps = new Map(years.map(y => [y, sumBy(byYear.get(y), r => r.statutory_mapping || 'Unmapped')])); const keys = [...new Set(years.flatMap(y => [...maps.get(y).keys()]))];
+
+const multi = years.length >= 2; const first = years[0], last = years[years.length - 1];
+
+head.innerHTML = <th class="py-2 pr-4">Statutory Mapping</th> + years.map(y => <th class="py-2 pr-4 text-right">FY${y}</th>).join('') + (multi ? <th class="py-2 pr-4 text-right">Variance</th><th class="py-2 text-right">% Change</th> : '');
+
+const rows = keys.map(k => { const vals = years.map(y => maps.get(y).get(k) || 0); const v = multi ? (maps.get(last).get(k) || 0) - (maps.get(first).get(k) || 0) : 0; const base = maps.get(first).get(k) || 0; const pct = base !== 0 ? (v / Math.abs(base)) * 100 : ((maps.get(last)?.get(k) || 0) !== 0 ? 100 : 0); return { k, vals, v, pct, weight: multi ? Math.abs(v) : Math.abs(vals[0]) }; }).sort((a, b) => b.weight - a.weight).slice(0, 15);
+
+body.innerHTML = ''; rows.forEach(r => { const tr = document.createElement('tr'); tr.className = "border-b border-slate-50 last:border-0"; const varColor = r.v >= 0 ? 'text-rose-600' : 'text-emerald-600'; tr.innerHTML = <td class="py-2 pr-4 text-slate-700">${esc(r.k)}</td> + r.vals.map(v => <td class="py-2 pr-4 text-right text-slate-500">${fmtCurrency(v)}</td>).join('') + (multi ? <td class="py-2 pr-4 text-right font-semibold ${varColor}">${r.v >= 0 ? '+' : ''}${fmtCurrency(r.v)}</td> <td class="py-2 text-right font-semibold ${varColor}">${r.pct >= 0 ? '+' : ''}${r.pct.toFixed(1)}%</td> : ''); body.appendChild(tr); }); }
+
+/* ================================================================== BUDGETS + REVIEWS (database) ================================================================== */ async function loadBudgets(year) { const { data, error } = await sb.from('opexbudgets').select('department,budgetamount').eq('fiscalyear', year); if (error) throw error; budgetsByYear.set(year, new Map((data || []).map(r => [r.department, Number(r.budgetamount)]))); } async function loadReviews(year) { const { data, error } = await sb.from('opexflagreviews') .select('department,status,comment,reviewer,reviewedat') .eq('fiscalyear', year).order('reviewed_at', { ascending: true }); if (error) throw error; reviewsMap = new Map(); (data || []).forEach(r => reviewsMap.set(${year}|${r.department}, r)); // latest decision wins }
+
+/* ================================================================== FLAG ENGINE - runs entirely in the browser, no data leaves ================================================================== / const FLAGCFG = { overMed: 0.10, overHigh: 0.25, noBudgetYoy: 0.20, zMed: 2, zHigh: 3, projTol: 0.05 }; const SEV_RANK = { Low: 1, Medium: 2, High: 3 }; const mean = a => a.reduce((s, x) => s + x, 0) / a.length; const stdev = a => { const m = mean(a); return Math.sqrt(mean(a.map(x => (x - m) 2))); };
+
+function groupByDept(rows) { const g = new Map(); rows.forEach(r => { const k = r.department || 'Unspecified'; if (!g.has(k)) g.set(k, []); g.get(k).push(r); }); return g; }
+
+function computeFlags(years, byYear) { const last = years[years.length - 1]; const prevYears = years.slice(0, -1); const prev = prevYears.length ? prevYears[prevYears.length - 1] : null; const budgets = budgetsByYear.get(last) || new Map(); const gLast = groupByDept(byYear.get(last)); const gBy = new Map(prevYears.map(y => [y, groupByDept(byYear.get(y))])); const flags = [];
+
+gLast.forEach((rows, dept) => { const actual = totalOf(rows); const prevRows = prev ? (gBy.get(prev).get(dept) || []) : []; const prevActual = prev ? totalOf(prevRows) : null; const yoy = prevActual ? (actual - prevActual) / Math.abs(prevActual) : null; const b = budgets.has(dept) ? budgets.get(dept) : null; const hasBudget = b !== null && b > 0; const overPct = hasBudget ? (actual - b) / b : null;
+
+// Year-end projection from the last 3 months' run-rate const m = sumBy(rows, r => r.month); const months = [...m.keys()].map(Number).filter(x => x >= 1 && x <= 12).sort((a, b) => a - b); const elapsed = months.length ? months[months.length - 1] : 12; const tail = [elapsed - 2, elapsed - 1, elapsed].filter(x => x >= 1).map(x => m.get(x) || 0); const proj = elapsed >= 12 ? actual : actual + mean(tail) * (12 - elapsed);
+
+// Anomaly score: each month vs this department's own prior-year monthly history const hist = []; prevYears.forEach(y => { sumBy(gBy.get(y).get(dept) || [], r => r.month).forEach((v, k) => { if (Number(k) >= 1 && Number(k) <= 12) hist.push(v); }); }); let maxZ = null, zMonth = null; if (hist.length >= 6) { const mu = mean(hist), sd = stdev(hist); if (sd > 0) m.forEach((v, k) => { const z = (v - mu) / sd; if (maxZ === null || z > maxZ) { maxZ = z; zMonth = k; } }); }
+
+const reasons = []; let sev = 0; const bump = (s, t) => { reasons.push(t); sev = Math.max(sev, SEVRANK[s]); }; if (hasBudget) { if (overPct >= FLAGCFG.overHigh) bump('High', Over approved budget by ${(overPct * 100).toFixed(0)}%); else if (overPct >= FLAGCFG.overMed) bump('Medium', Over approved budget by ${(overPct * 100).toFixed(0)}%); else if (proj > b (1 + FLAGCFG.projTol)) bump('Medium', Projected to exceed budget by ${((proj - b) / b * 100).toFixed(0)}%); } else if (yoy !== null && yoy >= FLAGCFG.noBudgetYoy) { bump(yoy >= 0.5 ? 'Medium' : 'Low', No budget on file; spend up ${(yoy * 100).toFixed(0)}% YoY); } if (maxZ !== null && maxZ >= FLAGCFG.zMed) bump(maxZ >= FLAGCFG.zHigh ? 'High' : 'Medium', Unusual spike in ${monthName(zMonth)} (z=${maxZ.toFixed(1)})); if (!reasons.length) return;
+
+// Top categories driving the increase (shares only - used for AI commentary) const sl = sumBy(rows, r => r.statutorymapping || 'Unmapped'); const sp = sumBy(prevRows, r => r.statutorymapping || 'Unmapped'); const deltas = [...sl.keys()].map(k => ({ category: k, delta: (sl.get(k) || 0) - (sp.get(k) || 0) })) .filter(x => x.delta > 0).sort((a, b) => b.delta - a.delta); const totalPos = deltas.reduce((s, x) => s + x.delta, 0); const drivers = deltas.slice(0, 3).map(x => ({ category: x.category, shareofincrease_pct: Math.round(x.delta / totalPos * 100) }));
+
+flags.push({ dept, actual, budget: hasBudget ? b : null, overPct, yoy, proj, maxZ, zMonth, drivers, severity: Object.keys(SEVRANK).find(k => SEVRANK[k] === sev), reasons }); });
+
+return flags.sort((a, b) => SEVRANK[b.severity] - SEVRANK[a.severity] || (b.overPct ?? b.yoy ?? 0) - (a.overPct ?? a.yoy ?? 0)); }
+
+/* ================================================================== FLAGS TABLE + HUMAN REVIEW ================================================================== */ function renderFlags() { const body = document.getElementById('flagsBody'); const hasB = (budgetsByYear.get(currentFlagYear) || new Map()).size > 0; document.getElementById('flagsSubtitle').textContent = lastFlags.length ? ${lastFlags.length} flagged for FY${currentFlagYear}. Budget: ${hasB ? 'loaded' : 'none uploaded'}. AI recommends, a human decides. : No departments flagged for FY${currentFlagYear}.; document.getElementById('explainBtn').disabled = lastFlags.length === 0; body.innerHTML = ''; const sevCls = { High: 'bg-rose-50 text-rose-700 border-rose-200', Medium: 'bg-amber-50 text-amber-700 border-amber-200', Low: 'bg-slate-50 text-slate-600 border-slate-200' }; const revCls = { justified: 'bg-emerald-50 text-emerald-700', investigate: 'bg-amber-50 text-amber-700', escalate: 'bg-rose-50 text-rose-700' }; const btn = (s, label, c) => <button data-status="${s}" class="px-2 py-1 text-[11px] font-semibold rounded border ${c} mr-1">${label}</button>;
+
+lastFlags.forEach(f => { const rev = reviewsMap.get(${currentFlagYear}|${f.dept}); const variance = f.overPct !== null ? ${(f.overPct * 100).toFixed(0)}% vs budget : f.yoy !== null ? ${(f.yoy * 100).toFixed(0)}% YoY : '-'; const tr = document.createElement('tr'); tr.dataset.dept = f.dept; tr.className = 'border-b border-slate-50' + (rev && rev.status === 'justified' ? ' opacity-60' : ''); tr.innerHTML = <td class="py-2 pr-3 font-medium text-slate-700">${esc(f.dept)}</td> <td class="py-2 pr-3 text-right text-slate-500">${fmtCurrency(f.actual)}</td> <td class="py-2 pr-3 text-right text-slate-500">${f.budget !== null ? fmtCurrency(f.budget) : '-'}</td> <td class="py-2 pr-3 text-right font-semibold text-slate-700">${variance}</td> <td class="py-2 pr-3 text-right text-slate-500">${fmtCurrency(f.proj)}</td> <td class="py-2 pr-3"><span class="px-2 py-0.5 text-xs font-semibold rounded-full border ${sevCls[f.severity]}">${f.severity}</span></td> <td class="py-2 pr-3 text-xs text-slate-500">${f.reasons.map(esc).join('<br>')}</td> <td class="py-2 pr-3 text-xs">${rev ? <span class="px-2 py-0.5 rounded-full font-semibold 
+𝑟
+𝑒
+𝑣
+𝐶
+𝑙
+𝑠
+[
+𝑟
+𝑒
+𝑣
+.
+𝑠
+𝑡
+𝑎
+𝑡
+𝑢
+𝑠
+]
+"
+𝑡
+𝑖
+𝑡
+𝑙
+𝑒
+=
+"
+{esc(rev.comment || '')}">
+𝑟
+𝑒
+𝑣
+.
+𝑠
+𝑡
+𝑎
+𝑡
+𝑢
+𝑠
+<
+/
+𝑠
+𝑝
+𝑎
+𝑛
+>
+<
+𝑑
+𝑖
+𝑣
+𝑐
+𝑙
+𝑎
+𝑠
+𝑠
+=
+"
+𝑡
+𝑒
+𝑥
+𝑡
+−
+𝑠
+𝑙
+𝑎
+𝑡
+𝑒
+−
+400
+𝑚
+𝑡
+−
+0.5
+"
+>
+{esc(rev.reviewer || '')}</div> : '<span class="text-slate-400">Pending</span>'}</td> <td class="py-2 whitespace-nowrap"> ${btn('justified', 'Justified', 'text-emerald-700 border-emerald-200 hover:bg-emerald-50')} ${btn('investigate', 'Investigate', 'text-amber-700 border-amber-200 hover:bg-amber-50')} ${btn('escalate', 'Escalate', 'text-rose-700 border-rose-200 hover:bg-rose-50')} </td>; body.appendChild(tr);
+
+const ai = aiCommentary.get(f.dept); if (ai) { const tr2 = document.createElement('tr'); tr2.innerHTML = <td colspan="9" class="py-2 px-3 text-xs text-slate-600 bg-blue-50/50"><i class="fa-solid fa-wand-magic-sparkles text-hoechst-blue mr-1"></i>${esc(ai)}</td>; body.appendChild(tr2); } }); }
+
+async function submitReview(dept, status) { const comment = prompt(Comment for ${dept} (optional):); if (comment === null) return; const { error } = await sb.from('opexflagreviews') .insert({ fiscal_year: currentFlagYear, department: dept, status, comment: comment || null }); if (error) { showError('Could not save review: ' + error.message); return; } await loadReviews(currentFlagYear); renderFlags(); }
+
+document.getElementById('flagsBody').addEventListener('click', e => { const b = e.target.closest('button[data-status]'); if (b) submitReview(b.closest('tr').dataset.dept, b.dataset.status); });
+
+/* ================================================================== AI (via Supabase Edge Function "opex-explain") Only percentages and generic codes ("Dept 1") are ever sent. ================================================================== */ const parseJson = t => JSON.parse(String(t).replace(/json|/g, '').trim());
+
+document.getElementById('explainBtn').addEventListener('click', async () => { if (!lastFlags.length) return; const btn = document.getElementById('explainBtn'); btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Thinking...'; try { const codeToDept = new Map(); const items = lastFlags.slice(0, 10).map((f, i) => { const code = Dept ${i + 1}; codeToDept.set(code, f.dept); return { code, severity: f.severity, hasbudget: f.budget !== null, overbudgetpct: f.overPct === null ? null : +(f.overPct 100).toFixed(1), yoygrowthpct: f.yoy === null ? null : +(f.yoy * 100).toFixed(1), projectedvsbudgetpct: f.budget ? +((f.proj - f.budget) / f.budget 100).toFixed(1) : null, peakmonth: f.zMonth ? monthName(f.zMonth) : null, peakmonthzscore: f.maxZ === null ? null : +f.maxZ.toFixed(1), topdrivers: f.drivers }; }); const { data, error } = await sb.functions.invoke('opex-explain', { body: { mode: 'explain', payload: { flags: items } } }); if (error) throw error; const out = parseJson(data.text); aiCommentary = new Map(Object.entries(out).map(([code, txt]) => [codeToDept.get(code), txt]).filter(([d]) => d)); renderFlags(); } catch (e) { showError('AI commentary failed: ' + (e.message || e)); } finally { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI Commentary'; } });
+
+document.getElementById('nlBtn').addEventListener('click', async () => { const q = document.getElementById('nlInput').value.trim(); if (!q) return; const btn = document.getElementById('nlBtn'); btn.disabled = true; try { const { data, error } = await sb.functions.invoke('opex-explain', { body: { mode: 'intent', payload: { question: q } } }); if (error) throw error; const intent = parseJson(data.text);
+
+await Promise.all([loadDepartments(), loadStatutoryMappings()]); selectedDepts.clear(); selectedCostCenters.clear(); selectedCostElements.clear(); selectedStatutoryMappings.clear(); ceStale = true; const match = (list, kws) => list.filter(x => (kws || []).some(k => x.toLowerCase().includes(String(k).toLowerCase()))); match(departments, intent.departmentkeywords).forEach(d => selectedDepts.add(d)); match(statutoryMappings, intent.statutorykeywords).forEach(s => selectedStatutoryMappings.add(s));
+
+const valid = (intent.years || []).filter(y => availableYears.some(a => a.fiscal_year === y)); if (valid.length) { selectedYears = new Set(valid); renderYearChips(); }
+
+renderList(listSearch.value); updateUI(); await runComparison(); } catch (e) { showError('Could not interpret the question: ' + (e.message || e)); } finally { btn.disabled = false; } });
+
+/* ================================================================== ERRORS + INIT ================================================================== */ function showError(msg) { globalError.textContent = PREVIEW_MODE ? 'Preview mode: live data access is temporarily disabled.' : msg; globalError.classList.remove('hidden'); } function hideError() { globalError.classList.add('hidden'); }
+
+async function initDashboard() { await loadYears(false); await loadDepartments(); renderList(); updateUI(); }
+
+/* ================================================================== EXCEL / CSV UPLOAD (OPEX data) ================================================================== */ const COLUMNS = { documentno: 'text', docdate: 'text', purchdoc: 'bigint', postgdate: 'text', refdocno: 'bigint', costctr: 'bigint', description: 'text', costelem: 'bigint', costelementname: 'text', actualamount: 'number', username: 'text', name: 'text', potext: 'text', month: 'bigint', tobecaptured: 'text', category: 'text', statutorymapping: 'text', management_mapping: 'text', department: 'text' };
+
+const HEADERALIASES = { documentno:'documentno', documentnumber:'documentno', docno:'documentno', doc:'documentno', docdate:'docdate', documentdate:'docdate', date:'docdate', purchdoc:'purchdoc', purchasedoc:'purchdoc', purchasedocument:'purchdoc', postgdate:'postgdate', postingdate:'postgdate', refdocno:'refdocno', referencedocno:'refdocno', referencedocumentno:'refdocno', costctr:'costctr', costcenter:'costctr', costcentre:'costctr', cctr:'costctr', description:'description', desc:'description', costelem:'costelem', costelement:'costelem', costelementno:'costelem', costelementname:'costelementname', elementname:'costelementname', actualamount:'actualamount', amount:'actualamount', value:'actualamount', amt:'actualamount', username:'username', user:'username', name:'name', purchaseordertext:'potext', potext:'potext', purchaseorder:'potext', month:'month', tobecaptured:'tobecaptured', capture:'tobecaptured', category:'category', statutorymapping:'statutorymapping', statutory:'statutorymapping', managementmapping:'managementmapping', management:'management_mapping', department:'department', dept:'department' };
+
+const normalizeHeader = h => String(h ?? '').toLowerCase().replace(/[^a-z0-9]/g, ''); const normalizeDepartment = v => String(v).trim().replace(/\s*-\s*/g, '-');
+
+function coerceValue(raw, type) { if (raw === undefined || raw === null || raw === '') return null; if (type === 'text') { const s = String(raw).trim(); return s === '' ? null : s; } const cleaned = String(raw).replace(/[^0-9.-]/g, ''); const n = type === 'bigint' ? parseInt(cleaned, 10) : parseFloat(cleaned); return Number.isFinite(n) ? n : null; }
+
+function mapHeaderRow(line) { const idxToCol = {}; const unmatched = []; (line || []).forEach((h, idx) => { const norm = normalizeHeader(h); const col = HEADER_ALIASES[norm] || (COLUMNS[norm] ? norm : null); if (col && COLUMNS[col] && !Object.values(idxToCol).includes(col)) idxToCol[idx] = col; else if (h !== null && String(h).trim() !== '') unmatched.push(h); }); return { idxToCol, unmatched }; }
+
+const HEADERSCANROWS = 25; const MINHEADERMATCHES = 3;
+
+function findHeaderRow(raw) { let best = { rowIndex: -1, idxToCol: {}, unmatched: [], score: 0 }; const limit = Math.min(raw.length, HEADERSCANROWS); for (let r = 0; r < limit; r++) { const line = raw[r]; if (!line || line.every(v => v === null || v === '')) continue; const { idxToCol, unmatched } = mapHeaderRow(line); const score = Object.keys(idxToCol).length; if (score > best.score) best = { rowIndex: r, idxToCol, unmatched, score }; } return best; }
+
+function parseWorkbook(workbook, fiscalYear) { const sheet = workbook.Sheets[workbook.SheetNames[0]]; const raw = XLSX.utils.sheettojson(sheet, { header: 1, defval: null, raw: true }); if (raw.length === 0) return { rows: [], unmatchedHeaders: [], matchedCount: 0, headerRowNumber: null, skippedPreambleRows: 0 };
+
+const header = findHeaderRow(raw); if (header.rowIndex === -1 || header.score < MINHEADERMATCHES) { return { rows: [], unmatchedHeaders: [], matchedCount: header.score, headerRowNumber: null, skippedPreambleRows: 0 }; }
+
+const idxToCol = header.idxToCol; const rows = []; let skippedNonData = 0;
+
+for (let r = header.rowIndex + 1; r < raw.length; r++) { const line = raw[r]; if (!line || line.every(v => v === null || v === '')) continue;
+
+const joined = line.filter(v => v !== null && v !== '').map(v => String(v).toLowerCase()).join(' '); const looksLikeTotalLine = /(^|\s)(sub\stotal|subtotal|sum|grand\stotal|total)\s*:?\s*$|^(sub\stotal|subtotal|sum|grand\stotal|total)\b/.test(joined.trim());
+
+const obj = { fiscalyear: fiscalYear }; let hasValue = false; Object.entries(idxToCol).forEach(([idx, col]) => { let val = coerceValue(line[Number(idx)], COLUMNS[col]); if (col === 'department' && val !== null) val = normalizeDepartment(val); if (col === 'statutorymapping' && val !== null) val = String(val).trim(); obj[col] = val; if (val !== null) hasValue = true; });
+
+const hasAnchor = obj.costctr !== null && obj.costctr !== undefined || obj.costelem !== null && obj.costelem !== undefined || (obj.department !== null && obj.department !== undefined) || (obj.documentno !== null && obj.documentno !== undefined);
+
+if (!hasValue) continue; if (looksLikeTotalLine && !hasAnchor) { skippedNonData++; continue; } if (!hasAnchor) { skippedNonData++; continue; }
+
+rows.push(obj); }
+
+return { rows, unmatchedHeaders: [...new Set(header.unmatched)], matchedCount: Object.keys(idxToCol).length, headerRowNumber: header.rowIndex + 1, skippedPreambleRows: header.rowIndex + skippedNonData }; }
+
+async function insertInChunks(rows, onProgress) { const CHUNK = 500; let inserted = 0, failed = 0, firstError = null; for (let i = 0; i < rows.length; i += CHUNK) { const chunk = rows.slice(i, i + CHUNK); const { error } = await sb.from(TABLE).insert(chunk); if (error) { failed += chunk.length; if (!firstError) firstError = error.message; console.error('Insert failed:', error.message); } else inserted += chunk.length; onProgress(Math.min(i + CHUNK, rows.length), rows.length); } return { inserted, failed, firstError }; }
+
+const uploadModal = document.getElementById('uploadModal'); const uploadYearInput = document.getElementById('uploadYearInput'); const uploadFileInput = document.getElementById('uploadFileInput'); const replaceYearCheckbox = document.getElementById('replaceYearCheckbox'); const startUploadBtn = document.getElementById('startUploadBtn'); const uploadStatus = document.getElementById('uploadStatus'); const uploadProgressWrap = document.getElementById('uploadProgressWrap'); const uploadProgressBar = document.getElementById('uploadProgressBar'); const uploadProgressText = document.getElementById('uploadProgressText'); const yearExistsNote = document.getElementById('yearExistsNote');
+
+document.getElementById('openUploadBtn').addEventListener('click', () => uploadModal.classList.remove('hidden')); document.getElementById('closeUploadBtn').addEventListener('click', () => uploadModal.classList.add('hidden'));
+
+uploadYearInput.addEventListener('input', () => { const y = parseInt(uploadYearInput.value, 10); const existing = availableYears.find(a => a.fiscalyear === y); if (existing) { yearExistsNote.className = 'text-xs mb-3 text-amber-600'; yearExistsNote.textContent = FY${y} already has ${Number(existing.row_count).toLocaleString()} rows. Uploading appends unless you tick "replace" below.; yearExistsNote.classList.remove('hidden'); } else if (Number.isFinite(y)) { yearExistsNote.className = 'text-xs mb-3 text-emerald-600'; yearExistsNote.textContent = FY${y} is new - this will create it.; yearExistsNote.classList.remove('hidden'); } else { yearExistsNote.classList.add('hidden'); } });
+
+function setUploadStatus(msg, kind) { uploadStatus.className = 'text-xs rounded-lg px-3 py-2 mb-4 border ' + ({ error: 'text-rose-700 bg-rose-50 border-rose-200', success: 'text-emerald-700 bg-emerald-50 border-emerald-200', info: 'text-slate-600 bg-slate-50 border-slate-200' }[kind] || 'text-slate-600 bg-slate-50 border-slate-200'); uploadStatus.innerHTML = msg; }
+
+startUploadBtn.addEventListener('click', async () => { const file = uploadFileInput.files[0]; const fiscalYear = parseInt(uploadYearInput.value, 10);
+
+if (!Number.isFinite(fiscalYear)) { setUploadStatus('Enter the fiscal year this file belongs to.', 'error'); return; } if (!file) { setUploadStatus('Choose a file first.', 'error'); return; }
+
+startUploadBtn.disabled = true; setUploadStatus('Reading file...', 'info'); uploadProgressWrap.classList.add('hidden');
+
+try { const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' }); const { rows, unmatchedHeaders, matchedCount, headerRowNumber, skippedPreambleRows } = parseWorkbook(workbook, fiscalYear);
+
+if (headerRowNumber === null) { setUploadStatus(Could not find a header row in the first ${HEADER_SCAN_ROWS} rows. Check the file has a row with names like "Cost Ctr", "Department", "Actual Amount"., 'error'); startUploadBtn.disabled = false; return; } if (rows.length === 0) { setUploadStatus(Found headers on row ${headerRowNumber}, but no data rows below them., 'error'); startUploadBtn.disabled = false; return; }
+
+if (replaceYearCheckbox.checked) { setUploadStatus(Removing existing FY${fiscalYear} rows..., 'info'); const { error: delError } = await sb.from(TABLE).delete().eq('fiscal_year', fiscalYear); if (delError) { setUploadStatus('Could not clear existing rows: ' + delError.message + ' - nothing was imported.', 'error'); startUploadBtn.disabled = false; return; } }
+
+const warn = (unmatchedHeaders.length ? <br><span class="text-amber-600">Skipped unrecognized column(s): ${unmatchedHeaders.map(esc).join(', ')}</span> : '') + <br><span class="text-slate-400">Headers found on row ${headerRowNumber} (${matchedCount} columns matched) + (skippedPreambleRows ? ; skipped ${skippedPreambleRows} non-data row(s) such as blanks or Subtotal/Sum lines : '') + .</span>;
+
+setUploadStatus(Uploading ${rows.length.toLocaleString()} row(s) to FY${fiscalYear}...${warn}, 'info'); uploadProgressWrap.classList.remove('hidden');
+
+const { inserted, failed, firstError } = await insertInChunks(rows, (done, total) => { uploadProgressBar.style.width = Math.round((done / total) * 100) + '%'; uploadProgressText.textContent = ${done.toLocaleString()} / ${total.toLocaleString()} rows; });
+
+if (failed === 0) { setUploadStatus(Done - ${inserted.toLocaleString()} row(s) imported into FY${fiscalYear}.${warn}, 'success'); } else { setUploadStatus(Imported ${inserted.toLocaleString()}, but ${failed.toLocaleString()} failed. First error: ${esc(firstError)}${warn}, 'error'); }
+
+deptsLoaded = ccLoaded = statLoaded = false; ceStale = true; await loadYears(true); if (activeTab === 'dept') loadDepartments(); else if (activeTab === 'cc') loadCostCenters(); else if (activeTab === 'stat') loadStatutoryMappings(); } catch (err) { setUploadStatus('Upload failed: ' + err.message, 'error'); } finally { startUploadBtn.disabled = false; } });
+
+/* ================================================================== BUDGET UPLOAD ================================================================== */ const budgetModal = document.getElementById('budgetModal'); document.getElementById('openBudgetBtn').addEventListener('click', () => budgetModal.classList.remove('hidden')); document.getElementById('closeBudgetBtn').addEventListener('click', () => budgetModal.classList.add('hidden'));
+
+function setBudgetStatus(msg, kind) { const el = document.getElementById('budgetStatus'); el.className = 'text-xs rounded-lg px-3 py-2 mb-4 border ' + (kind === 'error' ? 'text-rose-700 bg-rose-50 border-rose-200' : kind === 'success' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-slate-600 bg-slate-50 border-slate-200'); el.innerHTML = msg; }
+
+document.getElementById('startBudgetBtn').addEventListener('click', async () => { const fy = parseInt(document.getElementById('budgetYearInput').value, 10); const file = document.getElementById('budgetFileInput').files[0]; if (!Number.isFinite(fy) || !file) { setBudgetStatus('Enter a fiscal year and choose a file.', 'error'); return; } try { const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' }); const raw = XLSX.utils.sheettojson(wb.Sheets[wb.SheetNames[0]], { defval: null }); const totals = new Map(); raw.forEach(r => { let dept = null, amt = null; Object.entries(r).forEach(([k, v]) => { const n = normalizeHeader(k); if (n.includes('department') || n.includes('dept')) dept = v; else if (n.includes('budget') || n.includes('amount')) amt = v; }); const a = coerceValue(amt, 'number'); if (dept && a !== null) { const d = normalizeDepartment(dept); totals.set(d, (totals.get(d) || 0) + a); } }); const rows = [...totals].map(([department, budgetamount]) => ({ fiscalyear: fy, department, budget_amount })); if (!rows.length) { setBudgetStatus('No rows found. Check the headers are "Department" and "Budget".', 'error'); return; }
+
+const { error } = await sb.from('opexbudgets').upsert(rows, { onConflict: 'fiscalyear,department' }); if (error) throw error;
+
+await loadDepartments(); const unknown = rows.filter(r => !departments.includes(r.department)).map(r => r.department); setBudgetStatus(Saved ${rows.length} department budget(s) for FY${fy}. + (unknown.length ? <br><span class="text-amber-600">Not matching any department in your data: ${unknown.map(esc).join(', ')}</span> : ''), 'success'); } catch (e) { setBudgetStatus('Upload failed: ' + esc(e.message), 'error'); } }); </script> </body> </html>

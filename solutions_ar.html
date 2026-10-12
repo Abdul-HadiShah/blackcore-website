@@ -100,7 +100,7 @@
           class="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-hoechst-blue">
         <button id="nlBtn" class="px-4 py-2 text-sm font-semibold text-white bg-hoechst-blue rounded-lg hover:bg-blue-700 transition disabled:opacity-50">Ask</button>
       </div>
-      <p class="text-xs text-slate-400 mt-2">Only your question text is sent to the AI, to pick filters. Results are computed locally in your browser. Don't type confidential figures.</p>
+      <p class="text-xs text-slate-400 mt-2">Your question and anonymised per-department totals ("Department 1, 2, ...") are sent to the AI. Department names never leave your browser. Don't type confidential figures.</p>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -157,6 +157,8 @@
             <span id="runBtnText">Run Comparison</span>
           </button>
         </div>
+
+        <div id="aiAnswerCard" class="hidden bg-white rounded-xl shadow-sm border border-blue-200 p-6"></div>
 
         <div id="resultsSection" class="hidden space-y-6">
 
@@ -356,6 +358,7 @@ let activeTab = 'dept';
 let budgetsByYear = new Map();   // year -> Map(dept -> amount)
 let reviewsMap = new Map();      // "year|dept" -> latest review
 let lastFlags = [], currentFlagYear = null, aiCommentary = new Map();
+let lastByYear = null, lastYears = null;   // data behind the last comparison (for Ask AI)
 
 const listContainer = document.getElementById('listContainer');
 const selectedCountEl = document.getElementById('selectedCount');
@@ -667,6 +670,7 @@ async function runComparison() {
     const years = [...selectedYears].sort((a, b) => a - b);
     const results = await Promise.all(years.map(y => fetchYearRows(y, filters)));
     const byYear = new Map(years.map((y, i) => [y, results[i]]));
+    lastByYear = byYear; lastYears = years;
 
     if (years.every(y => byYear.get(y).length === 0)) {
       showError('No records matched your filters in any selected year. Try widening your selection.');
